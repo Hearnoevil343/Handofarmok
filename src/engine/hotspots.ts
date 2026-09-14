@@ -52,8 +52,8 @@ export function seedHotspots(
   // a large, slow, continental plate traps heat under itself
   const area = new Array(plates.sx.length).fill(0);
   const land = new Array(plates.sx.length).fill(0);
-  let cx = new Array(plates.sx.length).fill(0);
-  let cy = new Array(plates.sx.length).fill(0);
+  const cx = new Array(plates.sx.length).fill(0);
+  const cy = new Array(plates.sx.length).fill(0);
   for (let i = 0; i < n; i++) {
     const p = plateId[i];
     if (p < 0) continue;

@@ -87,7 +87,7 @@ export class ImageExporter {
     const zipContent = await zip.generateAsync({ type: "blob" });
     const link = document.createElement("a");
     link.href = URL.createObjectURL(zipContent);
-    link.download = `armoks_blueprint_export_${Date.now()}.zip`;
+    link.download = `hand_of_armok_heightmaps_${Date.now()}.zip`;
     link.click();
 
     URL.revokeObjectURL(link.href);

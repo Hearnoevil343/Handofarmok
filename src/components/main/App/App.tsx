@@ -10,12 +10,25 @@ import { ModalManager } from "@components/Modal/ModalManager";
 import type { RootState } from "@store/store";
 import { StartPage } from "@components/pages/start/page";
 import { WorldSettingsPage } from "@components/pages/world-settings/page";
+import { useEffect } from "react";
 import { useSelector } from "react-redux";
 
 export function App() {
   const isInitialized = useSelector(
     (state: RootState) => state.world.isInitialized,
   );
+
+  // Nothing is stored in the browser, so a reload or a closed tab loses the
+  // world without a word. Until there is real saving, at least ask first.
+  useEffect(() => {
+    if (!isInitialized) return;
+    const warn = (e: BeforeUnloadEvent) => {
+      e.preventDefault();
+      e.returnValue = "";
+    };
+    window.addEventListener("beforeunload", warn);
+    return () => window.removeEventListener("beforeunload", warn);
+  }, [isInitialized]);
 
   return (
     <>

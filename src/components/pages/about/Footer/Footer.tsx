@@ -5,7 +5,7 @@ export function Footer() {
     <footer className={styles.base}>
       <a
         className={styles.link}
-        href="https://github.com/Pythongor/hand-of-armok"
+        href="https://github.com/Hearnoevil343/Handofarmok"
         target="_blank"
       >
         [ STUDY THE SOURCE SCROLLS (GITHUB) ]

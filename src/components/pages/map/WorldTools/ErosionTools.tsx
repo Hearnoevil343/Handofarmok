@@ -11,8 +11,7 @@ import { worldManager } from "@tile-map/WorldManager";
 export function ErosionTools() {
   const [water, setWater] = useState(45);
   const [slope, setSlope] = useState(35);
-  const [seed, setSeed] = useState(() => Math.floor(Math.random() * 1e6));
-  const { busy, write, run } = useWorldWrite();
+  const { busy, write, run, seed, setSeed } = useWorldWrite("Erosion");
 
   return (
     <ToolPanel

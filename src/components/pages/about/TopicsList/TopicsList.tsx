@@ -6,9 +6,15 @@ export function TopicsList() {
       <div className={styles.topic}>
         <h3>WHAT IS THIS TOOL?</h3>
         <p>
-          Armok’s Blueprint was forged to give Overseers absolute control over
-          the foundation of their realm. While the gods provide random chance,
-          the Blueprint provides intent.
+          Hand of Armok was forged to give Overseers absolute control over the
+          foundation of their realm. While the gods provide random chance, the
+          Hand provides intent. It grew from Armok’s Blueprint by Pythongor,
+          though little of the original remains beyond the canvas and the token
+          ledger.
+        </p>
+        <p>
+          <strong>Nothing is kept in the browser.</strong> Closing or reloading
+          the tab loses the world, so export your world_gen.txt before you go.
         </p>
       </div>
 
@@ -24,8 +30,9 @@ export function TopicsList() {
             world_gen.txt to restore all saved blueprints.
           </li>
           <li>
-            <strong>Carve a Fresh Slab:</strong> Start with a blank canvas of
-            any size, from pocket worlds to continents.
+            <strong>Choose Your Blueprints:</strong> Click any number of
+            templates — blank slabs from pocket worlds to continents, generated
+            archetypes, or real regions of Earth — then load the selection.
           </li>
         </ul>
       </div>
@@ -37,9 +44,18 @@ export function TopicsList() {
         </p>
         <ul>
           <li>
-            <strong>The Property Ledger:</strong> Fine-tune mineral scarcity and
-            peak heights. Use the <strong>Runic Filter</strong> to find specific
-            laws.
+            <strong>Quick Setup:</strong> Dwarf Fortress’s own ladders for
+            history, beasts, civilisations and the rest, scaled to the land your
+            world actually holds. Each row shows where the world stands now.
+          </li>
+          <li>
+            <strong>Read This World:</strong> Measures what you built and proposes
+            settings to match, including the traps that make the game reject a
+            world forever.
+          </li>
+          <li>
+            <strong>The Property Ledger:</strong> Fine-tune every token by hand.
+            Use the <strong>Runic Filter</strong> to find specific laws.
           </li>
           <li>
             <strong>The Purge for Painting:</strong> Use the "Reset Destructive
@@ -54,12 +70,17 @@ export function TopicsList() {
         <p>Where the clerk becomes a creator and the map comes to life:</p>
         <ul>
           <li>
-            <strong>The Painter’s Palette:</strong> Select your layer
-            (Elevation, Rainfall, etc.) and paint directly onto the grid.
+            <strong>The Painter’s Palette:</strong> Biome, sculpt, climate,
+            volcano and savagery brushes, plus fill and eyedropper. Ctrl+Z undoes.
           </li>
           <li>
-            <strong>The Composite Vision:</strong> See how layers interact to
-            form biomes and mark potential volcanoes with fire-runes.
+            <strong>Layer Locks:</strong> Lock a layer and nothing writes to it —
+            no brush and no world tool.
+          </li>
+          <li>
+            <strong>World Tools:</strong> Generate a world, or run it through
+            geological ages — plates, mountains, erosion, rivers, ice ages and
+            rising seas. Each press can be undone.
           </li>
           <li>
             <strong>The Surveyor’s Bar:</strong> Use the status bar at the
@@ -69,7 +90,16 @@ export function TopicsList() {
       </div>
 
       <div className={styles.topic}>
-        <h3>IV. THE EXPORT VAULT</h3>
+        <h3>IV. GAME VIEW</h3>
+        <p>
+          Point it at the graphics folder of your Dwarf Fortress installation and
+          see your world drawn with the game’s own world-map sprites. Files are
+          read in your browser and never uploaded.
+        </p>
+      </div>
+
+      <div className={styles.topic}>
+        <h3>V. THE EXPORT VAULT</h3>
         <p>
           Bind your completed masterpiece into a form the World Engine can
           understand:
@@ -80,8 +110,8 @@ export function TopicsList() {
             ready for the game folder.
           </li>
           <li>
-            <strong>The PerfectWorld Bundle:</strong> A ZIP archive containing
-            heightmaps for every preset, ready for external utilities.
+            <strong>The PerfectWorld Bundle:</strong> A ZIP of elevation
+            heightmaps, one PNG per blueprint, ready for external utilities.
           </li>
         </ul>
       </div>
@@ -107,7 +137,7 @@ export function TopicsList() {
           <li>
             <strong>The Scribe's Mark:</strong> Visit the{" "}
             <strong>Great Repository (GitHub)</strong> to join the fellowship of
-            builders and help forge the future of the Blueprint.
+            builders and help forge the future of the Hand.
           </li>
         </ul>
       </div>

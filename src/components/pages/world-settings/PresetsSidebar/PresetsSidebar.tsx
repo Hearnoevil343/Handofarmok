@@ -69,7 +69,12 @@ export function PresetsSidebar() {
               <button
                 className={cn(styles.miniBtn, styles.delete)}
                 onClick={(e) => handleDelete(e, name)}
-                title="Remove Preset"
+                disabled={presetNames.length <= 1}
+                title={
+                  presetNames.length <= 1
+                    ? "The last blueprint can't be removed"
+                    : "Remove Preset"
+                }
               >
                 ✕
               </button>

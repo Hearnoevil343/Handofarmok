@@ -84,11 +84,30 @@
 .fileLabel {
   @include button;
   display: block;
+  position: relative;
   margin-inline: 2rem;
 
   &:hover {
     background: rgba($ui-active, 0.1);
   }
+
+  &:focus-within {
+    outline: 2px solid $ui-active;
+    outline-offset: 2px;
+  }
+}
+
+// Off screen but still focusable: Tab reaches it and Enter opens the picker.
+.fileInput {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
 }
 
 @keyframes pulse {

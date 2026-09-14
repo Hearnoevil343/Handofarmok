@@ -18,9 +18,8 @@ export function TectonicsTools() {
   const [plates, setPlates] = useState(6);
   const [drift, setDrift] = useState(20);
   const [mountains, setMountains] = useState(14);
-  const [seed, setSeed] = useState(() => Math.floor(Math.random() * 1e6));
   const [report, setReport] = useState<string | null>(null);
-  const { busy, write, run } = useWorldWrite();
+  const { busy, write, run, seed, setSeed } = useWorldWrite("TectonicAge");
 
   return (
     <ToolPanel

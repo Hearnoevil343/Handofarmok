@@ -28,7 +28,7 @@ export function PerfectWorldCard() {
     <section className={styles.exportCard}>
       <div className={styles.cardInfo}>
         <h3>PerfectWorld Heightmap</h3>
-        <p>Extract the elevation strata as a bitmap.</p>
+        <p>A ZIP of elevation heightmaps, one PNG per blueprint.</p>
       </div>
 
       <div className={styles.buttonGroup}>

@@ -136,7 +136,13 @@ export class GridScene extends Phaser.Scene {
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, cleanup);
     this.events.once(Phaser.Scenes.Events.DESTROY, cleanup);
 
-    this.redrawMap();
+    // Not `this.redrawMap()` here. Phaser marks a scene RUNNING only after
+    // create() returns, and redrawMap bails while the scene is not active, so a
+    // draw from inside create() never happened: the map opened black on every
+    // visit and appeared only after the first brush stroke. The RequestRedraw
+    // TileMap sends on mount fires before this scene exists at all. CREATE is
+    // emitted straight after the status becomes RUNNING.
+    this.events.once(Phaser.Scenes.Events.CREATE, () => this.redrawMap());
   }
 
   /** false anchors zoom on the map centre instead of the pointer */
@@ -489,7 +495,10 @@ export class GridScene extends Phaser.Scene {
 
     const g = this.displayGraphics;
     const t = this.tileSize;
-    g.lineStyle(Math.max(1, t * 0.12), 0xff3b30, 0.9);
+    // Width is in world units, so at the zoom that fits a 129 world on screen
+    // (about 0.2) a fixed 12% of a tile drew lines well under a pixel wide and
+    // only a few fragments showed. Keep at least two screen pixels.
+    g.lineStyle(Math.max(t * 0.12, 2 / this.cameras.main.zoom), 0xff3b30, 0.9);
     for (let y = 0; y < size; y++) {
       for (let x = 0; x < size; x++) {
         const i = y * size + x;

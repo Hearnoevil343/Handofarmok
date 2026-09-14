@@ -8,10 +8,10 @@
   "description": "A world builder for Dwarf Fortress: paint a world, run geological ages over it, and export a world_gen.txt that generates what you designed.",
   "repository": {
     "type": "git",
-    "url": "https://github.com/Pythongor/hand-of-armok.git"
+    "url": "https://github.com/Hearnoevil343/Handofarmok.git"
   },
   "bugs": {
-    "url": "https://github.com/Pythongor/hand-of-armok/issues"
+    "url": "https://github.com/Hearnoevil343/Handofarmok/issues"
   },
   "homepage": "https://Pythongor.github.io/hand-of-armok",
   "scripts": {
