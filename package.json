@@ -26,7 +26,7 @@
     "build:electron": "tsc -b && vite build --mode electron",
     "electron": "npm run build:electron && electron .",
     "dist": "npm run build:electron && electron-builder",
-    "simlab:build": "tsc src/engine/*.ts --ignoreConfig --ignoreDeprecations 6.0 --outDir tools/simlab/build --target es2020 --module commonjs --moduleResolution node --skipLibCheck",
+    "simlab:build": "tsc -p tools/simlab/tsconfig.json",
     "simlab": "node tools/simlab/cli.cjs"
   },
   "dependencies": {

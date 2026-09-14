@@ -2044,3 +2044,32 @@ same fix.
 
 Also: the default brush width was 1 tile, which is not a useful default for a
 painter. Now 5.
+
+---
+
+## 43. `simlab:build` did not run on Windows
+
+`npm run simlab:build` failed twice over on the Windows checkout, despite §41's
+first sweep having run.
+
+**Flags from a TypeScript that is not installed.** The script passed
+`--ignoreConfig` and `--ignoreDeprecations 6.0`, both TypeScript 6. The project
+pins `~5.9.3`, which stops at `TS5023: Unknown compiler option '--ignoreConfig'`.
+The sweep in §41 was built with a different compiler than the one `npm install`
+provides — the same pattern as the `lucide-react` pin in §42.
+
+**A glob nothing expanded.** With the flags removed it still fails:
+`TS6053: File 'src/engine/*.ts' not found`. npm runs scripts through cmd.exe on
+Windows, and cmd.exe passes `*` through literally. A POSIX shell expands it, so
+this only breaks where the harness is actually meant to run overnight.
+
+Both fixed by moving the options into `tools/simlab/tsconfig.json`, whose
+`include` glob tsc expands itself; the script is now `tsc -p
+tools/simlab/tsconfig.json`. `rootDir` is set to `src/engine` so the output stays
+flat in `tools/simlab/build/`, which is where `cli.cjs` looks.
+
+Verified on Windows: the build emits all 20 engine modules and
+`npm run simlab -- sweep --dry` reports 144 runs on 12 workers. A full sweep has
+not been run with this build.
+
+Also added `CLAUDE.md` with the environment notes that are not in any other file.

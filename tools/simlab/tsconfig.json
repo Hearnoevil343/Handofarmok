@@ -1,0 +1,14 @@
+{
+  // Compiles the world engine to plain CommonJS for the simulation lab.
+  // A config file rather than CLI arguments so the file glob is expanded by
+  // tsc itself: npm runs scripts through cmd.exe on Windows, which does not.
+  "compilerOptions": {
+    "target": "es2020",
+    "module": "commonjs",
+    "moduleResolution": "node",
+    "skipLibCheck": true,
+    "rootDir": "../../src/engine",
+    "outDir": "build"
+  },
+  "include": ["../../src/engine/*.ts"]
+}
