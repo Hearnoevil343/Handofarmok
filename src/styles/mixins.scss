@@ -1,0 +1,99 @@
+@use "@styles/variables" as *;
+
+@mixin button {
+  position: relative;
+  border-radius: 8px;
+  padding: 1rem;
+  background: transparent;
+  border: 1px solid $ui-accent;
+  color: $ui-accent;
+  font-family: inherit;
+  font-weight: bold;
+  cursor: pointer;
+  overflow: hidden;
+  transition: all 0.2s ease;
+  font-size: 1em;
+  font-weight: 500;
+  font-family: inherit;
+  background-color: $bg-dark;
+
+  &:hover:not(:disabled) {
+    background: rgba($ui-accent, 0.1);
+    box-shadow: 0 0 15px rgba($ui-accent, 0.2);
+    border-color: $ui-accent;
+  }
+
+  &:active {
+    background: rgba($ui-active, 0.1);
+    box-shadow: 0 0 15px rgba($ui-active, 0.2);
+    border-color: $ui-active;
+    color: $ui-active;
+  }
+
+  &:disabled {
+    border-color: $ui-gray;
+    color: $ui-gray;
+    cursor: not-allowed;
+    background: rgba($ui-gray, 0.05);
+
+    &:hover {
+      background: rgba($ui-gray, 0.05);
+      box-shadow: none;
+      border-color: $ui-gray;
+    }
+  }
+
+  &__loading {
+    border-color: $ui-gray;
+    color: $ui-light;
+    cursor: wait;
+  }
+
+  &__success {
+    border-color: $ui-success;
+    color: $ui-success;
+
+    &:hover {
+      background: rgba($ui-success, 0.1);
+      box-shadow: 0 0 15px rgba($ui-success, 0.2);
+      border-color: $ui-success;
+    }
+  }
+
+  &__error {
+    border-color: $ui-warning;
+    color: $ui-warning;
+    background: rgba($ui-warning, 0.05);
+    animation: shake 0.4s cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
+
+    &:hover {
+      background: rgba($ui-warning, 0.1);
+      box-shadow: 0 0 15px rgba($ui-warning, 0.2);
+      border-color: $ui-warning;
+    }
+  }
+}
+
+@mixin scroll {
+  &::-webkit-scrollbar {
+    width: 8px;
+  }
+
+  &::-webkit-scrollbar-track {
+    background: $bg-dark;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background: $ui-gray;
+    border-radius: 4px;
+    &:hover {
+      background: $ui-accent;
+    }
+  }
+}
+
+@mixin page {
+  width: 100%;
+  height: 100%;
+  background: radial-gradient(circle, $bg-dark 0%, #0a0a0a 100%);
+}

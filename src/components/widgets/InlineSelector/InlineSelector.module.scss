@@ -1,0 +1,47 @@
+@use "@styles/variables" as *;
+
+.base {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.label {
+  margin-right: 10px;
+}
+
+.buttonGroup {
+  display: flex;
+  border: 1px solid $ui-light-gray;
+  background: $bg-dark;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.button {
+  background: transparent;
+  border: none;
+  color: $ui-silver;
+  padding: 6px 12px;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-transform: uppercase;
+  font-weight: bold;
+
+  &:hover {
+    color: $ui-black;
+    background: $ui-accent;
+  }
+
+  &__active {
+    background: $ui-active;
+    color: $ui-black;
+
+    &:hover {
+      background: $ui-active;
+      color: $ui-black;
+    }
+  }
+}

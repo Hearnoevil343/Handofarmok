@@ -1,0 +1,141 @@
+@use "@styles/variables" as *;
+
+.tokenCard {
+  background: $panel-bg;
+  border: 1px solid $ui-dark;
+  padding: 1rem;
+  border-radius: 4px;
+
+  .tokenLabel {
+    color: $ui-accent;
+    font-size: 0.75rem;
+    font-family: "Fira Code", monospace;
+    margin-bottom: 0.75rem;
+    opacity: 0.8;
+  }
+}
+
+.parameterRow {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.paramInput {
+  flex: 1;
+  min-width: 0;
+  width: 100%;
+  box-sizing: border-box;
+
+  background: $ui-dark-gray;
+  border: 1px solid $ui-gray;
+  color: $ui-light;
+  padding: 0.4rem;
+  font-size: 0.8rem;
+  text-align: center;
+  font-family: "Fira Code", monospace;
+  transition: all 0.2s;
+
+  &:hover {
+    border-color: $ui-accent;
+  }
+
+  &:focus {
+    border-color: $ui-active;
+    background: $ui-black;
+    outline: none;
+  }
+}
+
+.booleanToggle {
+  flex: 1;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 0;
+  background: $ui-dark-gray;
+  border: 1px solid $ui-gray;
+  color: $text-gray;
+  padding: 0.5rem;
+  font-size: 0.7rem;
+  font-family: "Fira Code", monospace;
+  font-weight: bold;
+  letter-spacing: 1px;
+  transition: all 0.2s ease;
+  text-transform: uppercase;
+
+  &::before {
+    content: "";
+    display: inline-block;
+    width: 6px;
+    height: 6px;
+    margin-right: 10px;
+    border-radius: 50%;
+    background: $ui-gray;
+    box-shadow: inset 0 0 2px $ui-black;
+    transition: all 0.2s ease;
+  }
+
+  &:hover {
+    border-color: $text-gray;
+    background: $bg-dark;
+  }
+
+  &:focus {
+    border-color: $ui-active;
+    background: $bg-dark;
+    outline: none;
+  }
+
+  &.active {
+    color: $ui-accent;
+    border-color: rgba($ui-accent, 0.5);
+
+    &::before {
+      background: $ui-accent;
+      box-shadow: 0 0 8px $ui-accent;
+    }
+
+    &:hover {
+      background: rgba($ui-accent, 0.05);
+    }
+
+    &:focus {
+      border-color: $ui-active;
+      background: rgba($ui-active, 0.05);
+      color: $ui-active;
+
+      &::before {
+        background: $ui-active;
+        box-shadow: 0 0 8px $ui-active;
+      }
+    }
+  }
+}
+
+.reject {
+  margin-left: 8px; padding: 1px 6px; border-radius: 3px;
+  background: rgba($ui-warning, .15); border: 1px solid rgba($ui-warning, .5);
+  color: $ui-warning; font-size: 9px; letter-spacing: .05em;
+  text-transform: uppercase; cursor: help; vertical-align: middle;
+}
+
+.guide {
+  margin-top: 8px; padding-top: 8px;
+  border-top: 1px solid $panel-border;
+  display: flex; flex-direction: column; gap: 6px;
+}
+
+.guideLine { color: $text-gray; font-size: 10px; line-height: 1.45; margin: 0; strong { color: $ui-light; } }
+.warn { color: $ui-warning; }
+
+.bands {
+  width: 100%; border-collapse: collapse; font-size: 10px;
+  th {
+    color: $ui-silver; font-weight: normal; padding: 3px 2px;
+    border-bottom: 1px solid $panel-border; white-space: nowrap;
+  }
+  td { color: $ui-light; padding: 3px 2px; text-align: center; }
+}
+.pct { color: $text-gray; margin-left: 4px; }

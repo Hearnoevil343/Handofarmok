@@ -1,0 +1,23 @@
+@use "@styles/variables" as *;
+@use "@styles/mixins" as *;
+
+.base {
+  @include button;
+  width: 100%;
+}
+
+.btnText {
+  position: relative;
+  z-index: 2;
+}
+
+.progressBar {
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 100%;
+  background: rgba($ui-active, 0.2);
+  border-right: 2px solid $ui-active;
+  transition: width 0.1s linear;
+  z-index: 1;
+}

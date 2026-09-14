@@ -1,0 +1,66 @@
+@use "@styles/variables" as *;
+
+.briefInfo {
+  .topic {
+    margin-bottom: 40px;
+
+    h3 {
+      color: $ui-accent;
+      font-family: "Cinzel", serif;
+      border-bottom: 1px solid $ui-gray;
+      padding-bottom: 8px;
+      margin-bottom: 12px;
+      font-size: 1.2rem;
+      letter-spacing: 1px;
+    }
+
+    p {
+      color: $text-silver;
+      margin-bottom: 15px;
+    }
+
+    ul {
+      list-style: none;
+      padding-left: 10px;
+
+      li {
+        position: relative;
+        padding-left: 25px;
+        margin-bottom: 12px;
+        color: $ui-light;
+        font-size: 0.95rem;
+
+        &::before {
+          content: "»";
+          position: absolute;
+          left: 0;
+          color: $ui-active;
+          font-weight: bold;
+        }
+
+        strong {
+          color: $ui-active;
+          font-weight: bold;
+          text-transform: uppercase;
+          font-size: 0.85rem;
+          margin-right: 4px;
+        }
+      }
+    }
+    &:last-of-type {
+      margin-top: 60px;
+      padding: 20px;
+      border: 1px dashed rgba($ui-accent, 0.3);
+      background: rgba($ui-accent, 0.02);
+
+      h3 {
+        border-color: $ui-accent;
+        color: $ui-accent;
+      }
+
+      li::before {
+        color: $ui-accent;
+      }
+    }
+  }
+}

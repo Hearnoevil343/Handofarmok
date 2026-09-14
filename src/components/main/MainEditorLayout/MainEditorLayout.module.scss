@@ -1,0 +1,18 @@
+@use "@styles/variables" as *;
+
+.base {
+  height: calc(100vh - 50px);
+  width: 100vw;
+  background: #050505;
+  overflow: hidden;
+  color: $text-silver;
+  margin-top: 50px;
+}
+
+.mainContent {
+  position: relative;
+  display: flex;
+  flex-direction: row;
+  height: 100%;
+  width: 100%;
+}

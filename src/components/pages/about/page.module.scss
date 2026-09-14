@@ -1,0 +1,27 @@
+@use "@styles/variables" as *;
+@use "@styles/mixins" as *;
+
+.base {
+  @include page;
+  width: 100%;
+  height: 100%;
+}
+
+.container {
+  @include scroll;
+  height: 100%;
+  overflow-y: auto;
+}
+
+.tablet {
+  width: 880px;
+  margin: 40px auto;
+  padding: 40px;
+  background: $bg-dark;
+  border: 4px double $panel-border;
+  box-shadow:
+    inset 0 0 50px rgba($ui-black, 0.8),
+    0 10px 5px rgba($ui-black, 0.8);
+  color: $text-silver;
+  line-height: 1.6;
+}

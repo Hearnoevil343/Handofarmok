@@ -1,0 +1,13 @@
+@use "@styles/variables" as *;
+
+.nav { display: flex; flex-direction: column; gap: 2px; padding: 8px; }
+.item {
+  display: flex; align-items: center; gap: 10px; padding: 9px 12px; border-radius: 9px;
+  border: none; background: transparent; color: $text-silver; cursor: pointer;
+  font-size: 12px; text-align: left; transition: background .12s, color .12s;
+  &:hover { background: rgba($ui-white, .06); color: $ui-white; }
+}
+.active { background: rgba($ui-accent, .16); color: $ui-accent; &:hover { background: rgba($ui-accent, .2); color: $ui-accent; } }
+.warn.active { background: rgba($ui-warning, .16); color: $ui-warning; }
+.label { flex: 1; }
+.count { font-size: 10px; color: $text-gray; background: rgba($ui-white, .06); padding: 1px 7px; border-radius: 10px; }

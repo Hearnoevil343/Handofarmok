@@ -1,0 +1,34 @@
+@use "@styles/variables" as *;
+
+.description {
+  background: $ui-black;
+  padding: 20px;
+  border-left: 3px solid $ui-accent;
+  margin-bottom: 40px;
+  font-style: italic;
+  color: $ui-silver;
+
+  transition: border-left-color 0.2s ease;
+
+  &:hover {
+    border-left-color: $ui-active;
+
+    .descriptionText {
+      &::before,
+      &::after {
+        color: $ui-active;
+      }
+    }
+  }
+}
+
+.descriptionText {
+  margin: 0;
+  &::before,
+  &::after {
+    content: '"';
+    color: $ui-accent;
+    font-weight: bold;
+    transition: color 0.2s ease;
+  }
+}

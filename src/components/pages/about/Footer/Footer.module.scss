@@ -1,0 +1,34 @@
+@use "@styles/variables" as *;
+
+.base {
+  text-align: center;
+  padding-top: 30px;
+}
+
+.link {
+  color: $ui-accent;
+  text-decoration: none;
+  font-weight: bold;
+  padding: 10px 20px;
+  border: 1px solid $ui-accent;
+  transition: all 0.2s;
+
+  &:hover {
+    background: $ui-accent;
+    color: $ui-black;
+    box-shadow: 0 0 15px rgba($ui-accent, 0.4);
+  }
+}
+
+.versionBadge {
+  margin-top: 20px;
+  font-size: 10px;
+  color: $ui-light-gray;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  transition: color 0.3s;
+
+  &:hover {
+    color: $ui-accent;
+  }
+}

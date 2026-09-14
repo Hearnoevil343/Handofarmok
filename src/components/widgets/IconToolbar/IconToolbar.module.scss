@@ -1,0 +1,17 @@
+@use "@styles/variables" as *;
+
+.base { display: flex; flex-direction: column; gap: 4px; }
+.label { color: $ui-light; font-size: 11px; letter-spacing: .06em; text-transform: uppercase; }
+.row { display: flex; flex-wrap: wrap; gap: 3px; }
+
+.item {
+  flex: 1 1 48px; min-width: 44px;
+  display: flex; flex-direction: column; align-items: center; gap: 2px;
+  background: $ui-gray; border: 1px solid transparent; border-radius: 4px;
+  color: $ui-silver; cursor: pointer; padding: 5px 2px 4px;
+  &:hover { background: $ui-light-gray; color: $ui-white; }
+}
+
+.active { background: $ui-dark; border-color: $ui-accent; color: $ui-accent; }
+.icon { font-size: 14px; line-height: 1; }
+.name { font-size: 9px; letter-spacing: .02em; }

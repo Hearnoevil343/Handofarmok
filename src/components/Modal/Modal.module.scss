@@ -1,0 +1,98 @@
+@use "@styles/variables" as *;
+
+.base {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba($ui-black, 0.85);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10;
+  padding: 2rem;
+}
+
+.modalContent {
+  position: relative;
+  background: $panel-bg;
+  border: 1px solid $panel-border;
+  box-shadow:
+    0 20px 50px rgba($ui-black, 0.8),
+    0 0 0 1px rgba($ui-accent, 0.1);
+  border-radius: 4px;
+  max-width: 500px;
+  width: 100%;
+  animation: modalIn 0.2s ease-out;
+}
+
+@keyframes modalIn {
+  from {
+    transform: scale(0.95);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+.header {
+  padding: 1.5rem;
+  border-bottom: 1px solid $ui-dark;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+
+  h2 {
+    color: $ui-accent;
+    margin: 0;
+    font-size: 1.2rem;
+  }
+}
+
+.body {
+  padding: 1.5rem;
+  color: $ui-light;
+  font-size: 0.95rem;
+  line-height: 1.6;
+}
+
+.footer {
+  padding: 1.5rem;
+  display: flex;
+  justify-content: flex-end;
+  gap: 1rem;
+}
+
+.closeButton {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  background: transparent;
+  border: none;
+  color: $text-gray;
+  font-size: 1.5rem;
+  padding: 0;
+  cursor: pointer;
+  &:hover {
+    color: $ui-white;
+  }
+}
+
+.button {
+  transition: all 0.2s ease;
+
+  &__warning {
+    border: 1px solid $ui-accent;
+    color: $ui-accent;
+
+    &:hover {
+      background: rgba($ui-warning, 0.1);
+      color: $ui-warning;
+      border-color: $ui-warning;
+    }
+  }
+}

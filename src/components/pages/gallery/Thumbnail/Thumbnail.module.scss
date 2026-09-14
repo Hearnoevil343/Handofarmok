@@ -1,0 +1,15 @@
+@use "@styles/variables" as *;
+
+
+.base {
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  background: $ui-dark-gray;
+  border-radius: 4px;
+  margin-bottom: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid rgba($ui-white, 0.05);
+  image-rendering: pixelated;
+}

@@ -1,0 +1,99 @@
+$bg-dark: #1a1a1a;
+
+$panel-bg: #151515;
+$panel-border: #4a4a4a;
+
+$ui-black: #000;
+$ui-white: #fff;
+$ui-dark: #2a2a2a;
+$ui-dark-gray: #111;
+$ui-gray: #333;
+$ui-light-gray: #3a3a3a;
+$ui-silver: #888;
+$ui-light: #ccc;
+
+$ui-accent: #d4af37;
+$ui-active: #55ffff;
+
+$ui-warning: #ff5555;
+$ui-success: #55ff55;
+
+$text-silver: #c0c0c0;
+$text-gray: #666;
+
+$layer-colors: (
+  "elevation": #8b5a2b,
+  "rainfall": #3498db,
+  "drainage": #95a5a6,
+  "temperature": #e74c3c,
+  "volcanism": #9b59b6,
+  "savagery": #2ecc71,
+  "alignment": #ff69b4,
+);
+
+$biome-colors: (
+  "TemperateOcean": #00008b,
+  "ArcticOcean": #3f008b,
+  "TropicalOcean": #09517a,
+  "Mountain": #4b4b4b,
+  "Glacier": #70ffff,
+  "SandDesert": #ffd700,
+  "Badlands": #cd853f,
+  "Tundra": #b0e0e6,
+  "FreshwaterTemperateSwamp": #2f4f4f,
+  "SaltwaterTemperateSwamp": #2f4f4f,
+  "FreshwaterTropicalSwamp": #37653f,
+  "SaltwaterTropicalSwamp": #37653f,
+  "MangroveSwamp": #5f904c,
+  "FreshwaterTemperateMarsh": #4682b4,
+  "SaltwaterTemperateMarsh": #4682b4,
+  "FreshwaterTropicalMarsh": #469ab4,
+  "SaltwaterTropicalMarsh": #469ab4,
+  "Taiga": #4e6e5d,
+  "TemperateConiferousForest": #2d5a27,
+  "TemperateBroadleafForest": #4f7942,
+  "TropicalMoistBroadleafForest": #004d00,
+  "TropicalConiferousForest": #228b22,
+  "Grassland": #32cd32,
+  "TropicalGrassland": #68cd32,
+  "Savanna": #adff2f,
+  "TropicalSavanna": #cbff2f,
+  "TemperateShrubland": #8ba870,
+  "TropicalShrubland": #a3ad62,
+  "RockyWasteland": #a9a9a9,
+);
+
+$descriptor-good: #f0f;
+$descriptor-neutral: #ccc;
+$descriptor-evil: #9b59b6;
+
+@keyframes masterworkGlow {
+  from {
+    text-shadow: 0 0 5px #ffd7004d;
+  }
+  to {
+    text-shadow:
+      0 0 20px #ffd70099,
+      2px 2px 0px $ui-black;
+  }
+}
+
+@keyframes shake {
+  10%,
+  90% {
+    transform: translate3d(-1px, 0, 0);
+  }
+  20%,
+  80% {
+    transform: translate3d(2px, 0, 0);
+  }
+  30%,
+  50%,
+  70% {
+    transform: translate3d(-4px, 0, 0);
+  }
+  40%,
+  60% {
+    transform: translate3d(4px, 0, 0);
+  }
+}

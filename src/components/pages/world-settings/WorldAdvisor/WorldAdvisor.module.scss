@@ -1,0 +1,28 @@
+@use "@styles/variables" as *;
+
+.base {
+  border: 1px solid $panel-border; border-radius: 6px;
+  background: rgba($ui-black, .25); padding: 14px 16px; margin-bottom: 20px;
+  display: flex; flex-direction: column; gap: 10px;
+}
+.head { display: flex; flex-direction: column; gap: 8px; }
+.title { color: $ui-accent; font-size: 16px; letter-spacing: .1em; margin: 0; text-transform: uppercase; }
+.lead { color: $text-silver; font-size: 12px; line-height: 1.5; margin: 0; }
+.summary { color: $ui-active; font-size: 11px; margin: 0; }
+.clean { color: $ui-success; font-size: 12px; margin: 0; }
+.alarm { color: $ui-warning; font-size: 12px; margin: 0; }
+
+.primary {
+  align-self: flex-start; background: $ui-gray; border: 1px solid $ui-accent;
+  border-radius: 4px; color: $ui-accent; cursor: pointer;
+  font-size: 12px; padding: 8px 14px;
+  &:hover { background: $ui-light-gray; }
+}
+
+.list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+.item { border-left: 2px solid $panel-border; padding-left: 10px; }
+.row { display: flex; align-items: center; gap: 8px; cursor: pointer; }
+.name { color: $ui-light; font-size: 12px; }
+.blocker { color: $ui-warning; }
+.change { color: $text-silver; font-size: 11px; margin-left: auto; strong { color: $ui-active; } }
+.reason { color: $text-gray; font-size: 10px; line-height: 1.45; margin: 3px 0 0 24px; }

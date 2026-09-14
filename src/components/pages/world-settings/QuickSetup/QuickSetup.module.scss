@@ -1,0 +1,35 @@
+@use "@styles/variables" as *;
+
+.base {
+  border: 1px solid $panel-border; border-radius: 6px;
+  background: rgba($ui-black, .25);
+  padding: 14px 16px; margin-bottom: 20px;
+  display: flex; flex-direction: column; gap: 10px;
+}
+
+.head { border-bottom: 1px solid $panel-border; padding-bottom: 10px; }
+.title { color: $ui-accent; font-size: 16px; letter-spacing: .1em; margin: 0; text-transform: uppercase; }
+.lead { color: $text-silver; font-size: 12px; line-height: 1.5; margin: 6px 0 0; strong { color: $ui-light; } }
+
+.row { display: grid; grid-template-columns: 140px 1fr; gap: 10px 12px; align-items: center; }
+.name { color: $ui-light; font-size: 12px; letter-spacing: .04em; text-transform: uppercase; }
+.options { display: flex; flex-wrap: wrap; gap: 4px; }
+
+.chip {
+  background: $ui-gray; border: 1px solid $panel-border; border-radius: 4px;
+  color: $text-silver; cursor: pointer; font-size: 11px; padding: 6px 11px;
+  &:hover { background: $ui-light-gray; color: $ui-white; }
+}
+.on { background: $ui-dark; border-color: $ui-accent; color: $ui-accent; }
+
+.blurb {
+  grid-column: 2; color: $text-gray; font-size: 10px;
+  line-height: 1.45; margin: -4px 0 2px;
+}
+.applied { color: $ui-active; font-style: normal; }
+
+.chip { display: flex; flex-direction: column; align-items: center; gap: 2px; }
+.sub { color: $ui-active; font-size: 10px; font-variant-numeric: tabular-nums; }
+.on .sub { color: $ui-accent; }
+
+.locked { opacity: .55; cursor: not-allowed; &:hover { background: $ui-gray; } }

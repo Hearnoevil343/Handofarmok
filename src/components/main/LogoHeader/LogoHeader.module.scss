@@ -1,0 +1,21 @@
+@use "@styles/variables" as *;
+
+.base {
+  font-size: 3rem;
+  letter-spacing: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 0 2rem;
+  gap: 1rem;
+}
+
+.glitchTitle {
+  color: $ui-accent;
+  animation: masterworkGlow 3s infinite alternate;
+}
+
+.qualitySymbol {
+  color: $text-gray;
+  font-size: 2.5rem;
+}

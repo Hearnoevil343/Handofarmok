@@ -1,0 +1,121 @@
+@use "@styles/variables" as *;
+
+.base {
+  padding: 1rem 2rem;
+  background: $panel-bg;
+  border-bottom: 1px solid $ui-dark;
+  box-shadow: 0 4px 20px rgba($ui-black, 0.6);
+
+  position: relative;
+
+  p {
+    font-size: 0.9rem;
+    color: $text-gray;
+  }
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.presetTitle {
+  color: $ui-light;
+  margin-bottom: 0.5rem;
+  border-bottom: 9px solid transparent;
+}
+
+.presetTitle,
+.titleInput {
+  font-size: 1.5rem;
+  line-height: 1.2;
+  margin: 0 0 0.5rem 0;
+  font-weight: bold;
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+.titleInput {
+  padding: 0;
+  border: none;
+  outline: none;
+  border-bottom: 1px solid $ui-accent;
+  background: transparent;
+}
+
+.titleGroup {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  gap: 1.5rem;
+  color: $ui-accent;
+
+  .title {
+    letter-spacing: 4px;
+    margin: 0;
+    color: $ui-accent;
+  }
+
+  .qualitySymbol {
+    color: $text-gray;
+    font-size: 1.5rem;
+  }
+}
+
+.actionGroup {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+}
+
+.anchorButton {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  background: rgba($ui-accent, 0.05);
+  border: 1px solid rgba($ui-accent, 0.3);
+  color: $ui-accent;
+  padding: 0.6rem 1.2rem;
+  font-size: 0.75rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  height: 42px;
+  border-radius: 2px;
+
+  &:hover {
+    background: rgba($ui-accent, 0.15);
+    border-color: $ui-accent;
+    box-shadow: 0 0 12px rgba($ui-accent, 0.15);
+  }
+}
+
+.searchBox {
+  input {
+    background: $ui-black;
+    border: 1px solid $ui-gray;
+    padding: 0.8rem 1.2rem;
+    color: $ui-accent;
+    width: 300px;
+    height: 42px;
+    box-sizing: border-box;
+    font-family: inherit;
+    transition: all 0.2s ease;
+
+    &::placeholder {
+      transition: all 0.2s ease;
+    }
+
+    &:focus {
+      border-color: $ui-active;
+      outline: none;
+      box-shadow: 0 0 10px rgba($ui-active, 0.1);
+      color: $ui-active;
+
+      &::placeholder {
+        color: rgba($ui-active, 0.4);
+      }
+    }
+  }
+}

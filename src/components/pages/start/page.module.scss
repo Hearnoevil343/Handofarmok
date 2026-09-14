@@ -1,0 +1,27 @@
+@use "@styles/variables" as *;
+@use "@styles/mixins" as *;
+
+.base {
+  @include page;
+  @include scroll;
+  overflow-y: auto;
+  display: flex;
+  justify-content: center;
+}
+
+.header {
+  margin: 4rem 0 4rem;
+}
+
+.modal {
+  width: 800px;
+  text-align: center;
+  margin: 0 auto;
+}
+
+.cards {
+  margin: 3rem 0 0;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 2rem;
+}

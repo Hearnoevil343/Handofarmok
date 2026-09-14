@@ -1,0 +1,108 @@
+@use "@styles/variables" as *;
+
+.base {
+  grid-area: status;
+  min-height: 28px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px 0;
+  background: $panel-bg;
+  padding: 4px 12px;
+  font-family: "Fira Code", monospace;
+  font-size: 11px;
+  color: $ui-light;
+}
+
+.contextGroup {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  padding: 0 12px;
+}
+
+.layerGroup {
+  padding: 0 12px;
+  display: flex;
+  gap: 8px;
+  justify-content: flex-start;
+  flex-grow: 1;
+}
+
+.divider {
+  width: 1px;
+  height: 12px;
+  background: $ui-gray;
+  flex-shrink: 0;
+  margin: 0;
+  align-self: center;
+}
+
+.section {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 100%;
+  line-height: 1;
+
+  &__layer {
+    align-items: center;
+    gap: 4px;
+  }
+
+  &__biome {
+    width: 325px;
+    overflow: hidden;
+  }
+}
+
+.label {
+  color: $text-gray;
+  font-weight: bold;
+}
+
+.value {
+  color: $text-silver;
+  display: inline-block;
+  white-space: pre;
+  text-align: right;
+}
+
+.contentGroup {
+  display: flex;
+  gap: 8px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.descriptor {
+  font-weight: bold;
+  text-transform: uppercase;
+
+  &.Serene,
+  &.Mirthful,
+  &.Joyous_Wilds {
+    color: $descriptor-good;
+  }
+  &.Sinister,
+  &.Haunted,
+  &.Terrifying {
+    color: $descriptor-evil;
+  }
+  &.Calm,
+  &.Wilderness,
+  &.Untamed_Wilds {
+    color: $descriptor-neutral;
+  }
+}
+
+.biomeValue {
+  font-weight: bold;
+  text-transform: uppercase;
+
+  @each $name, $color in $biome-colors {
+    &.#{$name} {
+      color: $color;
+    }
+  }
+}

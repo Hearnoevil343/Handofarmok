@@ -1,0 +1,44 @@
+@use "@styles/variables" as *;
+
+.cardInfo {
+  h3 {
+    color: $ui-light;
+    margin-bottom: 1rem;
+    letter-spacing: 1px;
+  }
+  p {
+    color: $ui-silver;
+    font-size: 0.9rem;
+    line-height: 1.6;
+  }
+}
+
+.exportCard {
+  background: $panel-bg;
+  border: 1px solid $ui-gray;
+  padding: 2.5rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 2rem;
+  position: relative;
+  transition: border-color 0.3s ease;
+
+  &:hover:not(.disabled) {
+    border-color: $ui-accent;
+  }
+
+  &.disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    filter: grayscale(1);
+
+    button {
+      cursor: not-allowed;
+      &:hover {
+        border: 1px solid transparent;
+        transform: none;
+      }
+    }
+  }
+}

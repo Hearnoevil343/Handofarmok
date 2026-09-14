@@ -1,0 +1,25 @@
+@use "@styles/variables" as *;
+
+.base { display: flex; flex-direction: column; gap: 8px; height: 100%; min-height: 0; }
+.picker { display: flex; flex-direction: column; gap: 6px; padding: 8px; }
+.lead { color: $ui-accent; font-size: 13px; margin: 0; }
+.hint { color: $text-gray; font-size: 11px; line-height: 1.45; margin: 0; code { color: $ui-light; } }
+.error { color: $ui-warning; font-size: 11px; line-height: 1.4; margin: 4px 0 0; }
+
+.button {
+  align-self: flex-start; cursor: pointer;
+  background: $ui-gray; border: 1px solid $ui-accent; border-radius: 4px;
+  color: $ui-accent; font-size: 12px; padding: 9px 14px; margin-top: 4px;
+  &:hover { background: $ui-light-gray; }
+}
+.file { display: none; }
+
+.toolbar { display: flex; gap: 4px; padding: 4px 8px 0; }
+.small {
+  background: $ui-gray; border: 1px solid $panel-border; border-radius: 3px;
+  color: $ui-light; cursor: pointer; font-size: 11px; padding: 5px 9px;
+  &:hover { background: $ui-light-gray; }
+}
+
+.canvasWrap { flex: 1; min-height: 0; overflow: auto; padding: 8px; }
+.canvas { image-rendering: pixelated; display: block; }

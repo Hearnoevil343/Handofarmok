@@ -1,0 +1,30 @@
+@use "@styles/variables" as *;
+
+.base {
+  flex: 1;
+  min-width: 0;
+  width: 100%;
+  background: $ui-dark-gray;
+  border: 1px solid $ui-gray;
+  color: $ui-accent;
+  padding: 0.4rem;
+  font-size: 0.8rem;
+  font-family: "Fira Code", monospace;
+  cursor: pointer;
+  outline: none;
+  transition: all 0.2s;
+
+  &:hover {
+    border-color: $ui-accent;
+  }
+
+  &:focus {
+    border-color: $ui-active;
+    background: $ui-black;
+  }
+
+  option {
+    background: $ui-dark-gray;
+    color: $ui-light;
+  }
+}

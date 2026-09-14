@@ -1,0 +1,18 @@
+@use "@styles/variables" as *;
+
+.row {
+  display: grid; grid-template-columns: minmax(200px, 1fr) minmax(0, 1.6fr); gap: 16px 24px;
+  padding: 14px 0; border-bottom: 1px solid rgba($ui-white, .07);
+  &:last-child { border-bottom: none; }
+}
+.rejects { border-left: 2px solid rgba($ui-warning, .5); padding-left: 12px; margin-left: -14px; }
+.meta { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.label { display: flex; align-items: center; gap: 8px; color: $ui-light; font-size: 13px; }
+.badge {
+  display: inline-flex; align-items: center; gap: 4px; padding: 1px 7px; border-radius: 10px;
+  background: rgba($ui-warning, .15); border: 1px solid rgba($ui-warning, .45); color: $ui-warning;
+  font-size: 9px; letter-spacing: .05em; text-transform: uppercase;
+}
+.help { color: $text-gray; font-size: 11px; line-height: 1.45; }
+.token { color: $text-gray; font-size: 10px; opacity: .7; font-family: "Courier New", monospace; }
+.control { min-width: 0; }

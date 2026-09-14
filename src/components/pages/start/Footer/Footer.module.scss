@@ -1,0 +1,33 @@
+@use "@styles/variables" as *;
+
+.base {
+  margin-top: 6rem;
+  font-family: "Fira Code", monospace;
+  font-size: 0.85rem;
+  padding: 1rem;
+  border-radius: 4px;
+
+  .version {
+    color: $text-silver;
+  }
+
+  .qualityText {
+    color: $ui-warning;
+    font-style: italic;
+  }
+
+  .artifactDesc {
+    color: $ui-light;
+  }
+
+  .legendary {
+    color: $ui-active;
+    font-weight: bold;
+    text-transform: uppercase;
+  }
+
+  .separator {
+    color: $panel-border;
+    margin: 0 8px;
+  }
+}

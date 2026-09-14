@@ -1,0 +1,40 @@
+@use "@styles/variables" as *;
+@use "@styles/mixins" as *;
+
+.base {
+  @include page;
+  @include scroll;
+  overflow-y: auto;
+  flex: 1;
+  padding: 4rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  z-index: 20;
+}
+
+.vaultHeader {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  margin-bottom: 4rem;
+  color: $ui-accent;
+
+  h2 {
+    letter-spacing: 4px;
+    margin: 0;
+  }
+
+  .qualitySymbol {
+    color: $text-gray;
+    font-size: 1.5rem;
+  }
+}
+
+.exportGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 450px));
+  gap: 2rem;
+  width: 100%;
+  justify-content: center;
+}

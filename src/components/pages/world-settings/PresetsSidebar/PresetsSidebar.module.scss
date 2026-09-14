@@ -1,0 +1,134 @@
+@use "@styles/variables" as *;
+@use "@styles/mixins" as *;
+
+.base {
+  width: 100%;
+  background: transparent;
+  border-bottom: 1px solid $panel-border;
+  display: flex;
+  flex-direction: column;
+  max-height: 42vh;
+}
+
+.sidebarHeader {
+  padding: 14px 20px 10px;
+  color: $text-gray;
+  font-size: 10px;
+  font-weight: bold;
+  letter-spacing: 2px;
+  border-bottom: 1px solid $ui-dark;
+  flex: 0;
+}
+
+.container {
+  @include scroll;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+}
+
+.tab {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem 1.2rem;
+  background: transparent;
+  border-bottom: 1px solid $ui-dark;
+  gap: 1rem;
+  cursor: pointer;
+  transition: all 0.2s;
+
+  &:hover {
+    background: rgba($bg-dark, 0.5);
+    .actions {
+      opacity: 1;
+    }
+  }
+
+  &.active {
+    background: $bg-dark;
+
+    .tabTitle {
+      color: $ui-active;
+      text-shadow: 0 0 10px rgba($ui-active, 0.4);
+    }
+
+    .tabSubtitle {
+      color: $ui-active;
+    }
+
+    .actions {
+      opacity: 1;
+    }
+
+    &::before {
+      content: "";
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 2px;
+      height: 100%;
+      background: $ui-active;
+      box-shadow: 0 0 10px $ui-active;
+    }
+  }
+}
+
+.tabInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  overflow: hidden;
+}
+
+.tabTitle {
+  color: $text-silver;
+  font-size: 0.8rem;
+  font-weight: bold;
+  font-family: "Fira Code", monospace;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.actions {
+  display: flex;
+  gap: 0.5rem;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.miniBtn {
+  background: transparent;
+  border: 1px solid $ui-light-gray;
+  color: $text-gray;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.7rem;
+  cursor: pointer;
+  border-radius: 2px;
+  transition: all 0.2s;
+
+  &:hover {
+    border-color: $ui-accent;
+    color: $ui-accent;
+    background: rgba($ui-accent, 0.1);
+  }
+
+  &.delete:hover {
+    border-color: $ui-warning;
+    color: $ui-warning;
+    background: rgba($ui-warning, 0.1);
+  }
+}
+
+.tabSubtitle {
+  font-size: 0.7rem;
+  color: $text-gray;
+  transition: all 0.2s;
+}

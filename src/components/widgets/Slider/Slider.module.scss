@@ -1,0 +1,65 @@
+@use "@styles/variables" as *;
+
+.labelRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.valueDisplay {
+  color: $ui-accent;
+  font-weight: bold;
+  font-size: 0.9rem;
+}
+
+.slider {
+  width: 100%;
+  cursor: pointer;
+  accent-color: $ui-accent;
+  transition: accent-color 0.2s ease;
+
+  &:hover {
+    accent-color: $ui-active;
+  }
+}
+
+.markers {
+  position: relative;
+  height: 14px;
+  margin-top: 2px;
+}
+
+.marker,
+.markerWarn {
+  position: absolute;
+  transform: translateX(-50%);
+  white-space: nowrap;
+  font-size: 9px;
+  letter-spacing: 0.02em;
+  top: 0;
+
+  &::before {
+    content: "";
+    position: absolute;
+    top: -4px;
+    left: 50%;
+    width: 1px;
+    height: 4px;
+    background: currentColor;
+  }
+}
+
+.marker {
+  color: $ui-silver;
+}
+
+.markerWarn {
+  color: $ui-warning;
+}
+
+.hint {
+  color: $text-gray;
+  font-size: 10px;
+  line-height: 1.35;
+  margin: 6px 0 0;
+}

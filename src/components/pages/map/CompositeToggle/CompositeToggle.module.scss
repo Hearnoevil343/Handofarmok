@@ -1,0 +1,49 @@
+@use "@styles/variables" as *;
+
+.base {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: $ui-dark;
+  padding: 8px 12px;
+  border: 1px solid #414141;
+  border-radius: 4px;
+  transition: border-color 0.3s;
+
+  &:hover {
+    border-color: $ui-accent;
+  }
+}
+
+.input {
+  appearance: none;
+  width: 34px;
+  height: 18px;
+  background: $ui-light-gray;
+  border-radius: 20px;
+  position: relative;
+  cursor: pointer;
+  transition: background 0.3s;
+
+  &:checked {
+    background: $ui-accent;
+    &::before {
+      transform: translateX(16px);
+    }
+  }
+
+  &::before {
+    content: "";
+    position: absolute;
+    width: 14px;
+    height: 14px;
+    background: white;
+    border-radius: 50%;
+    top: 2px;
+    left: 2px;
+    transition: transform 0.3s;
+  }
+}
+
+.wrap { display: flex; flex-direction: column; gap: 2px; }
+.hint { color: $text-gray; font-size: 10px; line-height: 1.35; margin: 2px 0 0; }

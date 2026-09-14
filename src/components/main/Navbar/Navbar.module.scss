@@ -1,0 +1,131 @@
+@use "@styles/variables" as *;
+
+.nav {
+  background: $bg-dark;
+  border-bottom: 1px solid #252525;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 1.5rem;
+  z-index: 100;
+  box-shadow: 0 2px 10px rgba($ui-black, 0.5);
+  height: 50px;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+}
+
+.brand {
+  color: $ui-accent;
+  font-size: 0.9rem;
+  letter-spacing: 2px;
+  font-weight: bold;
+  text-shadow: 0 0 8px rgba($ui-accent, 0.3);
+  flex: 0 0 260px;
+}
+
+.links {
+  flex: 1;
+  display: flex;
+  gap: 4rem;
+  height: 100%;
+  justify-content: center;
+
+  a {
+    color: $ui-silver;
+    text-decoration: none;
+    text-align: center;
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 1.5px;
+    display: flex;
+    align-items: center;
+    position: relative;
+    transition: all 0.2s ease;
+    text-transform: uppercase;
+
+    &:hover {
+      color: $ui-light;
+    }
+
+    &:focus {
+      color: $ui-active;
+
+      &.active {
+        color: $ui-accent;
+        text-shadow: 0 0 10px rgba($ui-accent, 0.4);
+
+        &::after {
+          content: "";
+          position: absolute;
+          bottom: 0;
+          left: 0;
+          width: 100%;
+          height: 2px;
+          background: $ui-accent;
+          box-shadow: 0 0 10px $ui-accent;
+        }
+      }
+    }
+
+    &.active {
+      color: $ui-active;
+      text-shadow: 0 0 10px rgba($ui-active, 0.4);
+
+      &::after {
+        content: "";
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        width: 100%;
+        height: 2px;
+        background: $ui-active;
+        box-shadow: 0 0 10px $ui-active;
+      }
+    }
+
+    &:focus {
+      outline: none;
+    }
+  }
+}
+
+.actionButton {
+  border: none;
+  color: $ui-accent;
+  text-decoration: none;
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 1.5px;
+  display: flex;
+  align-items: center;
+  position: relative;
+  transition: all 0.2s ease;
+  text-transform: uppercase;
+  border-radius: 0;
+
+  &:hover,
+  &:focus {
+    color: $ui-warning;
+    border: none;
+    &::after {
+      background: $ui-warning;
+      box-shadow: 0 0 10px $ui-warning;
+    }
+  }
+
+  &::after {
+    content: "";
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    height: 2px;
+    transition: all 0.2s ease;
+  }
+
+  &:focus {
+    outline: none;
+  }
+}

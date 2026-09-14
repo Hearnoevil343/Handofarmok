@@ -1,0 +1,60 @@
+@use "@styles/variables" as *;
+@use "@styles/mixins" as *;
+
+.container {
+  padding: 2rem;
+  color: $text-silver;
+  max-width: 800px;
+  line-height: 1.6;
+}
+
+.title {
+  color: $ui-accent;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  margin: 0 0 1.5rem;
+  border-bottom: 2px solid $ui-light-gray;
+  font-weight: 800;
+  text-align: center;
+}
+
+.intro {
+  font-style: italic;
+  color: $text-silver;
+  margin-bottom: 1.5rem;
+  text-align: center;
+}
+
+.warningList {
+  list-style: none;
+  padding: 0;
+
+  li {
+    position: relative;
+    margin-bottom: 1.2rem;
+    padding-left: 2rem;
+
+    &::before {
+      content: "⚒️";
+      position: absolute;
+      left: 0;
+      top: 0.2rem;
+      font-size: 0.9rem;
+    }
+
+    strong {
+      color: $ui-active;
+      display: block;
+      margin-bottom: 0.2rem;
+      text-transform: uppercase;
+      font-size: 0.85rem;
+      letter-spacing: 0.5px;
+    }
+  }
+}
+
+.button {
+  @include button;
+  margin: 0 auto;
+  display: block;
+}

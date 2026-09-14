@@ -1,0 +1,63 @@
+@use "@styles/variables" as *;
+
+.selectorWrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  padding-bottom: 0.5rem;
+}
+
+.label {
+  color: $ui-accent;
+  font-size: 0.75rem;
+  font-family: "Courier New", Courier, monospace;
+  font-weight: bold;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+}
+
+.selectContainer {
+  position: relative;
+  background: $ui-dark;
+  border: 1px solid $panel-border;
+  border-radius: 4px;
+  transition: border-color 0.3s;
+
+  &:hover {
+    border-color: $ui-accent;
+  }
+
+  &::after {
+    content: "▼";
+    position: absolute;
+    right: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 0.7rem;
+    color: #666;
+    pointer-events: none;
+  }
+}
+
+.select {
+  width: 100%;
+  appearance: none;
+  background: transparent;
+  border: none;
+  color: $text-silver;
+  padding: 10px 12px;
+  font-family: "Courier New", Courier, monospace;
+  font-size: 0.85rem;
+  cursor: pointer;
+  outline: none;
+  text-transform: uppercase;
+
+  option {
+    background: $ui-dark;
+    color: $text-silver;
+    text-transform: uppercase;
+
+    font-family: "Courier New", Courier, monospace;
+    padding: 10px;
+  }
+}

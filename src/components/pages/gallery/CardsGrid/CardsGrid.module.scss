@@ -1,0 +1,21 @@
+@use "@styles/mixins.scss" as *;
+
+// A wrapping grid rather than one long horizontal strip: with 21 blueprints a
+// strip means scrolling sideways to see what is available, and you cannot
+// compare them at a glance.
+.base {
+  @include scroll;
+  width: 100%;
+  overflow-x: hidden;
+  overflow-y: auto;
+  margin-bottom: 40px;
+  padding: 20px 5px 5px;
+}
+
+.container {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+  gap: 20px;
+  margin-inline: 20px;
+  align-items: start;
+}

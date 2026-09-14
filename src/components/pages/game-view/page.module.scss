@@ -1,0 +1,8 @@
+@use "@styles/variables" as *;
+
+@use "@styles/mixins.scss" as *;
+
+.base { @include page; display: flex; flex-direction: column; min-height: 0; }
+.header { text-align: center; margin-bottom: 12px; }
+.title { color: $ui-accent; letter-spacing: 2px; font-size: 1.8rem; margin: 0; }
+.description { color: $ui-silver; font-size: 12px; margin: 6px 0 0; }

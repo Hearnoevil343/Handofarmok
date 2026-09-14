@@ -1,0 +1,17 @@
+@use "@styles/variables" as *;
+@use "@styles/mixins" as *;
+
+.base {
+  @include page;
+  display: grid;
+  grid-template-columns: 260px 1fr;
+  grid-template-rows: 1fr minmax(30px, auto);
+  grid-template-areas:
+    "left map"
+    "left status";
+  width: 100vw;
+  height: 100%;
+  background-color: $bg-dark;
+  font-family: "Courier New", Courier, monospace;
+  overflow: hidden;
+}

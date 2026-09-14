@@ -1,0 +1,9 @@
+@use "@styles/variables" as *;
+
+.base {
+  display: flex;
+  width: 100vw;
+  height: 100vh;
+  background-color: $bg-dark;
+  font-family: "Courier New", Courier, monospace;
+}

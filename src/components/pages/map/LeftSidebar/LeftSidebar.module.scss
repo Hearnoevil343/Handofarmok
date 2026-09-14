@@ -1,0 +1,20 @@
+@use "@styles/variables" as *;
+@use "@styles/mixins" as *;
+
+.base {
+  @include scroll;
+  overflow-y: auto;
+  height: 100%;
+  grid-area: left;
+  border-right: 2px solid $panel-border;
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  color: $text-silver;
+}
+
+.divider {
+  width: 100%;
+  border-top: 1px solid $ui-gray;
+}

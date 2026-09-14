@@ -1,0 +1,91 @@
+@use "@styles/variables" as *;
+
+.radioGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.radioLabel {
+  cursor: pointer;
+  position: relative;
+}
+
+.radioInput {
+  position: absolute;
+  opacity: 0;
+  width: 0;
+  height: 0;
+
+  &:checked + .radioContent {
+    @each $layer, $color in $layer-colors {
+      .radioLabel__#{$layer} & {
+        border-color: $color;
+        color: $color;
+        background: rgba($ui-active, 0.05);
+      }
+    }
+  }
+}
+
+.radioContent {
+  background: $ui-gray;
+  padding: 10px 12px;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  transition: all 0.2s;
+  user-select: none;
+  border: 2px solid transparent;
+
+  &:hover {
+    background: $ui-light-gray;
+  }
+}
+
+.indicator {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  margin-right: 10px;
+
+  @each $layer, $color in $layer-colors {
+    .radioLabel__#{$layer} & {
+      background: $color;
+    }
+  }
+}
+
+.hint {
+  color: $text-gray;
+  font-size: 10px;
+  line-height: 1.35;
+  margin: 4px 0 8px;
+}
+
+.lockOff,
+.lockOn {
+  margin-left: auto;
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 12px;
+  line-height: 1;
+  padding: 2px 4px;
+  border-radius: 3px;
+
+  &:hover {
+    background: rgba($ui-white, 0.08);
+  }
+}
+
+.lockOff {
+  opacity: 0.35;
+}
+
+.lockOn {
+  opacity: 1;
+  filter: drop-shadow(0 0 3px $ui-warning);
+}

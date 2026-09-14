@@ -1,0 +1,4 @@
+@use "@styles/variables" as *;
+
+.base { display: flex; flex-direction: column; gap: 4px; }
+.hint { color: $text-gray; font-size: 10px; line-height: 1.35; margin: 2px 0 0; }
