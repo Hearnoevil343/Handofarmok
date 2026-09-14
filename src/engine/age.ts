@@ -207,12 +207,16 @@ export function runAge(w: World, size: number, opts: AgeOptions): AgeReport {
   // 6. climate, with the rivers it just cut
   const climate = deriveClimate(el, size, opts.climate, opts.seed + 1);
   // crust is conserved; only how much of it is drowned may change
-  el = conserveCrust(el, opts.baselineLand ?? 0.3);
+  el = conserveCrust(el, opts.baselineLand ?? 0.3, opts.seaLevelOffset ?? 0);
 
   const world: World = { EL: el, ...climate, VL };
 
   // --- the long cycles ------------------------------------------------------
-  const phase = climatePhase(opts.age ?? 0, dispersal(el, size));
+  // Both callers advance the seed by one per age (the app passes seed + age,
+  // simlab seed * 1000 + age), so seed minus age is constant for a history.
+  // That gives each world its own climate record without new carried state.
+  const historySeed = (opts.seed ?? 0) - (opts.age ?? 0);
+  const phase = climatePhase(opts.age ?? 0, dispersal(el, size), historySeed);
 
   // Sea level is applied as a DELTA from the previous age. Adding the full
   // offset every age meant the previous one was never undone, and since the
