@@ -19,6 +19,9 @@
  * repeats exactly and a long history does not feel like a loop.
  */
 
+import { makeRng } from "./noise";
+import { GREENHOUSE_MYR, ICEHOUSE_MYR, SUPERCONTINENT_AGES, ages } from "./timescale";
+
 export type ClimatePhase = {
   /** degrees added to every tile */
   temperature: number;
@@ -28,65 +31,105 @@ export type ClimatePhase = {
   seaLevel: number;
   /** multiplier on rainfall */
   rainfall: number;
+  /** whether the planet has ice sheets at all this age */
+  icehouse: boolean;
   label: string;
 };
 
 /**
  * Timescales, corrected against Earth.
  *
- * The first version had these badly wrong, and the error was visible in the
- * output: continents shattered into islands within a dozen ages while no ice
- * age ever appeared.
+ *   supercontinent cycle   400 to 600 Myr
+ *   icehouse era           tens of Myr, about a third of the Phanerozoic
+ *   glacial cycle          ~100 kyr, inside an icehouse only
  *
- *   supercontinent cycle   400 to 600 Myr   (assembly ~110, divergence ~155)
- *   glacial cycle          ~100 kyr
- *   ratio                  about 4,000 : 1
+ * An age is ten million years (`timescale.ts`). The supercontinent cycle is
+ * swept smoothly, a fortieth per age. A glacial cycle is far shorter than an
+ * age, so where a world sits in one is *sampled* each age — but only during an
+ * icehouse. Whether there is an icehouse at all is an era that lasts several
+ * ages, drawn per history from its seed.
  *
- * The old settings used 23 ages and 6.3 ages — a ratio of 3.6 : 1, out by three
- * orders of magnitude. Continents therefore broke up roughly eighty times too
- * fast, and glaciation oscillated so slowly that a run of twenty ages never
- * completed three cycles of it.
- *
- * The two cannot both be animated at one time-step, so they are handled
- * differently. An age is a tectonic step of roughly ten million years, over
- * which the supercontinent cycle advances by a fortieth. Glaciation completes
- * about a hundred cycles within that same step, so it is *sampled* rather than
- * swept: each age lands somewhere in the glacial cycle, which is why a world
- * flips between icehouse and hothouse from one age to the next. That is also
- * what Earth's record looks like at this resolution.
+ * The previous version sampled the glacial state independently every age, from
+ * the age number alone. Two faults followed. Every world ever generated had the
+ * identical climate history, whatever its seed. And the planet flipped between
+ * glacial maximum and hothouse every ten million years, when Earth's record at
+ * that resolution shows long greenhouse stretches broken by a few long ice ages.
+ * The age-to-age sea-level swing that produced (thirty elevation units) also
+ * kept making and breaking land bridges, which the Wilson cycle metric counted
+ * as supercontinents assembling and breaking up.
  */
-const SUPERCONTINENT_AGES = 40;
 
-/** Deterministic noise so a seeded history replays identically. */
-function glacialSample(age: number): number {
-  const a = Math.sin(age * 12.9898) * 43758.5453;
-  const b = Math.sin(age * 78.233 + 1.7) * 24634.6345;
-  return ((a - Math.floor(a)) * 0.65 + (b - Math.floor(b)) * 0.35) * 2 - 1;
+/** Which era an age falls in, walking this history's own sequence of eras. */
+export function climateEra(historySeed: number, age: number): { icehouse: boolean; ageInEra: number } {
+  const rng = makeRng((historySeed ^ 0xc11a7e) >>> 0);
+  const length = (ice: boolean) => {
+    const r = ice ? ICEHOUSE_MYR : GREENHOUSE_MYR;
+    return ages(r.min + rng() * (r.max - r.min));
+  };
+  // a third of the record is icehouse, so a third of histories open in one,
+  // partway through so era boundaries do not line up across worlds
+  let icehouse = rng() < 1 / 3;
+  let start = 0;
+  let end = length(icehouse) * (0.2 + 0.8 * rng());
+  while (age >= end) {
+    icehouse = !icehouse;
+    start = end;
+    end += length(icehouse);
+  }
+  return { icehouse, ageInEra: age - start };
 }
 
-export function climatePhase(age: number, dispersal: number): ClimatePhase {
-  // glaciation completes ~100 cycles per age, so it is sampled, not swept
-  const glacial = glacialSample(age);
+/**
+ * Long-run mean of `warmth` below, from the era lengths: a greenhouse sits at
+ * 0.5 and an icehouse at -0.45, weighted by how long each lasts on average.
+ *
+ * Sea level and temperature are measured from this mean, not from zero. The
+ * painted world is the baseline, so over a long history the climate should
+ * move the coast either side of it rather than hold it permanently higher. Until
+ * conserveCrust stopped cancelling sea level this made no difference, because a
+ * constant offset was cancelled with everything else; afterwards the +0.16 mean
+ * and the old constant of -4 together held the sea 7 units high, which pushed
+ * enough ground below elevation 300 to cut mountain cover from 12% to 7%.
+ */
+const MEAN_WARMTH = (() => {
+  const ice = (ICEHOUSE_MYR.min + ICEHOUSE_MYR.max) / 2;
+  const green = (GREENHOUSE_MYR.min + GREENHOUSE_MYR.max) / 2;
+  return (ice * -0.45 + green * 0.5) / (ice + green);
+})();
+
+/** Where in the glacial cycle this age lands, -1 to 1. Replays identically per seed. */
+function glacialSample(historySeed: number, age: number): number {
+  const rng = makeRng((Math.imul(historySeed, 0x9e3779b1) ^ Math.imul(age + 1, 0x85ebca6b)) >>> 0);
+  rng();
+  return rng() * 2 - 1;
+}
+
+export function climatePhase(age: number, dispersal: number, historySeed = 0): ClimatePhase {
+  const era = climateEra(historySeed, age);
+  const u = glacialSample(historySeed, age);
+
+  // warmth: -1 is a glacial maximum, +1 a hothouse. An icehouse ranges from full
+  // glaciation to an interglacial like today; a greenhouse has no ice sheets to
+  // grow or melt, so it barely moves.
+  const warmth = era.icehouse ? -0.45 + u * 0.55 : 0.5 + u * 0.15;
   const superc = Math.sin((age / SUPERCONTINENT_AGES) * Math.PI * 2 + 1.1);
 
-  // cold locks water into ice, so the sea withdraws and land is exposed
-  const temperature = glacial * 10 + superc * 4;
-  const seaLevel = -glacial * 15 - superc * 7 - 4;
+  // ice locks water up, so cold withdraws the sea and exposes land; young ocean
+  // floor between dispersed continents is shallow and raises it
+  const anomaly = warmth - MEAN_WARMTH;
+  const temperature = anomaly * 10 + superc * 4;
+  const seaLevel = -anomaly * 15 - superc * 7;
 
   // assembled continents are dry; dispersed ones are wet
-  const rainfall = 1 + (dispersal - 0.5) * 0.3 + glacial * 0.08;
+  const rainfall = 1 + (dispersal - 0.5) * 0.3 + anomaly * 0.08;
 
-  let label = "temperate";
-  // positive glacial is the WARM side here: temperature rises with it and sea
-  // level falls with it (ice melts, sea rises). Labels were backwards before.
-  if (glacial < -0.55) label = "glacial maximum, seas withdrawn";
-  else if (glacial < -0.2) label = "icehouse";
-  else if (glacial > 0.55) label = "hothouse, shelves flooded";
-  else if (glacial > 0.2) label = "interglacial";
+  let label = era.icehouse
+    ? (warmth < -0.55 ? "icehouse, glacial maximum, seas withdrawn" : "icehouse, interglacial")
+    : (warmth > 0.55 ? "greenhouse, shelves flooded" : "greenhouse");
   if (superc > 0.7) label += ", continents dispersed";
   else if (superc < -0.7) label += ", continents assembled";
 
-  return { temperature, seaLevel, rainfall, label };
+  return { temperature, seaLevel, rainfall, icehouse: era.icehouse, label };
 }
 
 /**
@@ -271,17 +314,28 @@ export function smoothShelf(
  * planet, it is a slow drowning.
  *
  * Rather than chase each loss, the total is restored. A uniform offset is
- * solved for that brings the land share back toward the world's own baseline,
- * and only part of the correction is applied each age so the climate cycle can
- * still move the coast either side of it. This is a fudge, and deliberately so:
- * the simplification being corrected is our own, not the planet's.
+ * solved for that brings the land share back toward the world's own baseline.
+ * This is a fudge, and deliberately so: the simplification being corrected is
+ * our own, not the planet's.
+ *
+ * Land is measured **with the climate's sea-level offset taken back out**.
+ * Measuring it as it stood meant a glacial maximum's exposed shelf counted as
+ * surplus crust and was sunk again the next age, and a high stand's flooded
+ * shelf counted as lost crust and was raised. That cancelled 60% of every
+ * sea-level change within one age — and nearly all of the supercontinent
+ * cycle's, which moves so slowly that it looked exactly like drift. Only the
+ * crust is conserved now; how much of it the sea covers is left to the climate.
  */
 export function conserveCrust(
-  el: Int16Array, targetShare: number, rate = 0.6,
-  continentalFloor = 62, fadeTop = 170,
+  el: Int16Array, targetShare: number,
+  /** sea-level offset already baked into `el`, positive when the sea has withdrawn */
+  seaOffset = 0,
+  rate = 0.6, continentalFloor = 62, fadeTop = 170,
 ): Int16Array {
   const SEA = 100;
   const n = el.length;
+  // elevation as it would stand with the sea at its baseline
+  const base = (v: number) => v - seaOffset;
 
   // The lift tapers with height. Restoring land share means moving crust
   // across the shoreline, and only the shelf and coastal lowland can do that —
@@ -300,7 +354,8 @@ export function conserveCrust(
   const shareAt = (shift: number) => {
     let c = 0;
     for (let i = 0; i < n; i++) {
-      if (el[i] + shift * weight(el[i]) >= SEA) c++;
+      const v = base(el[i]);
+      if (v + shift * weight(v) >= SEA) c++;
     }
     return c / n;
   };
@@ -318,7 +373,7 @@ export function conserveCrust(
 
   const out = new Int16Array(n);
   for (let i = 0; i < n; i++) {
-    out[i] = Math.min(400, Math.max(0, Math.round(el[i] + shift * weight(el[i]))));
+    out[i] = Math.min(400, Math.max(0, Math.round(el[i] + shift * weight(base(el[i])))));
   }
   return out;
 }
@@ -353,7 +408,7 @@ export function wilsonDrive(
   el: Int16Array,
   size: number,
   age: number,
-  periodAges = 40,
+  periodAges = SUPERCONTINENT_AGES,
 ): void {
   const SEA = 100;
   const phase = Math.sin((age / periodAges) * Math.PI * 2 + 1.1);
@@ -388,7 +443,7 @@ export function wilsonDrive(
     // slab pull is the stronger force, so closing an ocean is more decisive
     // than opening one
     const blend = (phase > 0 ? 0.34 : 0.62) * Math.max(0.35, Math.abs(phase));
-    let nx = plates.vx[p] * (1 - blend) + rx * blend;
+    const nx = plates.vx[p] * (1 - blend) + rx * blend;
     let ny = plates.vy[p] * (1 - blend) + ry * blend;
 
     // north and south are clamped, so keep most of the motion east-west

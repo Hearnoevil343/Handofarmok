@@ -62,6 +62,7 @@ function runHistory(cfg) {
       rivers: r.riverTiles,
       straightAfter: 100 * r.straightAfter,
       uplift: +uplift.toFixed(1),
+      seaLevel: +sea.toFixed(2),
       phase: r.phase,
     });
   }
