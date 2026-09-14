@@ -32,7 +32,7 @@ export function ApplyButton() {
       onClick={handleApply}
       disabled={selectedTitles.length === 0}
       labels={{
-        idle: `RESTORE ARCHIVES (${selectedTitles.length})`,
+        idle: `LOAD SELECTED (${selectedTitles.length})`,
         loading: "DECRYPTING MAPS...",
         success: "ANCIENT KNOWLEDGE RESTORED!",
         error: "FORGE FAILED - CHECK NETWORK",

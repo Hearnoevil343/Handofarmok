@@ -2073,3 +2073,269 @@ Verified on Windows: the build emits all 20 engine modules and
 not been run with this build.
 
 Also added `CLAUDE.md` with the environment notes that are not in any other file.
+
+---
+
+## 44. Time scales: a sea that stays moved, ice ages that last, one clock
+
+The first pass of the simulation lab on Windows, used the way it was meant to be:
+measure, change, measure again. Every number below is 48 worlds (24 seeds x
+PANGAEA and CONTINENTS) x 100 ages, same settings before and after, compared
+with `tools/simlab/analyse-timescales.cjs`.
+
+```
+                                         before     after     Earth / intent
+slow sea-level cycle, vs ice ages        -0.26      0.77      1.0 = not suppressed
+last age's sea level still in the coast  -0.50     -0.15      0
+land, lowest vs highest sea fifth        7.8 pts   19.8 pts   ~15 (33% vs 18%)
+land jump, age to age (median)           6.0 pts    2.7 pts
+icehouse length (median)                 1 age      6 ages    3-10 ages
+distinct climate histories, 24 seeds     1          24
+supercontinent, assembly to assembly     11 ages    17 ages   40 (engine clock)
+largest landmass flicker, age to age     10.4 pts   6.2 pts
+mountain % of land, ages 51-100          10.8       8.6       target 12
+mountain controller pinned at 0 or 100   30%        42%
+land % p95                               43.5       48.3      Earth tops out at 33
+lab score (lower is better)              2.25       1.73
+```
+
+### The sea was being put back every age
+
+`conserveCrust` restores continental crust lost to the simplifications, and it
+ran *before* the new sea level was applied, measuring land with the previous
+age's offset still in it. A glacial maximum's exposed shelf therefore counted as
+surplus crust and was sunk again next age; a high stand's flooded shelf counted
+as lost crust and was raised. That undid 60% of every sea-level change within
+one age, and nearly all of the supercontinent cycle's, which moves so slowly
+that it is indistinguishable from drift. Its effect on the coast measured
+**-0.26** of the glacial term's per unit of sea level: not just suppressed but
+backwards.
+
+`conserveCrust` now takes the sea-level offset and measures land with it removed.
+Crust is conserved; how much of it the sea covers is left to the climate.
+
+### Every world had the same climate, and it changed every age
+
+`glacialSample(age)` depended on the age number alone, so all 24 seeds produced
+**one** climate history. And it was drawn independently each age, so the planet
+went from glacial maximum to hothouse and back every ten million years — a median
+icehouse lasted **one age**. Earth's record at that resolution is long greenhouse
+stretches broken by a few long ice ages: the Late Paleozoic one lasted about 100
+Myr, the present one 34 Myr so far.
+
+Climate now has eras. `climateEra()` walks a per-history sequence of greenhouse
+(60-140 Myr) and icehouse (30-80 Myr) eras, about a third icehouse. Inside an
+icehouse each age still samples the glacial cycle, which is far shorter than an
+age; a greenhouse has no ice sheets and barely moves. The seed comes from
+`opts.seed - opts.age`, which is constant because both callers advance the seed by
+one per age, so no new state has to be carried between ages.
+
+### The climate has to average zero
+
+The first version of the above cut mountain cover from 11.7% to **7.4%** and left
+the uplift controller pinned in half of all ages. Greenhouses are warm and last
+longer than icehouses, so mean warmth was +0.16, and the sea-level formula also
+carried a constant -4. `conserveCrust` used to cancel both along with everything
+else; once it stopped, the sea sat seven units high for the whole history, and in
+a world where mountains live between 300 and the collapse ceiling at 340 that is
+a lot of mountain. Sea level, temperature and rainfall are now measured from the
+long-run mean (`MEAN_WARMTH`), and the constant is gone. Mountain cover came back
+to 8.6% — better, but see below.
+
+### One clock
+
+`src/engine/timescale.ts`: ten million years per age, the supercontinent period
+and the era lengths in Myr, converted to ages in one place. `wilsonDrive` and
+`climatePhase` both read the period from it instead of each holding a 40.
+
+### A change I expected to make and did not
+
+Reading `denudeInactive`, its rate looked like it would flatten a range in one or
+two ages against a comment asking for twenty. Measured instead: 15 ages of normal
+history, then uplift off and only the erosion chain run, at seven rates. At the
+current 0.3 a range loses **half its relief in 11 ages** and 1/e in 17 —
+Appalachian speed, as the comment says. What disappears fast is ground above
+elevation 300: 15% of it is left after five ages. But with denudation switched
+off entirely 45% is left, so the rate is not the main cause; thermal erosion,
+river carving and the collapse ceiling cut peaks below the line. The rate was left
+alone. The test is `tools/simlab/denudation-test.cjs`.
+
+### Still wrong
+
+- **Supercontinents still cycle too fast.** 17 ages from assembly to assembly
+  against the engine's own 40. Part of the old figure was sea-level flicker making
+  and breaking land bridges, and that is halved; the rest is tectonic —
+  `wilsonDrive`, rifting at plumes and welding do not follow the clock they are
+  given.
+- **Mountain cover is below target** (8.6% against 12) and the controller is
+  pinned in 42% of ages, up from 30%. Why the sea-level change still costs mountain
+  is not yet measured.
+- **Sea-level swings now overshoot.** 19.8 points between low and high sea against
+  Earth's ~15, and the top 5% of ages hold over 48% land. The glacial amplitude of
+  15 was tuned while 60% of it was being cancelled; it can come down.
+- `edgeBias` sits at 2.1-2.3 against a ceiling of 1.3. Unrelated to time, and the
+  worst-scoring metric in every run.
+- One run reached 25 plates.
+- None of this has been looked at in the running app. The phase text Run Age
+  reports has changed ("icehouse, interglacial", "greenhouse, shelves flooded").
+
+Also: simlab rows now record each age's `seaLevel`, and `Run Simlab
+(Windows).bat` runs the lab by double-click.
+
+---
+
+## 45. Fixes from the first playtest
+
+The app was played end to end in a browser against `npm run dev`, which is what
+`Launch (Windows).bat` runs. Twenty-seven findings are in
+`docs/playtest-2026-09-14.md`; these are the six fixed so far. Each was checked in
+the running app afterwards, and the map data was compared by capturing the
+`world_gen.txt` export inside the page — nothing was saved to disk.
+
+### The map opened black
+
+Every visit to The World Map showed a black canvas until the first brush stroke,
+and the default tool is Raise at 100%, so seeing your world meant changing it.
+The engine was running — the cursor drew and the status bar read real values —
+but the terrain never did.
+
+`GridScene.create()` ended with `this.redrawMap()`, and `redrawMap` returns early
+unless the scene is active. Phaser sets a scene's status to `CREATING` while
+`create()` runs and to `RUNNING` only after it returns
+(`SceneManager.create`), so that draw never happened. The `RequestRedraw` that
+`TileMap` sends on mount fires before the scene exists at all. The first draw now
+runs on Phaser's `CREATE` event, which is emitted straight after the status
+becomes `RUNNING`. Checked: Europe is drawn the moment the map opens.
+
+### World Tools could not be undone
+
+Undo only restores snapshots from `worldManager.saveSnapshot()`, which was called
+in three places, all brush input. Generate World, Run Age, Tectonic Age, Erosion,
+Rivers & Lakes, Derive Climate, World Events and World Forge were one-way — the
+most destructive buttons in the app with no way back. `useWorldWrite.run()` now
+snapshots before the tool runs.
+
+Checked: Run Age, then Ctrl+Z without leaving the map, then export — 0 of 16,641
+cells differ from the export taken before the age, in every layer.
+
+Undo restores terrain, not the Run Age session: the age counter and plates stay
+where the undone age left them.
+
+### Layer locks did not stop World Tools
+
+The sidebar says "Locked layers are never written", but only the brushes checked.
+With Elevation locked, Run Age changed 16,573 of 16,641 elevation cells.
+`useWorldWrite.write()` now leaves locked layers alone. Checked: with Elevation
+locked, Run Age changed **0** elevation cells, while rainfall (16,535),
+temperature (16,436), drainage (16,290) and savagery (16,415) changed.
+
+A locked layer is kept exactly as it was, so the layers derived alongside it (a
+new climate from a new elevation, say) may no longer match it. That is what a
+lock asks for.
+
+### Seeds re-rolled whenever you left the map
+
+Five panels held their seed in `useState(() => Math.random())`, and the drawer
+unmounts on every page change, so a seed was re-rolled on the way back. For Run
+Age that happened mid-history — 485051 for ages 1–3, 784031 for age 4 — while the
+plates, plumes and sea level carried on in the session, and with it the climate
+record §44 keys on `seed - age`. Seeds now live outside the component, keyed by
+panel. Checked: four seeds read the same after a round trip to the Export Vault.
+
+### Two lengths for an age
+
+The Run Age panel's drift hint assumed ten million years an age; the line under
+it said about 44 thousand, from Dwarf Fortress's literal 1,873 m tile. A factor
+of about 230, in adjacent sentences. It now says an age is `MYR_PER_AGE` (10)
+million years on the scaled-planet reading, and gives the literal size as
+context: 242 km, which Earth's plates would cross in 4.8 million years.
+
+### Dead GitHub link
+
+The About page and `package.json` pointed at `github.com/Pythongor/hand-of-armok`,
+which returns 404. They now point at `github.com/Hearnoevil343/Handofarmok`.
+`homepage` still names the old GitHub Pages address, because `npm run deploy` and
+Vite's `base` depend on it.
+
+### Found while verifying
+
+Leaving The World Map wipes the undo history, brush strokes included:
+`TileMap` calls `switchToPreset` on every mount and `switchToPreset` always
+clears history. Logged as playtest item 27, not fixed here.
+
+`npm run lint` still reports the same four `prefer-const` errors in `cycles.ts`,
+`hotspots.ts` and `isostasy.ts`; nothing new.
+
+---
+
+## 46. The rest of the playtest list
+
+Everything from `docs/playtest-2026-09-14.md` that could be fixed without a
+design decision. Each was checked in the running app; map data again by comparing
+`world_gen.txt` exports captured inside the page.
+
+**Undo history survived nothing** (27). `TileMap` calls `switchToPreset` on every
+mount and `switchToPreset` cleared history unconditionally, so visiting any other
+page threw away every undo step. It now clears only when the preset actually
+changes. Checked: Run Age, About, back to the map, Ctrl+Z, export — 0 cells differ
+from before the age in all six layers.
+
+**Plate boundaries were almost invisible** (26). Line width is in world units and
+was 12% of a 24-unit tile; at the zoom that fits a 129 world (about 0.2) that is
+roughly half a screen pixel. Now at least two screen pixels. Checked: after an
+age, seams draw as a solid red line.
+
+**Nothing warned before a reload** (11). There is still no saving — that is a
+design question — but closing or reloading the tab with a world loaded now asks
+first. Checked by dispatching `beforeunload`: not blocked on the start page,
+blocked once Europe is loaded. The About page now says plainly that nothing is
+kept in the browser.
+
+**Quick Setup showed nothing selected** (8). Only the last button clicked lit up,
+while Read This World, from the same numbers, reported "your settings read as Low
+civilisations". Rows now show the tier the current values match (`getIntent`,
+the advisor's own reading), and History and Minerals show the current
+`END_YEAR` and `MINERAL_SCARCITY`. Checked on a fresh Europe: Medium 100 yr,
+Sparse, and a tier in every group.
+
+**Smaller fixes, each checked:**
+
+- Read This World called caves, mythical sites and the site cap "population";
+  now "count", with "population" kept for `TOTAL_CIV_POPULATION` (9).
+- The World Tools button sat on the painter settings bar's wrapped second row; the
+  bar now stops short of it and the button shares its top row (14).
+- The × on the only blueprint did nothing; it is now disabled and says why (25).
+- `CARRIBEAN` → `CARIBBEAN`, file and title together, since the gallery derives
+  the filename from the title (3).
+- The gallery's fixed button covered the last row of cards; the page has room for
+  it now. "RESTORE ARCHIVES (N)" is "LOAD SELECTED (N)" and the header says to
+  click cards first (4, 5).
+- "Restore from Scroll" used `hidden` on its file input, which also hid it from
+  the keyboard and screen readers; it is visually hidden instead and shows a focus
+  ring (2).
+- Navbar links wrapped onto three lines near 1000 px; the gap scales with the
+  window and labels no longer wrap. "Reset Destructive Parameters" no longer wraps
+  inside its button, and the filter box shrinks rather than overflowing (7).
+- About described the upstream "Armok's Blueprint" and none of the tools added
+  since; rewritten, including Game View, World Tools, locks and the lack of saving
+  (20). The heightmap card now says what it produces — a ZIP of PNGs — and the zip
+  is `hand_of_armok_heightmaps_<time>.zip` (22).
+- Run Age and Generate World say that they reshape every unlocked layer and that
+  Ctrl+Z undoes them.
+- The four `prefer-const` lint errors are fixed; `npm run lint` is clean for the
+  first time.
+
+### Not fixed, and why
+
+- **No saving between sessions** (11). Needs deciding where worlds live —
+  `localStorage` is too small for several 257 worlds, IndexedDB is not — and when
+  to save.
+- **Run Age erases a detailed map in one press** (16). The simulation doing what
+  it models; whether it should be gentler on painted worlds is a design choice.
+- **Blocky terrain and hard rectangles after ages** (17), **raised strip along the
+  map edge** (18). Simulation bugs. The edge strip is simlab's `edgeBias`; the
+  blockiness needs a metric before it can be tuned.
+- **The "Region" templates show solid green thumbnails** (6). They have no map
+  data by design.
+- **Warning dialog needing two clicks** (1) and **one unexplained reload** (12)
+  did not reproduce.

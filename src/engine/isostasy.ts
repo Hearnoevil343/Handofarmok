@@ -88,7 +88,7 @@ export function orogenicCollapse(
   /** share of the excess lost downward into the mantle root each pass */
   subsidence = 0.12,
 ): Int16Array {
-  let cur = Int16Array.from(el);
+  const cur = Int16Array.from(el);
 
   for (let p = 0; p < passes; p++) {
     const delta = new Float64Array(cur.length);

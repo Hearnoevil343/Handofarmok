@@ -1,8 +1,9 @@
 import { CLIMATE_NAMES, getSession, runAge } from "@engine/index";
 import { currentWorld, titleCase, useWorldWrite } from "./useWorldWrite";
+import { formatYears, worldWidthKm, yearsForTiles } from "@helpers/scale";
 
+import { MYR_PER_AGE } from "@engine/timescale";
 import { SeedField } from "./SeedField";
-import { ageDuration, worldWidthKm } from "@helpers/scale";
 import { Selector } from "@components/widgets/Selector/Selector";
 import { Slider } from "@components/widgets/Slider/Slider";
 import { ToolPanel } from "./ToolPanel";
@@ -23,9 +24,8 @@ export function RunAge() {
   const [density, setDensity] = useState(5);
   const [rebound, setRebound] = useState(55);
   const [climate, setClimate] = useState(CLIMATE_NAMES[0]);
-  const [seed, setSeed] = useState(() => Math.floor(Math.random() * 1e6));
   const [report, setReport] = useState<string | null>(null);
-  const { busy, write, run } = useWorldWrite();
+  const { busy, write, run, seed, setSeed } = useWorldWrite("RunAge");
 
   const go = () =>
     run(() => {
@@ -98,18 +98,26 @@ export function RunAge() {
   return (
     <ToolPanel
       title="Run Age"
-      blurb="Tectonics, weathering, rivers, isostatic rebound and climate, chained in order. The plates persist between presses, so a rift keeps widening and continents keep travelling instead of being re-rolled every time."
+      blurb="Tectonics, weathering, rivers, isostatic rebound and climate, chained in order. The plates persist between presses, so a rift keeps widening and continents keep travelling instead of being re-rolled every time. Every unlocked layer is reshaped — a detailed map will not survive many ages — and Ctrl+Z undoes a press."
       open
     >
       <Slider min={2} max={16} currentValue={plates} onChange={setPlates} label="Plates"
         hint="Only used when rolling a new configuration." />
       <Slider min={0} max={60} currentValue={drift} onChange={setDrift} label="Drift Per Age"
         hint="How far the plates travel each age. Treating the map as a whole planet, Earth manages about 1.5 tiles per ten million years, which is roughly 4 here. Higher is faster than any real planet." />
+      {/* One scale, not two. This used to say an age was about 44 thousand
+          years, from Dwarf Fortress's literal tile size, directly under a hint
+          that assumes ten million — a factor of about 230 apart. The engine's
+          climate eras and supercontinent cycle only make sense under the
+          scaled-planet reading, so that is the one stated. */}
       <p className={styles.blurb}>
-        At {worldManager.gridSize}&times;{worldManager.gridSize} this world is
-        about {worldWidthKm(worldManager.gridSize).toFixed(0)} km across, so{" "}
-        {ageDuration(worldManager.gridSize, drift)} at Earth's average plate
-        speed of 5 cm a year.
+        An age is about {MYR_PER_AGE} million years, reading this map as a whole
+        planet: the scale the drift, the climate eras and the supercontinent
+        cycle are all set to. Taken literally, {worldManager.gridSize}&times;
+        {worldManager.gridSize} is only{" "}
+        {worldWidthKm(worldManager.gridSize).toFixed(0)} km across, and Earth's
+        plates would cross it in{" "}
+        {formatYears(yearsForTiles(worldManager.gridSize))}.
       </p>
       <Slider min={2} max={35} currentValue={mountains} onChange={setMountains} label="Mountain Cover"
         markers={[{ at: 14, label: "earth-like" }]} />
@@ -128,7 +136,7 @@ export function RunAge() {
       <SeedField seed={seed} onChange={setSeed} label="Seed" />
 
       <button type="button" className={styles.primary} disabled={busy} onClick={go}>
-        {busy ? "Running\u2026" : "Run Age"}
+        {busy ? "Running…" : "Run Age"}
       </button>
       <button type="button" className={styles.secondary} onClick={reset}>
         Reroll Plates

@@ -83,6 +83,9 @@
   transition: all 0.2s ease;
   height: 42px;
   border-radius: 2px;
+  // at ~1000px wide the label wrapped to three lines inside a 42px button
+  white-space: nowrap;
+  flex: none;
 
   &:hover {
     background: rgba($ui-accent, 0.15);
@@ -92,12 +95,17 @@
 }
 
 .searchBox {
+  // shrinks instead of pushing past the right edge once the reset button no
+  // longer wraps
+  flex: 0 1 300px;
+  min-width: 180px;
+
   input {
     background: $ui-black;
     border: 1px solid $ui-gray;
     padding: 0.8rem 1.2rem;
     color: $ui-accent;
-    width: 300px;
+    width: 100%;
     height: 42px;
     box-sizing: border-box;
     font-family: inherit;

@@ -7,12 +7,12 @@ import {
   sizeFor,
 } from "@helpers/worldGuide";
 import { LEVEL_NAMES, type Level } from "@helpers/vanillaScales";
+import { getIntent, setIntent } from "@helpers/worldAdvisor";
 import { useDispatch, useSelector } from "react-redux";
 
 import type { RootState } from "@store/store";
 import cn from "classnames";
 import { measureWorld } from "@helpers/worldMeasure";
-import { setIntent } from "@helpers/worldAdvisor";
 import styles from "./QuickSetup.module.scss";
 import { updateActiveSetting } from "@store/slices/worldSlice";
 import { useMemo, useState } from "react";
@@ -31,6 +31,11 @@ const LEVELS: Level[] = [0, 1, 2, 3, 4];
  * Values are adjusted for the land this world actually has, so a large world of
  * open sea gets fewer than the table says and a pocket world of solid land gets
  * more.
+ *
+ * Each row shows where the world already stands. Only the button you last
+ * clicked used to light up, so a freshly loaded world showed nothing at all
+ * while Read This World, from the same numbers, reported "your settings read as
+ * Low civilisations".
  */
 export function QuickSetup() {
   const dispatch = useDispatch();
@@ -51,6 +56,12 @@ export function QuickSetup() {
   if (!preset) return null;
   const dim = preset.size;
   const size = sizeFor(dim);
+
+  // what the current values match, the same reading Read This World uses
+  const intent = getIntent(activePresetTitle ?? "default", preset.settings, dim, land ?? dim * dim);
+  const currentOf = (token: string) => Number(preset.settings[token]?.[0]?.[0]);
+  const currentHistory = history ?? currentOf("END_YEAR");
+  const currentMineral = mineral ?? currentOf("MINERAL_SCARCITY");
 
   const set = (key: string, params: string[]) =>
     dispatch(updateActiveSetting({ key, index: 0, params }));
@@ -109,7 +120,7 @@ export function QuickSetup() {
         <div className={styles.options}>
           {HISTORY_PRESETS.map((h) => (
             <button key={h.value} type="button"
-              className={cn(styles.chip, history === h.value && styles.on)}
+              className={cn(styles.chip, currentHistory === h.value && styles.on)}
               onClick={() => { setHistory(h.value); set("END_YEAR", [String(h.value)]); }}>
               {h.label}
               <span className={styles.sub}>{h.value} yr</span>
@@ -123,7 +134,7 @@ export function QuickSetup() {
         <div className={styles.options}>
           {MINERAL_PRESETS.map((m) => (
             <button key={m.value} type="button"
-              className={cn(styles.chip, mineral === m.value && styles.on)}
+              className={cn(styles.chip, currentMineral === m.value && styles.on)}
               onClick={() => { setMineral(m.value); set("MINERAL_SCARCITY", [String(m.value)]); }}>
               {m.label}
             </button>
@@ -131,28 +142,31 @@ export function QuickSetup() {
         </div>
       </div>
 
-      {QUICK_GROUPS.map((g) => (
-        <div key={g.id} className={styles.row}>
-          <span className={styles.name}>{g.label}</span>
-          <div className={styles.options}>
-            {LEVELS.map((lv) => (
-              <button
-                key={lv}
-                type="button"
-                className={cn(styles.chip, chosen[g.id] === lv && styles.on)}
-                onClick={() => apply(g.id, lv)}
-                title={groupValues(g.id, lv, dim, land)
-                  .map((v) => `${v.token.replace(/_/g, " ")}: ${v.value}`)
-                  .join("\n")}
-              >
-                {LEVEL_NAMES[lv]}
-                <span className={styles.sub}>{label(g.id, lv)}</span>
-              </button>
-            ))}
+      {QUICK_GROUPS.map((g) => {
+        const current = chosen[g.id] ?? intent[g.id];
+        return (
+          <div key={g.id} className={styles.row}>
+            <span className={styles.name}>{g.label}</span>
+            <div className={styles.options}>
+              {LEVELS.map((lv) => (
+                <button
+                  key={lv}
+                  type="button"
+                  className={cn(styles.chip, current === lv && styles.on)}
+                  onClick={() => apply(g.id, lv)}
+                  title={groupValues(g.id, lv, dim, land)
+                    .map((v) => `${v.token.replace(/_/g, " ")}: ${v.value}`)
+                    .join("\n")}
+                >
+                  {LEVEL_NAMES[lv]}
+                  <span className={styles.sub}>{label(g.id, lv)}</span>
+                </button>
+              ))}
+            </div>
+            <p className={styles.blurb}>{g.blurb}</p>
           </div>
-          <p className={styles.blurb}>{g.blurb}</p>
-        </div>
-      ))}
+        );
+      })}
     </section>
   );
 }

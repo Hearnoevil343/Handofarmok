@@ -11,8 +11,7 @@ import { worldManager } from "@tile-map/WorldManager";
 
 export function DeriveClimate() {
   const [climate, setClimate] = useState(CLIMATE_NAMES[0]);
-  const [seed, setSeed] = useState(() => Math.floor(Math.random() * 1e6));
-  const { busy, write, run } = useWorldWrite();
+  const { busy, write, run, seed, setSeed } = useWorldWrite("DeriveClimate");
 
   return (
     <ToolPanel

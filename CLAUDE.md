@@ -49,6 +49,29 @@ electron-builder's symlink step. (Not re-verified.)
 - `package-lock.json` is listed in `.gitignore` but is tracked anyway.
 - Import paths are case-sensitive on Linux/macOS but not Windows.
 
+## Simulation time
+
+- One age is 10 million years. Periods and durations live in
+  `src/engine/timescale.ts` in Myr; do not hard-code a period in ages anywhere
+  else.
+- `runAge` derives the climate history's seed as `opts.seed - opts.age`. Any
+  caller must advance `seed` by exactly one per age (Run Age passes
+  `seed + session.age`, simlab `seed * 1000 + age`) or every age gets a different
+  climate history.
+- Judge engine changes by before/after simlab runs with identical settings, not
+  by one run: 12 worlds was too noisy for the supercontinent figures, 48 was not.
+  Keep a copy of `tools/simlab` (including `build/`) from before the change to run
+  the "before" side, then compare with
+  `node tools/simlab/analyse-timescales.cjs <runDir>`.
+- Windows refuses to start a process whose working directory path is very long
+  ("The directory name is invalid"). Run simlab copies from a short path such as
+  `%TEMP%\hoa-before`.
+- `npm run lint` and `npm run check-types` are both clean; keep them that way.
+- Open playtest findings and their status live in `docs/playtest-2026-09-14.md`.
+- To check map data in the running app without downloading anything, patch
+  `HTMLAnchorElement.prototype.click` in the page to capture the export's blob URL
+  and `fetch` it (CHANGES §45).
+
 ## How to work here
 
 - Explain plainly, with numbers. Say what was measured and what was not.

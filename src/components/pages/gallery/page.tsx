@@ -59,7 +59,8 @@ export function GalleryPage() {
         <header className={styles.header}>
           <h2 className={styles.title}>CHOOSE YOUR BLUEPRINTS</h2>
           <p className={styles.description}>
-            Select the ancient scrolls you wish to study and reshape.
+            Click the scrolls you wish to study and reshape, then load them with
+            the button below.
           </p>
         </header>
         <CardsGrid />

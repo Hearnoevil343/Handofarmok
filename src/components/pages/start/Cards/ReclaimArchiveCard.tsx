@@ -107,11 +107,13 @@ export function ReclaimArchiveCard() {
 
           <label className={styles.fileLabel}>
             RESTORE FROM SCROLL
+            {/* visually hidden rather than `hidden`, which also removed it from
+                the keyboard and screen readers */}
             <input
               type="file"
               accept=".txt"
               onChange={handleFileUpload}
-              hidden
+              className={styles.fileInput}
             />
           </label>
         </>

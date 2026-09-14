@@ -94,7 +94,12 @@ export function advise(
       if (cur < 0) continue;
       const ratio = cur === 0 ? Infinity : want / cur;
       if (ratio > 1.6 || ratio < 0.62) {
-        const kind = TOKEN_KIND[token] === "type" ? "type count" : "population";
+        // "population" only for the one token that is one; caves, mythical
+        // sites and the site cap were all being described as populations
+        const kind =
+          TOKEN_KIND[token] === "type" ? "type count"
+            : token === "TOTAL_CIV_POPULATION" ? "population"
+              : "count";
         out.push({
           id: `count-${token}`,
           token,

@@ -21,7 +21,9 @@
 
 // ---- contextual settings bar ----------------------------------------------
 .bar {
-  position: absolute; left: 68px; right: 12px; top: 12px; z-index: 20;
+  // stops short of the World Tools button, which sits in the same top row;
+  // running to the edge put the bar's wrapped second row underneath it
+  position: absolute; left: 68px; right: 150px; top: 12px; z-index: 20;
   display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
   padding: 8px 12px; border-radius: 12px; min-height: 44px;
   background: rgba($ui-black, .78); backdrop-filter: blur(8px);
@@ -93,7 +95,7 @@
 
 // ---- world tools drawer ---------------------------------------------------
 .drawerToggle {
-  position: absolute; right: 12px; top: 64px; z-index: 20;
+  position: absolute; right: 12px; top: 12px; z-index: 20;
   display: inline-flex; align-items: center; gap: 6px; padding: 8px 12px;
   border-radius: 10px; border: 1px solid rgba($ui-white, .08);
   background: rgba($ui-black, .78); backdrop-filter: blur(8px);

@@ -48,10 +48,14 @@ export class WorldManager {
 
   public switchToPreset(title: string) {
     if (this.presets.has(title)) {
+      // Only a real switch clears history. TileMap calls this on every mount,
+      // so clearing unconditionally meant any visit to another page and back
+      // threw away every undo step, brush strokes included.
+      const changed = title !== this.activePresetTitle;
       this.activePresetTitle = title;
       const data = this.presets.get(title)!;
       this.gridSize = Math.sqrt(data.elevation.length);
-      this.clearHistory();
+      if (changed) this.clearHistory();
     }
   }
 

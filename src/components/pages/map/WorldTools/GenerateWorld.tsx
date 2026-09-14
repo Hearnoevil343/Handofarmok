@@ -14,13 +14,12 @@ const opts = (names: string[]) =>
 export function GenerateWorld() {
   const [archetype, setArchetype] = useState(ARCHETYPE_NAMES[0]);
   const [climate, setClimate] = useState(CLIMATE_NAMES[0]);
-  const [seed, setSeed] = useState(() => Math.floor(Math.random() * 1e6));
-  const { busy, write, run } = useWorldWrite();
+  const { busy, write, run, seed, setSeed } = useWorldWrite("GenerateWorld");
 
   return (
     <ToolPanel
       title="Generate World"
-      blurb="Rolls an entirely new world from a seed. Replaces every layer — anything painted is lost."
+      blurb="Rolls an entirely new world from a seed. Replaces every unlocked layer; Ctrl+Z brings back what was there."
       open
     >
       <span className={styles.field}>Terrain</span>
