@@ -49,6 +49,13 @@ one at a time.
       rolled from the seed), spin direction (prograde/retrograde mirrors wind
       bands, rain shadows, currents), axial tilt; check in DF whether POLE adds
       latitude cooling to painted temperature.
+- [ ] **Persistent plate boundaries** (next after step-1 fixes, with per-plate
+      frames). Only plate seeds carry between ages; plate ownership is regrown
+      from the seeds every age (tectonics.ts:133, again at age.ts:139/141) with
+      noise re-seeded per age, so boundaries re-route every age. Carry the
+      plate map as state, advect it, fill only gaps, change boundaries only by
+      weld/rift/subduction events, fix the noise per history, and measure
+      boundary persistence in simlab. Plan section 2.
 - [ ] **Later: planet size as scale only.** Presets like "Mars-sized",
       "Earth-sized", "twice Earth" change only the planet's size (km per tile,
       tiles a plate crosses per Myr). Same sun, day, rotation, water and
