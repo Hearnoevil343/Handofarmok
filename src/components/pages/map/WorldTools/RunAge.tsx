@@ -11,14 +11,6 @@ import { ToolPanel } from "./ToolPanel";
 import styles from "./WorldTools.module.scss";
 import { worldManager } from "@tile-map/WorldManager";
 
-/** How long each age stays on screen when several are run in a row. */
-const PACES = {
-  watch: { label: "Watch (0.6 s per age)", holdMs: 600 },
-  quick: { label: "Quick (0.15 s per age)", holdMs: 150 },
-  instant: { label: "As fast as it runs", holdMs: 0 },
-} as const;
-type Pace = keyof typeof PACES;
-
 /**
  * Ages of the world, run as a chain. Press it repeatedly and the same plates
  * keep travelling, so a rift widens instead of being replaced. Several ages in
@@ -34,7 +26,6 @@ export function RunAge() {
   const [rebound, setRebound] = useState(55);
   const [climate, setClimate] = useState(CLIMATE_NAMES[0]);
   const [agesToRun, setAgesToRun] = useState(1);
-  const [pace, setPace] = useState<Pace>("watch");
   const [report, setReport] = useState<string | null>(null);
   const stopRequested = useRef(false);
   const { busy, write, runAsync, seed, setSeed } = useWorldWrite("RunAge");
@@ -107,9 +98,9 @@ export function RunAge() {
         const line = stepAge();
         setReport(total > 1 ? `${i} of ${total} — ${line}` : line);
         if (i === total) break;
-        // paint this age, then hold it long enough to be seen
+        // let the map paint this age before the next one starts
         await new Promise<void>((resolve) =>
-          window.requestAnimationFrame(() => window.setTimeout(resolve, PACES[pace].holdMs)),
+          window.requestAnimationFrame(() => window.setTimeout(resolve, 0)),
         );
       }
     });
@@ -174,12 +165,6 @@ export function RunAge() {
 
       <Slider min={1} max={100} currentValue={agesToRun} onChange={setAgesToRun} label="Ages To Run"
         hint={`Runs this many ages in a row and shows each one on the map as it happens, ending on the last. ${(agesToRun * MYR_PER_AGE).toLocaleString()} million years. Every age is its own undo step.`} />
-      <span className={styles.field}>Pace</span>
-      <Selector
-        value={pace}
-        options={(Object.keys(PACES) as Pace[]).map((p) => ({ label: PACES[p].label, value: p }))}
-        onChange={(v) => setPace(v as Pace)}
-      />
 
       <button type="button" className={styles.primary} disabled={busy} onClick={() => void go()}>
         {busy ? "Running…" : agesToRun > 1 ? `Run ${agesToRun} Ages` : "Run Age"}
