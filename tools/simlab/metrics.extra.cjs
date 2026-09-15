@@ -153,9 +153,34 @@ function columnStriping(el, N) {
   return jumps / N;
 }
 
+/**
+ * Blockiness: share of land tiles with exactly the same elevation as the tile
+ * to the east, and share at the corner of a 2x2 block of identical elevation.
+ * Generated worlds have almost none; terrain shifted as rigid whole-tile blocks
+ * and re-quantised has many. It is what the eye sees as stair-stepped,
+ * pixel-block land that none of the other metrics caught.
+ */
+function blockiness(el, N) {
+  let land = 0, sameEast = 0, flat2x2 = 0;
+  for (let y = 0; y < N - 1; y++) {
+    for (let x = 0; x < N; x++) {
+      const i = y * N + x;
+      if (el[i] < SEA) continue;
+      land++;
+      const e = y * N + ((x + 1) % N);
+      if (el[e] === el[i]) {
+        sameEast++;
+        if (el[i + N] === el[i] && el[e + N] === el[i]) flat2x2++;
+      }
+    }
+  }
+  return land ? { sameEast: (100 * sameEast) / land, flat2x2: (100 * flat2x2) / land } : { sameEast: 0, flat2x2: 0 };
+}
+
 /** Everything, for one age. */
 function measureAge(w, N, engineMetrics) {
   const el = w.EL;
+  const block = blockiness(el, N);
   let land = 0, mtn = 0, frozen = 0;
   for (let i = 0; i < el.length; i++) {
     if (el[i] >= SEA) { land++; if (el[i] >= 300) mtn++; }
@@ -179,6 +204,8 @@ function measureAge(w, N, engineMetrics) {
     oceanZonality: zonality(w.TP, el, N, true),
     oceanPlateau: plateauShare(w.TP, el, N, true),
     flatRunTP: longestFlatRun(w.TP, N),
+    sameEast: block.sameEast,
+    flat2x2: block.flat2x2,
   };
 }
 

@@ -393,17 +393,39 @@ function advect(
         // other, so crust is conserved. Without this, plates simply shove land
         // off the side of the map and every run is a net loss. North-south
         // clamps instead, since a sphere has poles rather than a seam.
-        const sxp = ((Math.round(x - vx[p] * distance) % size) + size) % size;
-        const syp = Math.min(size - 1, Math.max(0, Math.round(y - vy[p] * distance)));
-        const si = syp * size + sxp;
-        if (plateId[si] !== p) continue;
-        claims++; sum += el[si];
-        if (el[si] > highest) { highest = el[si]; owner = p; srcIdx = si; }
+        const fx = x - vx[p] * distance, fy = y - vy[p] * distance;
+        // Sub-tile motion: the source point falls between four tiles, so blend
+        // the ones this plate owns by distance (bilinear). Rounding to the
+        // nearest tile moved every plate in whole-tile jumps. Against that, on
+        // 96 worlds: score 2.19/6.15 and 2.32/6.07 -> 1.76/3.37 and 1.71/5.84,
+        // coastline dimension 1.39-1.42 -> 1.33-1.34 (into target for the first
+        // time), bimodality 0.79-0.82 -> 0.89-0.90, runs with a degenerate age
+        // 20 and 22 -> 2 and 2. Bilinear blends a little blur every step; a
+        // per-plate frame resampled sharply would avoid that (see
+        // docs/simulation-plan.md).
+        const x0 = Math.floor(fx), y0 = Math.floor(fy), tx = fx - x0, ty = fy - y0;
+        let wsum = 0, vsum = 0, bestW = -1, si = -1;
+        for (let k = 0; k < 4; k++) {
+          const dx = k & 1, dy = k >> 1;
+          const w = (dx ? tx : 1 - tx) * (dy ? ty : 1 - ty);
+          if (w <= 0) continue;
+          const sx = (((x0 + dx) % size) + size) % size;
+          const sy = Math.min(size - 1, Math.max(0, y0 + dy));
+          const j = sy * size + sx;
+          if (plateId[j] !== p) continue;
+          wsum += w; vsum += w * el[j];
+          if (w > bestW) { bestW = w; si = j; }
+        }
+        // the plate must own most of the source point, as rounding required
+        if (wsum < 0.5) continue;
+        const value = vsum / wsum;
+        claims++; sum += value;
+        if (value > highest) { highest = value; owner = p; srcIdx = si; }
       }
       if (claims === 0) {
         elevation[i] = -1;                            // resolved below
       } else if (claims === 1) {
-        elevation[i] = highest; newId[i] = owner;
+        elevation[i] = Math.round(highest); newId[i] = owner;
         if (newProv && srcIdx >= 0) newProv[i] = province![srcIdx];
       } else {
         // Overlap is the main source of mountain, not boundary relief, so this
