@@ -28,7 +28,33 @@ one at a time.
       `feature/update-check` (not pushed). Needs: merge, then test the
       "Get the update" link opening the browser from the packaged .exe.
 
+### Built on `sim/overnight` (not merged)
+- [x] **Run several ages live** — "Ages To Run" (1-100) and pace in Run Age;
+      each age repaints the map, Stop keeps the age reached. Every age is its
+      own undo step and undo now rewinds the simulation session too (plates,
+      age, sea level...), history capped by memory not 30 steps. Checked in
+      the app: undo 5 then run gives Age 1; replay reproduces age 5 exactly.
+
 ### To build
+- [ ] **Shorter time steps** (dev prefers slower progression, more clicks).
+      Research 2026-09-15 (both reports in the session): processes run once per
+      10-Myr age at fixed strength, so drift, erosion and rare events tick
+      together; plates move by whole tiles (Math.round), which likely causes
+      the blocky mid-history terrain. Plan, in order:
+      1. Plate positions as float offsets; resample crust each step
+         semi-Lagrangian with bilinear interpolation (sub-tile motion).
+      2. ~1 Myr sub-steps inside an age; every per-age constant rewritten as a
+         rate per Myr (mountain decay exp(-dt/50 Myr) matches today's 0.2/age).
+      3. Rifts and collisions as scheduled events with durations (rift speeds
+         up ~10 Myr before breakup; collision uplift ~50 Myr).
+      4. Implicit stream-power erosion (Braun & Willett 2013, O(n), stable at
+         large dt) — implement from the paper; Landlab is the MIT reference,
+         FastScape/goSPL/GPlates are GPL.
+      5. Add a blockiness metric first (tools/simlab/blockiness-test.cjs).
+      6. Calibrate against Scotese PaleoDEMs (CC-BY-4.0, 1 degree, every 5 Myr,
+         Zenodo 5460860): per-slice land %, hypsometry, mountain %, coastline
+         dimension at our own resolution. Attribution required.
+      7. Move the engine into a Web Worker if sub-steps make ages slow.
 - [ ] **Import a world DF generated** — so players can take a world they like and
       reshape it. Route: DFHack script dumps the six layers per tile
       (`Dwarf Fortress\dfhack-config\scripts\dump-regions.lua` already does this),
@@ -249,6 +275,13 @@ identical, mountains 89–100% overlap. The problems are in the painted data.
         supercontinent cycle. At both settings the autocorrelation period is 40
         ages (the engine clock) and the assembly gap median is 21-26 ages. The
         case for drift 3 is terrain quality, not cycle timing.
+      - Caveat on the overnight probe scripts (seam, step, centroid, seed and
+        elongation probes, trace-one): they carried uplift as
+        `r.upliftStrength`, but runAge returns `nextUpliftStrength`, so the
+        mountain controller sat at 45 in those probes. They were used only to
+        find mechanisms; every accepted change was judged on simlab sweeps,
+        whose worker passes state correctly. Don't reuse probe numbers as
+        measurements.
       - Still open in simulation: land share on the land-heavy archetypes
         (scoring question above); coast roughness 1.40-1.43 (target 1.18-1.34)
         unchanged by everything tried tonight; assembly gap shorter than the
