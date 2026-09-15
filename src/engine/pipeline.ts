@@ -3,6 +3,16 @@ import { specifyRanked } from "./shape";
 import { elevation } from "./generate";
 import { PROFILES } from "./profiles";
 import * as climate from "./climate";
+import { DEFAULT_PLANET, type Planet } from "./planet";
+
+/** The same field with every row reversed east to west. */
+function mirrorX(a: Int16Array, size: number): Int16Array {
+  const out = new Int16Array(a.length);
+  for (let y = 0; y < size; y++) {
+    for (let x = 0; x < size; x++) out[y * size + x] = a[y * size + (size - 1 - x)];
+  }
+  return out;
+}
 
 export const LAYERS = ["EL", "RF", "TP", "DR", "VL", "SV"] as const;
 export type LayerKey = (typeof LAYERS)[number];
@@ -19,7 +29,19 @@ export function blankWorld(size: number): World {
 /** Derive rainfall / temperature / drainage / volcanism / savagery from terrain. */
 export function deriveClimate(
   el: Int16Array, size: number, climateProfile: string, seed: number,
+  planet: Planet = DEFAULT_PLANET,
 ): Pick<World, "RF" | "TP" | "DR" | "VL" | "SV"> {
+  // A retrograde planet is the mirror image of a prograde one: the Coriolis
+  // force reverses, so prevailing winds, rain shadows, boundary currents and
+  // dry coasts all swap east for west. Deriving the climate on the mirrored map
+  // and mirroring the result back flips every one of them at once.
+  if (planet.spin === -1) {
+    const out = deriveClimate(mirrorX(el, size), size, climateProfile, seed, { ...planet, spin: 1 });
+    return {
+      RF: mirrorX(out.RF, size), TP: mirrorX(out.TP, size), DR: mirrorX(out.DR, size),
+      VL: mirrorX(out.VL, size), SV: mirrorX(out.SV, size),
+    };
+  }
   const rng = makeRng(seed);
   const land = new Uint8Array(size * size);
   let landCount = 0;
@@ -29,8 +51,8 @@ export function deriveClimate(
   }
   const P = PROFILES[climateProfile];
   const raw = {
-    TP: climate.temperature(el, size, rng),
-    RF: climate.rainfall(el, size, rng),
+    TP: climate.temperature(el, size, rng, planet),
+    RF: climate.rainfall(el, size, rng, planet),
     DR: climate.drainage(el, size, rng),
   };
   // Ocean is ranked separately with the same bands. Ranking only land left
@@ -59,10 +81,11 @@ export function deriveClimate(
 
 /** Shape and climate are independent axes: any archetype x any climate. */
 export function generateWorld(size: number, archetype: string,
-                              climateProfile: string, seed: number): World {
+                              climateProfile: string, seed: number,
+                              planet: Planet = DEFAULT_PLANET): World {
   const rng = makeRng(seed);
   const el = elevation(size, archetype, rng);
-  return { EL: el, ...deriveClimate(el, size, climateProfile, seed + 1) };
+  return { EL: el, ...deriveClimate(el, size, climateProfile, seed + 1, planet) };
 }
 
 const REGIONS = ["SWAMP", "DESERT", "FOREST", "MOUNTAINS", "OCEAN",

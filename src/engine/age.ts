@@ -20,6 +20,7 @@ import {
   relaxBathymetry, restoreFreeboard, seaLevelFromBasins, updateCrust,
 } from "./ocean";
 import { MYR_PER_AGE } from "./timescale";
+import type { Planet } from "./planet";
 
 /**
  * One age of the world, run as a chain rather than a pile of separate buttons.
@@ -101,6 +102,8 @@ export type AgeOptions = {
   seaLevelDatum?: number;
   /** oceanic plates faster than continental ones (TectonicAgeOptions.plateSpeeds) */
   plateSpeeds?: boolean;
+  /** pole layout, spin and axial tilt the climate follows (planet.ts); Earth by default */
+  planet?: Planet;
   /** sea-level offset already baked into EL from the previous age */
   seaLevelOffset?: number;
 };
@@ -367,7 +370,7 @@ export function runAge(w: World, size: number, opts: AgeOptions): AgeReport {
   }
 
   // 6. climate, with the rivers it just cut
-  const climate = deriveClimate(el, size, opts.climate, opts.seed + 1);
+  const climate = deriveClimate(el, size, opts.climate, opts.seed + 1, opts.planet);
   // crust is conserved; only how much of it is drowned may change
   if (oceanState && tect.crust && freeboardRef !== undefined) {
     el = restoreFreeboard(el, tect.crust, freeboardRef, datum);
