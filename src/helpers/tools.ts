@@ -50,8 +50,9 @@ export const TOOLS: ToolMeta[] = [
   },
   {
     id: "climate", label: "Climate", key: "c",
-    hint: "Paint rainfall, temperature or drainage directly.",
-    shows: ["climateLayer", "value", "size", "strength", "falloff", "shape", "line"],
+    hint: "Stamp rainfall, temperature or drainage: every tile under the brush takes the value.",
+    // no strength or falloff: the brush stamps its value exactly
+    shows: ["climateLayer", "value", "size", "shape", "line"],
   },
   {
     id: "volcano", label: "Volcano", key: "v",

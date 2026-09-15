@@ -2849,3 +2849,29 @@ freeboard target. With it: 2.20 / 2.22 (worst 9.4 / 10.7), better but still
 behind the default, and 13 and 14 degenerate runs — land on highland worlds
 still swings by about ten points. Also open: coastlines too rough (dimension
 1.37), flat land patches (1.3% of land against 0.08%). The option stays off.
+
+---
+
+## 54. The Climate brush stamps its value; drift stays at 4
+
+### Climate brush
+
+The Climate brush moved each tile part of the way toward the brush value on each
+pass, scaled by Strength and softened by Falloff, so rainfall 100 took several
+strokes to arrive and overlapping strokes left uneven patches. It now stamps:
+every tile under the brush takes the value exactly. Strength and Falloff are no
+longer shown for it; Size, Shape and Line still apply.
+
+### Drift 3, measured again
+
+Drift 3 beat drift 4 before the plate work in §52. On the current engine it does
+not:
+
+| | set A | set B | 200 ages |
+|---|---|---|---|
+| drift 4 | 1.45 | 1.39 | 0.49 (worst 2.21) |
+| drift 3 | 1.65 | 1.64 | 0.28 (worst 0.74) |
+
+Both 96-world sets are worse by more than the ~0.15 noise, continents clump more
+(largest landmass 84-88% of land -> 90-92%) and edge bias falls below target.
+Only the 200-age set improves. The default stays at 4.

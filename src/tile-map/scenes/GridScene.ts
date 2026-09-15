@@ -45,6 +45,7 @@ export class GridScene extends Phaser.Scene {
   private falloffKind: FalloffKind = "smooth";
   private scatter: number = 0;
   private paintMode: PaintMode = PaintMode.Brush;
+  private activeTool = "";
   private showPlates: boolean = false;
   /** Anchor value for the Flatten op, sampled when the stroke starts. */
   private flattenAnchor: number | null = null;
@@ -92,6 +93,7 @@ export class GridScene extends Phaser.Scene {
       this.falloffKind = state.falloffKind;
       this.scatter = state.scatter;
       this.paintMode = state.paintMode;
+      this.activeTool = state.activeTool;
       if (this.showPlates !== state.showPlates) {
         this.showPlates = state.showPlates;
         this.redrawMap();
@@ -403,7 +405,11 @@ export class GridScene extends Phaser.Scene {
         // not "most of a volcano" -- so it is always written at full strength.
         const discrete =
           !this.activeBiome && LAYER_META[this.currentLayer].control === "steps";
-        const strength = discrete
+        // The Climate brush stamps the value it is set to. Moving each tile
+        // part of the way per pass meant rainfall 100 needed several strokes to
+        // arrive and left uneven patches wherever strokes overlapped.
+        const stamp = this.activeTool === "climate" && this.brushOp === BrushOp.Paint;
+        const strength = discrete || stamp
           ? 1
           : this.brushOpacity * weight * (airbrush ? AIRBRUSH_STRENGTH : 1);
 

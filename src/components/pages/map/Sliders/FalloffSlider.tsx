@@ -13,9 +13,10 @@ export function FalloffSlider() {
   const { falloff, falloffKind, paintMode } = useSelector(
     (state: RootState) => state.paint,
   );
-  const { activeLayer, activeBiome } = useSelector((st: RootState) => st.paint);
-  // meaningless on a two-state layer
+  const { activeLayer, activeBiome, activeTool } = useSelector((st: RootState) => st.paint);
+  // meaningless on a two-state layer, and the Climate brush stamps its value
   if (activeBiome === null && LAYER_META[activeLayer].control === "steps") return null;
+  if (activeTool === "climate") return null;
   if (paintMode === PaintMode.Line) return null;
 
   return (
