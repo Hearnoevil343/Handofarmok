@@ -31,6 +31,16 @@ the simulation's own step list is `docs/simulation-plan.md`.
 - [x] **Step-1 engine fixes** — one flow analysis per age, supercontinent
       temperature sign, hotspots fixed in the mantle frame. Results in
       `docs/simulation-plan.md`.
+- [x] **Painting fixes** — climate button crash, brushes clashing, Sculpt as an
+      airbrush, gaps on fast drags, first-load brush size. CHANGES.md §51.
+      Open question: should the Climate brush also build up while held?
+- [x] **Persistent plate boundaries** — boundaries 49% -> 89% persistent,
+      sharper plate motion, real units (`scale.ts`). CHANGES.md §52.
+- [x] **Planet settings** — pole layout, spin, axial tilt in Run Age and
+      Derive Climate. Export still `POLE:NONE` until checked in DF. §53.
+- [ ] **Ocean model** (opt-in, on `feature/ocean-model`) — sea-floor age,
+      sea level from basins and ice, continental freeboard. Behind the default
+      on score so far; see `docs/simulation-plan.md` step 4.
 - [x] **Run several ages live** — "Ages To Run" (1-100) in Run Age;
       each age repaints the map, Stop keeps the age reached. Every age is its
       own undo step and undo now rewinds the simulation session too (plates,
