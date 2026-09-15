@@ -93,9 +93,11 @@ age.
 - [ ] Collision thickens crust (conserve volume) instead of deleting 90%.
 - [ ] Rifts and collisions as events with durations (rift speed-up ~10 Myr,
       collision uplift ~50 Myr, then decay).
-- [ ] Hotspots fixed in the mantle frame, 10-15 at 129, life 50-150 Myr,
-      Gaussian bump on the plate overhead; large igneous provinces every
-      10-20 Myr. Wrap across the seam.
+- [x] Hotspots fixed in the mantle frame, wrapping across the seam (step 1:
+      score A +0.07, B -0.05, 200 ages +0.15, all within noise; kept because
+      the old drift was physically wrong and dropped spots at the map edge).
+- [ ] Hotspot count 10-15 at 129, life 50-150 Myr, Gaussian bump on the plate
+      overhead; large igneous provinces every 10-20 Myr.
 
 ## 3. Surface: erosion and sediment
 
@@ -113,7 +115,8 @@ chemical weathering ~15% of mass leaves as solution; glacial erosion
 ~velocity^2, cheaply as a K multiplier on ice.
 
 **Plan:**
-- [ ] One flow analysis per step (drop the duplicate).
+- [x] One flow analysis per step (drop the duplicate). Step 1: identical
+      output, 0 of 115,200 values differ.
 - [ ] Implicit stream-power incision with slope, written from the paper
       (Landlab is the MIT reference).
 - [ ] Sediment routing down the drainage stack with a capacity term; deposit
@@ -135,7 +138,11 @@ flattening (Parsons & Sclater); Cretaceous sea level ~170 m above today from
 young sea floor; glacial lowstand ~125 m; hydro-isostatic factor ~0.7.
 
 **Plan:**
-- [ ] Fix `separateCrust` ordering (immediate bug).
+- [ ] Replace `separateCrust` together with depth-vs-age, not on its own.
+      Step 1 tried an order-keeping version and it tripled the score (A
+      1.76 -> 5.28, B 1.71 -> 5.12, 200 ages 0.84 -> 2.70): the buggy mapping
+      is what currently holds the shelf and slope shape up, so it has to go
+      out in the same change that gives bathymetry a real source.
 - [ ] `oceanAge` field advected with plates, 0 at ridges; bathymetry from
       depth-vs-age.
 - [ ] Sea level from constant water volume (bisection) minus ice volume, x0.7;
@@ -160,7 +167,8 @@ elevation cooling itself.
 - [ ] 2D diffusive EBM (~10 ms, warm-started), ice-albedo feedback, lapse
       6.5 K/km; ocean current anomalies by basin side, peaking mid-latitude.
 - [ ] Replace hard rank-fitting with gentle calibration.
-- [ ] Fix the supercontinent temperature sign.
+- [x] Fix the supercontinent temperature sign. Step 1: scores unchanged
+      (temperature is rank-fitted afterwards); kept because it is correct.
 
 ## 6. Climate: wind and rainfall
 
@@ -281,8 +289,9 @@ the only planet with calibration data.
 
 ## Order of work
 
-1. Quick bug fixes: `separateCrust` ordering, duplicate flow analysis,
-   supercontinent temperature sign, hotspots in the mantle frame. (Each A/B.)
+1. Quick bug fixes — done: duplicate flow analysis, supercontinent
+   temperature sign, hotspots in the mantle frame. `separateCrust` moved to
+   step 4 (see section 4).
 2. Persistent plate map with per-plate frames (section 2) — boundaries that
    last, and no accumulated blur.
 3. Scale and sub-steps (section 1) — everything after depends on per-Myr rates.
