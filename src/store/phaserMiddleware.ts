@@ -39,7 +39,12 @@ export const phaserMiddleware: Middleware = (store) => {
       EventBus.emit(BusEvent.BrushUpdated, settings);
     }
 
+    // Switch the world data here, not only by event. The only listeners are the
+    // map's Phaser scenes, so choosing a blueprint anywhere else — the World
+    // Settings sidebar — left worldManager on the old one: Quick Setup and Read
+    // This World measured, and Apply Selected tuned against, the wrong world.
     if (setActivePreset.match(action)) {
+      worldManager.switchToPreset(action.payload);
       EventBus.emit(BusEvent.PresetSwitched, action.payload);
     }
 
@@ -64,6 +69,7 @@ export const phaserMiddleware: Middleware = (store) => {
 
       const newActive = store.getState().world.activePresetTitle;
       if (newActive) {
+        worldManager.switchToPreset(newActive);
         EventBus.emit(BusEvent.PresetSwitched, newActive);
       }
     }

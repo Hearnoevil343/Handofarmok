@@ -2339,3 +2339,56 @@ Sparse, and a tier in every group.
   data by design.
 - **Warning dialog needing two clicks** (1) and **one unexplained reload** (12)
   did not reproduce.
+
+---
+
+## 47. Second playtest pass: the parts the first one never reached
+
+Blueprint switching, import, every World Tool, every brush, Apply Selected and
+Reset Destructive Parameters. Three bugs, all fixed and checked in the app.
+
+### World Settings measured whichever world the map last showed
+
+With EUROPE and a generated EUROPE COPY loaded, Quick Setup and Read This World
+reported 7,960 land tiles for both. `phaserMiddleware` handled
+`setActivePreset` by emitting `PresetSwitched`, and the only listeners are the
+map's Phaser scenes — so choosing a blueprint in the World Settings sidebar never
+reached `worldManager`. Read This World measured one world and Apply Selected
+wrote its proposals into another. The middleware now switches `worldManager`
+itself, for `setActivePreset` and after `deletePreset`, and Quick Setup measures
+the selected blueprint by name rather than whatever is active.
+
+Checked with EUROPE and PANGAEA: 8,893 land for EUROPE, 5,326 for PANGAEA, in
+both Quick Setup and Read This World.
+
+### Read This World findings outlived the blueprint they were read from
+
+Select another blueprint and the old list and its Apply button stayed, ready to
+write one world's proposals into the other. Findings now clear when the active
+blueprint changes. Checked: switching to PANGAEA showed no reading and no Apply
+button until read again.
+
+### The status bar showed the tile as it was before a click
+
+It refreshed only on pointer move, so after a click, fill or eyedropper the
+values were stale until the mouse moved. It now refreshes on pointer up. Checked:
+straight after clicks, without moving, it read rainfall 50 after Climate,
+volcanism 100 after Volcano, savagery 20 after Savagery (Calm), and grassland at
+elevation 196 after Fill on ocean.
+
+### Checked and working
+
+- **Blueprints are isolated.** Generate World on a duplicate changed 16,547
+  elevation cells; the original's export still matched `presets/europe.txt`
+  exactly.
+- **Import round-trips exactly.** A two-blueprint `world_gen.txt` dropped onto
+  Reclaim Archive in a fresh tab and exported again is byte-identical (2,006
+  lines).
+- **Every World Tool runs** without console errors: Tectonic Age, Erosion,
+  Rivers & Lakes, Derive Climate, World Events (Ice Age), World Forge (5 steps).
+- **Every brush writes what it says**, by whole-map export diff: Climate 167
+  rainfall cells, Volcano 25 volcanism, Savagery 25 savagery, Fill 142 elevation.
+- **Apply Selected** takes 13 proposals to "Nothing to change"; **Reset
+  Destructive Parameters** sets `EROSION_CYCLE_COUNT` to 0.
+- Importing opens the Prepare for Painting dialog on purpose
+  (`useWorldInitializer(true)`); loading from the gallery does not.
