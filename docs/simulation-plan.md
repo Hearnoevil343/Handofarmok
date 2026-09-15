@@ -43,9 +43,14 @@ talus threshold per tile, drownSpecks 10 tiles, stampOrogen 200 tiles, hotspot
 speed 1 tile/age, rift offset 9, boundary-current reach 20).
 
 **Plan:**
-- [ ] `scale.ts`: `kmPerTile(size)`, `metresPerUnit`, `myrPerStep`; convert
-      every constant through it. Test: a 257 run and a 129 run of the same
-      world agree on land %, mountain %, hypsometry within noise.
+- [x] `scale.ts`: planet radius, `kmPerTile(size)`, metres per elevation unit
+      (provisional), and `scaleLength` / `scaleArea` / `scaleSlope` for
+      constants written in tiles at 129. Converted: rebound radius, denudation
+      window, orogenic collapse spread, shelf smoothing, boundary-current
+      reach and blur, hotspot radii, orogen and speck areas, talus step.
+      Bit-identical at 129 (0 of 6,989,220 values over 3 worlds x 20 ages).
+- [ ] Test: a 257 run and a 129 run of the same world agree on land %,
+      mountain %, hypsometry within noise. (257 is 371 ms/age — over budget.)
 - [ ] Sub-steps inside `runAge`; per-step rates (`exp(-dt/tau)` for decays).
 - [ ] Periodic (tileable) noise so fields have no seam at x = 0.
 - [ ] Web Worker once a step costs more than a frame.
@@ -77,17 +82,24 @@ migrate slowly; here collision belts get uplift along a different line each
 age.
 
 **Plan:**
-- [ ] **Persistent plate map (first in this section).** Carry each tile's plate
-      ID in the simulation state and advect it with the crust. Stop regrowing
-      plates from seeds every age: fill only gaps (new sea floor opening behind
-      a moving plate) from their neighbours. Boundaries change only through
-      events — welding merges two IDs, a rift splits a plate along the rift
-      axis, subduction consumes crust. Boundary noise fixed per history
-      (`seed - age`), not re-rolled. New simlab metric: boundary persistence
-      (share of boundary tiles still on a boundary the next age). Done together
-      with per-plate frames below.
-- [ ] Per-plate crust frames with float offsets; clamped cubic resampling;
-      erosion/deposition deltas written back to plate space once per step.
+- [x] **Persistent plate map.** The plate map is carried state (session and
+      simlab), advected with the crust; gaps take a neighbour's plate; a
+      weld renumbers it, a plume rift cuts the host plate in two along the
+      rift line, consumed plates are dropped, seeds sit at their plate's
+      centre. Two things this exposed, both fixed: welds only ever lowered the
+      count (6 plates fell to 2 in twenty ages), so the largest plate now
+      rifts at a random point when the count is below the setting; and every
+      touching pair welded at once, so welds are one per age, strongest
+      contact first, contact scaled to map size. New simlab metric
+      `boundaryPersist`: 49% -> 89% of boundary tiles still within 2 tiles of
+      a boundary the next age.
+- [x] Clamped Catmull-Rom resampling inside plates (bilinear only where the
+      4x4 neighbourhood crosses a plate edge). With the persistent map, 96
+      worlds: score 1.83/1.66 -> 1.73/1.63, 200 ages 0.99 -> 0.94 (worst
+      2.86 -> 2.21); flat 2x2 patches roughly halved. Largest landmass over
+      200 ages still 63% -> 70% of land: watch.
+- [ ] Per-plate crust frames with float offsets, if blur still shows after
+      sub-steps multiply the number of resamples.
 - [ ] Plate speeds as cm/yr per plate (continental plates slower), not unit
       vectors.
 - [ ] Collision thickens crust (conserve volume) instead of deleting 90%.

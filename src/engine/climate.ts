@@ -1,5 +1,6 @@
 import { fbm, norm01 } from "./noise";
 import type { Grid } from "./noise";
+import { scaleLength } from "./scale";
 
 /** Exact squared EDT (Felzenszwalb & Huttenlocher). Replaces scipy's
  *  distance_transform_edt -- exact, not a chamfer approximation. */
@@ -58,7 +59,8 @@ export function temperature(el: Int16Array, size: number, rng: () => number): Gr
   // a satellite image is anything but a straight line. Breaking the contour up
   // is what stops the ocean looking ruled.
   const eddies = fbm(size, rng, 5, 16);
-  const cur = boundaryCurrents(el, size, 20);
+  // currents reach ~6,000 km off a coast (20 tiles at 129)
+  const cur = boundaryCurrents(el, size, Math.max(1, Math.round(scaleLength(20, size))));
   for (let y = 0; y < size; y++) {
     const base = 1 - Math.pow(lat(size, y), 1.25);
     const tropical = 1 - Math.min(1, lat(size, y) / 0.75);
@@ -126,7 +128,8 @@ export function boundaryCurrents(el: Int16Array, size: number, reach = 14): Grid
   // Atlantic Drift, thousands of kilometres past Newfoundland — so the field is
   // smeared along the flow to match.
   let cur = out;
-  for (let pass = 0; pass < 4; pass++) {
+  const passes = Math.max(1, Math.round(scaleLength(4, size)));
+  for (let pass = 0; pass < passes; pass++) {
     const next = new Float64Array(size * size);
     for (let y = 0; y < size; y++) {
       for (let x = 0; x < size; x++) {

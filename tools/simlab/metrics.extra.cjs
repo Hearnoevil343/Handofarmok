@@ -177,6 +177,42 @@ function blockiness(el, N) {
   return land ? { sameEast: (100 * sameEast) / land, flat2x2: (100 * flat2x2) / land } : { sameEast: 0, flat2x2: 0 };
 }
 
+/**
+ * Boundary persistence: share of last age's plate-boundary tiles that still
+ * have a boundary within `r` tiles this age. Plates move ~1-2 tiles per age,
+ * so an exact-tile match would punish a boundary for moving with its plates;
+ * a boundary regrown along a new line every age scores low. Wraps east-west.
+ */
+function boundaryMask(map, N) {
+  const m = new Uint8Array(map.length);
+  for (let y = 0; y < N; y++) {
+    for (let x = 0; x < N; x++) {
+      const i = y * N + x, a = map[i];
+      if (map[y * N + ((x + 1) % N)] !== a || (y < N - 1 && map[i + N] !== a)) m[i] = 1;
+    }
+  }
+  return m;
+}
+function boundaryPersistence(prevMap, map, N, r = 2) {
+  if (!prevMap || !map || prevMap.length !== map.length) return NaN;
+  const before = boundaryMask(prevMap, N), now = boundaryMask(map, N);
+  let total = 0, kept = 0;
+  for (let y = 0; y < N; y++) {
+    for (let x = 0; x < N; x++) {
+      if (!before[y * N + x]) continue;
+      total++;
+      let hit = false;
+      for (let dy = -r; dy <= r && !hit; dy++) {
+        const yy = y + dy;
+        if (yy < 0 || yy >= N) continue;
+        for (let dx = -r; dx <= r; dx++) if (now[yy * N + (((x + dx) % N) + N) % N]) { hit = true; break; }
+      }
+      if (hit) kept++;
+    }
+  }
+  return total ? (100 * kept) / total : NaN;
+}
+
 /** Everything, for one age. */
 function measureAge(w, N, engineMetrics) {
   const el = w.EL;
@@ -209,4 +245,4 @@ function measureAge(w, N, engineMetrics) {
   };
 }
 
-module.exports = { masses, boxFill, edgeBias, zonality, plateauShare, longestFlatRun, columnStriping, measureAge };
+module.exports = { masses, boxFill, edgeBias, zonality, plateauShare, longestFlatRun, columnStriping, boundaryPersistence, measureAge };

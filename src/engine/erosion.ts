@@ -1,4 +1,5 @@
 import { makeRng } from "./noise";
+import { scaleSlope } from "./scale";
 
 /**
  * Terrain erosion. Operates on elevation only; run Derive Climate afterwards,
@@ -100,7 +101,8 @@ export function thermalErosion(
 ): Int16Array {
   const h = new Float64Array(size * size);
   for (let i = 0; i < h.length; i++) h[i] = el[i];
-  const talus = 14 - (strength / 100) * 11;          // higher strength = flatter
+  // higher strength = flatter; a height step between tiles, so it shrinks with them
+  const talus = scaleSlope(14 - (strength / 100) * 11, size);
   const rate = 0.35;
 
   for (let c = 0; c < cycles; c++) {

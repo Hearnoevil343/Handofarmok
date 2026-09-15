@@ -5,7 +5,7 @@ import type { PlateSet } from "./tectonics";
 import { denudeInactive, isostaticRebound, orogenicCollapse } from "./isostasy";
 import { tectonicAge } from "./tectonics";
 import { type Hotspot, applyHotspots, riftAtPlumes, seedHotspots } from "./hotspots";
-import { assignPlates } from "./tectonics";
+import { compactPlates } from "./tectonics";
 import { deStraighten, measureStraightness } from "./artifacts";
 import {
   climatePhase, conserveCrust, dispersal, drownSpecks,
@@ -14,6 +14,7 @@ import {
 import { type Provinces, seedProvinces, stampOrogen } from "./provinces";
 import { makeRng } from "./noise";
 import { thermalErosion } from "./erosion";
+import { scaleArea } from "./scale";
 
 /**
  * One age of the world, run as a chain rather than a pile of separate buttons.
@@ -35,6 +36,8 @@ const EXTINCTION_SURVIVAL = 0.35;
 
 export type AgeOptions = {
   plateSet?: PlateSet;
+  /** plate ownership per tile from the previous age (AgeReport.plateMap) */
+  plateMap?: Int16Array;
   plates: number;
   /** how far plates travel, as a share of the map */
   drift: number;
@@ -108,6 +111,7 @@ export function runAge(w: World, size: number, opts: AgeOptions): AgeReport {
 
   const tect = tectonicAge(w.EL, size, {
     plateSet: opts.plateSet,
+    plateMap: opts.plateMap,
     plates: opts.plates,
     distance: (opts.drift / 100) * (size / 3),
     strength: opts.upliftStrength ?? 45,
@@ -118,7 +122,7 @@ export function runAge(w: World, size: number, opts: AgeOptions): AgeReport {
 
   // a belt raised by one collision is one geological unit, even after a later
   // rift tears it in two
-  stampOrogen(provinces, tect.uplifting, opts.age ?? 0);
+  stampOrogen(provinces, tect.uplifting, opts.age ?? 0, Math.round(scaleArea(200, size)));
   let el = tect.elevation;
 
   // Volcanoes go extinct. Over twenty ages an un-decayed field climbed from
@@ -136,16 +140,19 @@ export function runAge(w: World, size: number, opts: AgeOptions): AgeReport {
   const rng = makeRng(opts.seed ^ 0x1105);
   // collided continents travel as one from here on — and become one plate, so
   // the count comes back down after a collision and rifting can continue
-  let plateMap = assignPlates(el, size, tect.plateSet, makeRng(opts.seed));
-  const weld = weldCollidedPlates(tect.plateSet, el, plateMap.plateId, size);
-  if (weld.merged) plateMap = assignPlates(el, size, tect.plateSet, makeRng(opts.seed + 1));
+  // The plate map is the one tectonics just moved with the crust. It used to be
+  // regrown from the seeds here, and again after a weld, so boundaries never
+  // lasted; now a weld renumbers it and a rift cuts it, and nothing else does.
+  const plateId = tect.plateId;
+  const weld = weldCollidedPlates(tect.plateSet, el, plateId, size);
+  if (weld.merged) for (let i = 0; i < plateId.length; i++) plateId[i] = weld.remap[plateId[i]];
 
   // Plumes were seeded once and never replaced, so by the time a supercontinent
   // had assembled there was no plume left to rift it apart. They are topped up
   // every age instead, which also lets a plume appear *because* a continent has
   // assembled — the actual mechanism.
   let spots = opts.spots ?? [];
-  const fresh = seedHotspots(el, size, tect.plateSet, plateMap.plateId,
+  const fresh = seedHotspots(el, size, tect.plateSet, plateId,
                              Math.max(0, (opts.hotspots ?? 2) - spots.filter((s) => !s.plume).length), rng);
   const hasPlume = spots.some((s) => s.plume);
   for (const f of fresh) {
@@ -158,7 +165,28 @@ export function runAge(w: World, size: number, opts: AgeOptions): AgeReport {
   // the return is snapshotted before this point, so mutating the input here
   // threw the new seeds away every age.
   if (spots.some((s) => s.plume) && tect.plateSet.sx.length < 24) {
-    riftAtPlumes(tect.plateSet, spots, plateMap.plateId, size);
+    riftAtPlumes(tect.plateSet, spots, plateId, size);
+  }
+  compactPlates(tect.plateSet, plateId);
+
+  // Welds only ever reduce the plate count, and with the map carried a plume
+  // rift adds one plate, not two phantom seeds — so a 6-plate world wound down
+  // to 2 within twenty ages, and with two plates any single event redrew every
+  // boundary at once. Earth keeps a roughly steady count because big plates
+  // break. When the count is below the setting, the largest plate rifts across
+  // a random point on it, at most once an age.
+  if (tect.plateSet.sx.length < Math.max(2, opts.plates)) {
+    const count = tect.plateSet.sx.length;
+    const area = new Array(count).fill(0);
+    for (let i = 0; i < plateId.length; i++) area[plateId[i]]++;
+    const big = area.indexOf(Math.max(...area));
+    const pick = makeRng(opts.seed ^ 0x2177);
+    let k = Math.floor(pick() * area[big]);
+    for (let i = 0; i < plateId.length; i++) {
+      if (plateId[i] !== big || k-- > 0) continue;
+      riftAtPlumes(tect.plateSet, [{ x: i % size, y: (i / size) | 0, life: 1, plume: true }], plateId, size);
+      break;
+    }
   }
 
   if ((opts.hotspots ?? 2) > 0 && spots.length) {
@@ -242,7 +270,8 @@ export function runAge(w: World, size: number, opts: AgeOptions): AgeReport {
   // shift: culling before it left every speck the falling sea had just exposed.
   let specksDrowned = 0;
   if (opts.cullSpecks !== false) {
-    const culled = drownSpecks(world.EL, size, 10);
+    // under ~1 million km² (10 tiles at 129) is a speck, not a landmass
+    const culled = drownSpecks(world.EL, size, Math.max(1, Math.round(scaleArea(10, size))));
     world.EL = culled.elevation;
     specksDrowned = culled.removed;
   }
@@ -264,7 +293,7 @@ export function runAge(w: World, size: number, opts: AgeOptions): AgeReport {
     lakeTiles: lakes,
     volcanoes: volc,
     boundaries: tect.counts,
-    plateMap: plateMap.plateId,
+    plateMap: plateId,
     nextUpliftStrength: (() => {
       const got = land ? mtn / land : 0;
       const err = opts.mountainTarget - got;

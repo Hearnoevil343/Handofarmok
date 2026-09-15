@@ -46,6 +46,8 @@ export function RunAge() {
     }
     const r = runAge(w0, size, {
       plateSet: session.plates ?? undefined,
+      // boundaries persist: the plate map is carried state, not redrawn each age
+      plateMap: session.plateGridSize === size ? session.plateMap ?? undefined : undefined,
       spots: session.spots,
       provinces: session.provinces ?? undefined,
       upliftStrength: session.upliftStrength,
