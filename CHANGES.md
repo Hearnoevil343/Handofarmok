@@ -2945,8 +2945,6 @@ stroke's path anyway, as the airbrush already did.
 
 ## 56. Dwarf Fortress's original world_gen.txt, in the Export Vault
 
-- Added **Download Original DF World Gen File** to the Export Vault: DF's own
-  default `world_gen.txt` (ten standard regions), bundled in the app, for
-  replacing a broken `prefs/world_gen.txt`.
-- Checked the bundled copy against the settings DF itself uses when no
-  world_gen.txt exists.
+- Added an **Original DF World Gen File** card to the Export Vault that links to
+  the DF Wiki's default `world_gen.txt`, for replacing a broken
+  `prefs/world_gen.txt`.
