@@ -2588,3 +2588,71 @@ it says — subtropical deserts now sit on west coasts instead of in bands.
 DF crashes in `SDL2.dll` after about half of command-line generations, before
 saving — with or without DFHack scripts. Worth knowing before building the
 "import a DF world" feature on `-gen`.
+
+---
+
+## 52. Plate boundaries that last, and real units for the map
+
+Step 2 of `docs/simulation-plan.md`, and the first part of step 3.
+
+### Boundaries were redrawn every age
+
+Only each plate's seed point and heading carried from one age to the next.
+Which tile belonged to which plate was grown again from the seeds every age,
+with noise rolled fresh from the age number, and then grown a second time after
+welding. So the boundaries re-routed every ten million years even when the
+plates had barely moved, and a collision belt was lifted along a different line
+each age. `session.plateMap` was saved, but only to draw the overlay.
+
+Now the plate map is carried state, in the session and in simlab:
+
+- it moves with the crust; new sea floor opening behind a plate takes a
+  neighbour's plate;
+- a weld renumbers it, a plume rift cuts the host plate in two along the rift
+  line (tiles beyond the line become the new plate), and a plate with no tiles
+  left is dropped;
+- each seed sits at the centre of its plate's tiles.
+
+Two problems showed up only once the map persisted. Welds only ever reduced the
+plate count, and a rift now adds one real plate instead of two phantom seeds,
+so a 6-plate world wound down to 2 in twenty ages — and with two plates any
+event redraws every boundary at once. When the count is below the Plates
+setting, the largest plate now rifts across a random point on it. And every
+touching pair welded in the same age; welds are now one per age, strongest
+contact first, with the contact needed scaled to the map.
+
+A new simlab metric, `boundaryPersist`, is the share of last age's boundary
+tiles still within two tiles of a boundary: **49% → 89%**.
+
+### Less blur from moving plates
+
+Plates have moved by fractions of a tile since the overnight simulation work
+(that replaced whole-tile jumps and brought the coastline dimension into
+target), sampled bilinearly, which averages the relief a little every age. Inside a plate the sample is now
+clamped Catmull-Rom over the 4×4 neighbourhood, never above or below the four
+nearest tiles; bilinear stays only where the neighbourhood reaches another
+plate.
+
+Measured on the 96-world sets and the 200-age set against `develop`:
+
+| | set A | set B | 200 ages |
+|---|---|---|---|
+| score (mean) | 1.83 → 1.73 | 1.66 → 1.63 | 0.99 → 0.94 |
+| worst world | 3.86 → 3.61 | 4.16 → 3.54 | 2.86 → 2.21 |
+| flat 2×2 patches % | 0.15 → 0.08 | 0.16 → 0.08 | 0.11 → 0.09 |
+| boundary persistence % | 49 → 89 | 50 → 88 | 49 → 89 |
+
+Within noise on the score, clearly better on boundaries and blockiness. Not
+fixed: over 200 ages the largest landmass holds 70% of land against 63% before.
+
+### Real units
+
+`src/engine/scale.ts` defines the planet (radius 6,371 km), km per tile and a
+provisional metres-per-unit scale. Constants that were a number of tiles at 129
+— rebound radius, denudation window, collapse spread, shelf smoothing,
+boundary-current reach, hotspot radii, orogen and speck areas, the talus step —
+now scale with map size, so a 257 map is the same planet in more detail instead
+of a planet where everything reaches half as far. The conversion is exactly 1 at
+129: three worlds over twenty ages came out identical, 0 of 6,989,220 values.
+Not yet checked: whether a 257 and a 129 history now agree, and 257 runs at 371
+ms an age, over the 300 ms budget.

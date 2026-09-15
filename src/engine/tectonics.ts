@@ -116,6 +116,76 @@ export function advancePlateSet(ps: PlateSet, size: number, distance: number): P
   };
 }
 
+/**
+ * Seeds follow the plates they belong to: each moves to the centre of its
+ * plate's tiles (x as a circular mean, so a plate on the seam stays on the
+ * seam). A plate wrapped most of the way round the world has no meaningful
+ * centre, so it keeps the seed advanced along its heading instead.
+ */
+function followPlates(ps: PlateSet, plateId: Int16Array, size: number, distance: number): PlateSet {
+  const next = advancePlateSet(ps, size, distance);
+  const count = ps.sx.length;
+  const sinX = new Float64Array(count), cosX = new Float64Array(count);
+  const sumY = new Float64Array(count), area = new Float64Array(count);
+  for (let i = 0; i < plateId.length; i++) {
+    const p = plateId[i];
+    if (p < 0 || p >= count) continue;
+    const a = ((i % size) / size) * Math.PI * 2;
+    sinX[p] += Math.sin(a); cosX[p] += Math.cos(a); sumY[p] += (i / size) | 0; area[p]++;
+  }
+  for (let p = 0; p < count; p++) {
+    if (!area[p]) continue;
+    next.sy[p] = sumY[p] / area[p];
+    if (Math.hypot(sinX[p], cosX[p]) / area[p] > 0.2) {
+      next.sx[p] = ((Math.atan2(sinX[p], cosX[p]) / (Math.PI * 2)) * size + size) % size;
+    }
+  }
+  return next;
+}
+
+/**
+ * Drop plates that own no tiles any more — consumed by subduction, or emptied
+ * by a weld — and renumber the map to match. Mutates both.
+ */
+export function compactPlates(ps: PlateSet, plateId: Int16Array): void {
+  const count = ps.sx.length;
+  const area = new Array(count).fill(0);
+  for (let i = 0; i < plateId.length; i++) if (plateId[i] >= 0 && plateId[i] < count) area[plateId[i]]++;
+  if (area.every((a) => a > 0)) return;
+  const remap = new Array(count).fill(-1);
+  let k = 0;
+  for (let p = 0; p < count; p++) if (area[p] > 0) remap[p] = k++;
+  for (let i = 0; i < plateId.length; i++) plateId[i] = Math.max(0, remap[plateId[i]] ?? 0);
+  const keep = (_: number, p: number) => area[p] > 0;
+  ps.sx = ps.sx.filter(keep); ps.sy = ps.sy.filter(keep);
+  ps.vx = ps.vx.filter(keep); ps.vy = ps.vy.filter(keep);
+}
+
+/**
+ * A tile whose neighbours mostly belong to one other plate joins it. Advection
+ * picks an owner per tile, so without this, single stray tiles of one plate
+ * are left inside another and, now that the map is carried, never go away.
+ */
+function tidyPlateIds(plateId: Int16Array, size: number): Int16Array {
+  const out = Int16Array.from(plateId);
+  for (let y = 0; y < size; y++) {
+    for (let x = 0; x < size; x++) {
+      const i = y * size + x, own = plateId[i];
+      const nb = [
+        plateId[y * size + ((x + size - 1) % size)], plateId[y * size + ((x + 1) % size)],
+        y > 0 ? plateId[i - size] : own, y < size - 1 ? plateId[i + size] : own,
+      ];
+      for (const c of nb) {
+        if (c === own) continue;
+        let same = 0;
+        for (const d of nb) if (d === c) same++;
+        if (same >= 3) { out[i] = c; break; }
+      }
+    }
+  }
+  return out;
+}
+
 export type Plates = {
   plateId: Int16Array;
   vx: number[];
@@ -373,6 +443,17 @@ export function applyBoundaries(
   return { elevation, volcanism, plateId, counts, uplifting };
 }
 
+/** Catmull-Rom weight of tap k (-1..2) at fraction t between taps 0 and 1. */
+function catmullRom(t: number, k: number): number {
+  const t2 = t * t, t3 = t2 * t;
+  switch (k) {
+    case -1: return (-t3 + 2 * t2 - t) / 2;
+    case 0: return (3 * t3 - 5 * t2 + 2) / 2;
+    case 1: return (-3 * t3 + 4 * t2 + t) / 2;
+    default: return (t3 - t2) / 2;
+  }
+}
+
 /** Move plate material along its velocity, carrying the plate map with it. */
 function advect(
   el: Int16Array, size: number, plates: Plates, distance: number, rng: () => number,
@@ -418,7 +499,23 @@ function advect(
         }
         // the plate must own most of the source point, as rounding required
         if (wsum < 0.5) continue;
-        const value = vsum / wsum;
+        let value = vsum / wsum;
+        // Inside the plate, sample with Catmull-Rom over the 4x4 neighbourhood
+        // instead: bilinear averages every age, so relief blurred a little more
+        // each step and landmasses slowly merged. Clamped to the four inner tiles
+        // so it never overshoots into new peaks or pits. At plate edges, where
+        // the neighbourhood reaches another plate, bilinear stays.
+        let cub = 0, lo = Infinity, hi = -Infinity, full = true;
+        for (let b = -1; b <= 2 && full; b++) {
+          const sy = Math.min(size - 1, Math.max(0, y0 + b)), wy = catmullRom(ty, b);
+          for (let a = -1; a <= 2; a++) {
+            const j = sy * size + ((((x0 + a) % size) + size) % size);
+            if (plateId[j] !== p) { full = false; break; }
+            cub += catmullRom(tx, a) * wy * el[j];
+            if (a >= 0 && a <= 1 && b >= 0 && b <= 1) { lo = Math.min(lo, el[j]); hi = Math.max(hi, el[j]); }
+          }
+        }
+        if (full) value = Math.min(hi, Math.max(lo, cub));
         claims++; sum += value;
         if (value > highest) { highest = value; owner = p; srcIdx = si; }
       }
@@ -487,6 +584,11 @@ function advect(
 export type TectonicAgeOptions = {
   /** existing plates to advance; a new set is rolled when absent */
   plateSet?: PlateSet;
+  /**
+   * which plate owns each tile, carried from the previous age; grown from the
+   * seeds only when absent (the first age, or a new plate set)
+   */
+  plateMap?: Int16Array;
   plates: number;
   /** how far the plates travel, in tiles */
   distance: number;
@@ -504,11 +606,21 @@ export function tectonicAge(
   const rng = makeRng(opts.seed);
   const ps = opts.plateSet
     ?? newPlateSet(size, Math.max(2, Math.min(24, opts.plates)), rng);
-  const plates = assignPlates(el, size, ps, rng);
+
+  // Plate ownership is carried state. It used to be regrown from the seeds
+  // every age with freshly rolled noise, so boundaries re-routed each age and a
+  // collision belt was lifted along a different line every time. Now the map
+  // moves with the crust, gaps take a neighbour's plate, and boundaries change
+  // only through events: welding, rifting, one plate overriding another.
+  const carried = opts.plateMap && opts.plateMap.length === el.length && opts.plateSet
+    && opts.plateMap.every((p) => p >= 0 && p < ps.sx.length)
+    ? opts.plateMap : undefined;
+  const plates = carried ? platesFromMap(el, carried, ps) : assignPlates(el, size, ps, rng);
 
   const moved = opts.distance > 0
     ? advect(el, size, plates, opts.distance, rng, opts.province)
-    : { elevation: Int16Array.from(el), plateId: plates.plateId, province: opts.province };
+    : { elevation: Int16Array.from(el), plateId: Int16Array.from(plates.plateId), province: opts.province };
+  moved.plateId = tidyPlateIds(moved.plateId, size);
 
   // re-derive which plates are oceanic after the move
   const sea = new Array(plates.count).fill(0), total = new Array(plates.count).fill(0);
@@ -525,7 +637,16 @@ export function tectonicAge(
     opts.strength, rng,
   );
   // the seeds travel with their plates so the next age continues this one
-  return { ...result, plateSet: advancePlateSet(ps, size, opts.distance), province: moved.province };
+  return { ...result, plateSet: followPlates(ps, moved.plateId, size, opts.distance), province: moved.province };
+}
+
+/** A carried plate map, with which plates are mostly sea floor. */
+function platesFromMap(el: Int16Array, plateId: Int16Array, ps: PlateSet): Plates {
+  const count = ps.sx.length;
+  const sea = new Array(count).fill(0), total = new Array(count).fill(0);
+  for (let i = 0; i < el.length; i++) { total[plateId[i]]++; if (el[i] < SEA) sea[plateId[i]]++; }
+  const oceanic = total.map((t, p) => (t ? sea[p] / t > 0.6 : true));
+  return { plateId, vx: ps.vx, vy: ps.vy, oceanic, count };
 }
 
 /**

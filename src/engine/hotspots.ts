@@ -1,5 +1,6 @@
 import type { PlateSet } from "./tectonics";
 import { makeRng } from "./noise";
+import { scaleLength } from "./scale";
 
 /**
  * Mantle plumes: the constructive half of volcanism.
@@ -116,7 +117,8 @@ export function applyHotspots(
     const i = y * size + x;
 
     // a plume under a continent lifts and cracks it; over ocean it builds islands
-    const radius = spot.plume ? 6 : 2.6;
+    // a superplume head ~1,900 km across, an ocean hotspot swell ~800 km
+    const radius = scaleLength(spot.plume ? 6 : 2.6, size);
     const lift = spot.plume ? 55 * k : 190 * k;
 
     for (let dy = -Math.ceil(radius); dy <= Math.ceil(radius); dy++) {
@@ -161,7 +163,8 @@ export function riftAtPlumes(
   spots: Hotspot[],
   plateId: Int16Array,
   size: number,
-  offset = 9,
+  /** smallest share of the map a plate must cover to be split */
+  minShare = 0.08,
 ): number {
   let made = 0;
   for (const spot of spots) {
@@ -177,14 +180,42 @@ export function riftAtPlumes(
     const ay = plates.vx[host] ?? 1;
     const m = Math.hypot(ax, ay) || 1;
 
-    for (const sign of [1, -1]) {
-      plates.sx.push(((x + (ax / m) * offset * sign) % size + size) % size);
-      plates.sy.push(Math.min(size - 1, Math.max(0, y + (ay / m) * offset * sign)));
-      // the two halves pull apart along the axis
-      plates.vx.push((ax / m) * sign);
-      plates.vy.push((ay / m) * sign);
-      made++;
+    // The plate map is carried between ages, so a rift has to actually cut the
+    // host in two: tiles on the far side of the line through the plume become a
+    // new plate. (Pushing two seeds was enough when the map was regrown from
+    // seeds every age.) A plate already too small is left alone, or a plume
+    // living several ages slices its host into slivers.
+    let area = 0;
+    for (let i = 0; i < plateId.length; i++) if (plateId[i] === host) area++;
+    if (area < plateId.length * minShare) continue;
+
+    const child = plates.sx.length;
+    let sinA = 0, cosA = 0, yA = 0, nA = 0, sinB = 0, cosB = 0, yB = 0, nB = 0;
+    for (let i = 0; i < plateId.length; i++) {
+      if (plateId[i] !== host) continue;
+      const tx = i % size, ty = (i / size) | 0;
+      let dx = tx - x;
+      if (dx > size / 2) dx -= size;
+      if (dx < -size / 2) dx += size;
+      const ang = (tx / size) * Math.PI * 2;
+      if (dx * ax + (ty - y) * ay > 0) {
+        plateId[i] = child;
+        sinA += Math.sin(ang); cosA += Math.cos(ang); yA += ty; nA++;
+      } else {
+        sinB += Math.sin(ang); cosB += Math.cos(ang); yB += ty; nB++;
+      }
     }
+    if (!nA || !nB) {
+      for (let i = 0; i < plateId.length; i++) if (plateId[i] === child) plateId[i] = host;
+      continue;
+    }
+    const cx = (s: number, c: number) => ((Math.atan2(s, c) / (Math.PI * 2)) * size + size) % size;
+    // the two halves pull apart along the axis
+    plates.sx.push(cx(sinA, cosA)); plates.sy.push(yA / nA);
+    plates.vx.push(ax / m); plates.vy.push(ay / m);
+    plates.sx[host] = cx(sinB, cosB); plates.sy[host] = yB / nB;
+    plates.vx[host] = -ax / m; plates.vy[host] = -ay / m;
+    made++;
   }
   return made;
 }

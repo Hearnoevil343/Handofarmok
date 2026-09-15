@@ -6,7 +6,7 @@ const ENGINE = workerData.engineDir;
 const { generateWorld } = require(path.join(ENGINE, "pipeline"));
 const { runAge } = require(path.join(ENGINE, "age"));
 const engineMetrics = require(path.join(ENGINE, "metrics"));
-const { measureAge } = require("./metrics.extra.cjs");
+const { measureAge, boundaryPersistence } = require("./metrics.extra.cjs");
 
 /**
  * One world, run forward for N ages, measured every age.
@@ -19,7 +19,7 @@ const { measureAge } = require("./metrics.extra.cjs");
 function runHistory(cfg) {
   const N = cfg.size;
   let w = generateWorld(N, cfg.archetype, cfg.climate, cfg.seed);
-  let plateSet, spots, provinces, sea = 0;
+  let plateSet, plateMap, spots, provinces, sea = 0;
   let uplift = cfg.upliftStart;
 
   // the world keeps its own land share rather than drifting to a global default
@@ -30,7 +30,7 @@ function runHistory(cfg) {
   const rows = [];
   for (let age = 1; age <= cfg.ages; age++) {
     const r = runAge(w, N, {
-      plateSet, spots, provinces,
+      plateSet, plateMap, spots, provinces,
       upliftStrength: uplift,
       seaLevelOffset: sea,
       baselineLand,
@@ -53,6 +53,8 @@ function runHistory(cfg) {
     });
     w = r.world;
     plateSet = r.plateSet;
+    const persist = boundaryPersistence(plateMap, r.plateMap, N);
+    plateMap = r.plateMap;
     spots = r.spots;
     provinces = r.provinces;
     uplift = r.nextUpliftStrength;
@@ -62,6 +64,7 @@ function runHistory(cfg) {
     rows.push({
       age,
       ...m,
+      boundaryPersist: persist,
       plates: plateSet.sx.length,
       volcanoes: r.volcanoes,
       rivers: r.riverTiles,
