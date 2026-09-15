@@ -19,7 +19,8 @@ const { measureAge, boundaryPersistence } = require("./metrics.extra.cjs");
 function runHistory(cfg) {
   const N = cfg.size;
   let w = generateWorld(N, cfg.archetype, cfg.climate, cfg.seed);
-  let plateSet, plateMap, crust, oceanAge, waterVolume, spots, provinces, sea = 0;
+  let plateSet, plateMap, crust, oceanAge, basinDepthRef, freeboardRef, continentalAreaRef, seaLevelDatum;
+  let spots, provinces, sea = 0;
   let uplift = cfg.upliftStart;
 
   // the world keeps its own land share rather than drifting to a global default
@@ -30,7 +31,8 @@ function runHistory(cfg) {
   const rows = [];
   for (let age = 1; age <= cfg.ages; age++) {
     const r = runAge(w, N, {
-      plateSet, plateMap, crust, oceanAge, waterVolume, spots, provinces,
+      plateSet, plateMap, crust, oceanAge, basinDepthRef, freeboardRef, continentalAreaRef, seaLevelDatum,
+      spots, provinces,
       upliftStrength: uplift,
       seaLevelOffset: sea,
       baselineLand,
@@ -52,6 +54,7 @@ function runHistory(cfg) {
       ...(cfg.subSteps !== undefined ? { subSteps: cfg.subSteps } : {}),
       ...(cfg.conserveLand !== undefined ? { conserveLand: cfg.conserveLand } : {}),
       ...(cfg.oceanModel !== undefined ? { oceanModel: cfg.oceanModel } : {}),
+      ...(cfg.plateSpeeds !== undefined ? { plateSpeeds: cfg.plateSpeeds } : {}),
       age,
     });
     w = r.world;
@@ -60,7 +63,10 @@ function runHistory(cfg) {
     plateMap = r.plateMap;
     crust = r.crust;
     oceanAge = r.oceanAge;
-    waterVolume = r.waterVolume;
+    basinDepthRef = r.basinDepthRef;
+    freeboardRef = r.freeboardRef;
+    continentalAreaRef = r.continentalAreaRef;
+    seaLevelDatum = r.seaLevelDatum;
     spots = r.spots;
     provinces = r.provinces;
     uplift = r.nextUpliftStrength;
@@ -72,6 +78,7 @@ function runHistory(cfg) {
       ...m,
       boundaryPersist: persist,
       seaRiseM: r.seaLevelMetres ?? 0,
+      seaDatumM: r.seaLevelDatum ?? 0,
       plates: plateSet.sx.length,
       volcanoes: r.volcanoes,
       rivers: r.riverTiles,

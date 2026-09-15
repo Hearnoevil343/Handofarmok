@@ -168,10 +168,25 @@ young sea floor; glacial lowstand ~125 m; hydro-isostatic factor ~0.7.
       1.76 -> 5.28, B 1.71 -> 5.12, 200 ages 0.84 -> 2.70): the buggy mapping
       is what currently holds the shelf and slope shape up, so it has to go
       out in the same change that gives bathymetry a real source.
-- [ ] `oceanAge` field advected with plates, 0 at ridges; bathymetry from
-      depth-vs-age.
-- [ ] Sea level from constant water volume (bisection) minus ice volume, x0.7;
-      remove the forced land share.
+- [x] `oceanAge` and crust type advected with plates, 0 at ridges;
+      bathymetry from depth-vs-age (Parsons & Sclater), measured from the
+      starting sea level. Behind the `oceanModel` option while it is tuned.
+- [~] Sea level. Constant water volume was tried first and failed: painted
+      oceans start far shallower than their ages imply and rigid plates never
+      consume their interiors, so the basins deepened for tens of ages and the
+      sea fell 600-4,000 m. Now: 0.7 x (reference - mean basin depth) minus
+      the ice anomaly, the reference settling early (paleo sea-level method).
+      Sea stays within ~-330..+90 m of start.
+- [~] Forced land share replaced by slow (~100 Myr) continental freeboard and
+      continental-area conservation on crust type (crust budget: rifts open
+      ~150 tiles of sea floor inside continents an age; accretion, collision
+      and foundering roughly cancel), plus shelf depth for submerged continent.
+- [x] `hypsometricBimodality` rebuilt in metres (deep mode below -2.5 km,
+      continental mode -1..+2 km); the old one looked for the upper mode among
+      the mountains and only rewarded separateCrust's narrow sea-floor band.
+- [ ] A/B the ocean model against the default on the fixed metric; tune the
+      mountain controller (it hunts 0-100 on the ocean model); sediment into
+      the oceans (step 5) is the physical replacement for area conservation.
 
 ## 5. Climate: temperature
 
