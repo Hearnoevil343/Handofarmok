@@ -218,8 +218,29 @@ identical, mountains 89–100% overlap. The problems are in the painted data.
         0.84-0.97 throughout, controller pinned 16% of ages (was 34%).
         Supercontinent cycle still faster than Earth: 6.6 full cycles in 200
         ages (clock implies 5), assembly gap median 19 ages, autocorrelation
-        period 35 (target 40, Earth 40-60). Next target; drift is the obvious
-        lever and the running parameter search already varies it.
+        period 35 (target 40, Earth 40-60).
+      - Drift on good-5, 200 ages, 12 worlds (drift 4 = score 1.02/3.27,
+        bimodality 0.72, elongation 2.11, assembly gap 19, period 35):
+        drift 3 -> 1.13/4.38, bimodality 0.80, elongation 2.30, gap 30, period
+        37; drift 2 -> 0.96/3.60, bimodality 0.77, elongation 2.39, gap 28,
+        period 46. Both put bimodality and elongation inside target and slow
+        the cycle toward Earth; mountains, edgeBias and degenerate ages
+        unchanged. Stopped the good-4 parameter search.
+      - **Drift validated on the 96-world set** (100 ages, vs good-5 at drift 4):
+        drift 3 — set A 2.19/6.15 -> 1.85/5.20, set B 2.32/6.07 -> 2.16/5.58,
+        bimodality 0.79-0.82 -> 0.89, elongation 2.12-2.17 -> 2.22 (now in
+        target), mountains 11.0% -> 11.8-12.2%, degenerate runs 20/22 -> 12/17.
+        drift 2 — means 1.89 / 1.97 but worst worlds slightly worse (6.40,
+        6.71), bimodality 0.90, elongation 2.33, degenerate 9/16.
+      - **Decision for the dev: change the default drift from 4 to 3?** It is
+        the Run Age slider default (`RunAge.tsx` useState(4)), and
+        `timescale.ts` calibrates it: drift 4 = Earth's plates covering ~1.5
+        tiles per 10 Myr, which is what makes an age 10 Myr. At drift 3 plates
+        cover ~1.1 tiles per age — about 75% of Earth's average speed, still
+        inside Earth's range — so an age can stay 10 Myr, but the comment and
+        `helpers/scale.ts` ageDuration wording would need updating. Recommended:
+        drift 3 (improves every failing metric on both seed sets, best worst
+        case). Not changed overnight because it is a user-facing default.
       - Parameter search restarted on good-3 (`%TEMP%\hoa-night\search3`).
         After 3 rounds its best was plates 8 + mountainTarget 0.10. Checked on
         both 48-world seed sets over 100 ages: score 3.28/7.99 -> 3.15/5.95
