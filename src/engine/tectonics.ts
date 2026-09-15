@@ -295,7 +295,9 @@ export function applyBoundaries(
   // cover. At 170 it pinned at 100 and still could not reach 12%, because
   // merged plates present fewer boundaries and denudation removes belts faster
   // than a single boundary can raise them.
-  const k = (strength / 100) * 340;
+  // 420 with denudeInactive at 0.2: at 340 / 0.3 the controller pinned near
+  // its ceiling over long histories and mountain cover still decayed.
+  const k = (strength / 100) * 420;
   const elevation = Int16Array.from(el);
   const volcanism = new Int16Array(n);
   const uplifting = new Uint8Array(n);
