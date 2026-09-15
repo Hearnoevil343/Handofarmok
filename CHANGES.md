@@ -2438,16 +2438,51 @@ now appears on rows 29–91 in patches on the west coasts instead of on rows
 42–45 and 82–86 only. There is somewhat more desert overall (221 tiles against
 173).
 
-### Found, not yet fixed
+### The Earth presets: wrong deserts, fixed by rainfall alone
 
-- **Dry coastlines on the Earth presets.** Land touching the sea is painted
-  under rainfall 10 far more often than inland (North America 45% vs 2%,
-  Caribbean 15% vs 0%, Europe 12% vs 2%), so DF puts desert specks on coasts
-  that should be wet.
-- **Middle East:** central Arabia painted rainfall 29–47, so DF grows grassland
-  and a swamp where the desert should be.
-- **World and North America:** most freezing land is painted under rainfall 10,
-  and DF types part of it as sand desert.
-- DF crashes in `SDL2.dll` after about half of command-line generations, before
-  saving — with or without DFHack scripts. Worth knowing before building the
-  "import a DF world" feature on `-gen`.
+DF has no token for a tile's biome, so there is no way to tell it "this is
+desert". It derives the biome from the painted layers, and across 120,000
+generated land tiles the rule is exact: rainfall under 10 with DF temperature
+above -5 is Desert every time; at -5 or colder it is Tundra or Glacier. So each
+fix sets rainfall to the value that gives the biome the real place has.
+`tools/presets/fix-earth-rainfall.cjs` records how; only `PS_RF` rows change.
+
+- **Sand desert at the poles.** Freezing land painted under rainfall 10, and
+  polar coasts painted just above freezing, came out as desert on Antarctica
+  and the Arctic islands. Floored at 10. Cold inland deserts (Gobi,
+  Taklamakan) are left dry.
+- **Desert specks on wet coasts.** Coastal tiles painted far drier than the land
+  just inland at the same height — most likely sea pixels read as zero rain in
+  the source data — are lifted to the inland level. Only isolated specks: a tile
+  is left alone when most of the coast around it is dry too, which keeps the
+  real coastal deserts. Checked tile by tile: the Peru/Atacama, Namib and
+  Western Sahara coasts are unchanged.
+- **Central Arabia painted wet.** MIDDLE_EAST had a ring of rainfall 29–51 on the
+  plateau, wetter than its own coasts, and DF grew grassland and swamp there;
+  AFRICA's corner of Arabia had 16–28. Scaled down to desert, keeping the
+  variation. Every edge of the area fades over several tiles so no new straight
+  line appears, and Yemen, Asir (above elevation 220–280), Oman, Mesopotamia and
+  the Zagros keep their rain.
+
+Predicted DF desert tiles, using DF's own temperatures from the generated
+worlds:
+
+| preset | desert | on freezing land | on coasts |
+|---|---|---|---|
+| WORLD | 2003 → 1226 | 313 → 0 | 984 → 316 |
+| NORTH_AMERICA | 591 → 397 | 41 → 0 | 426 → 274 |
+| EUROPE | 360 → 324 | 0 | 180 → 144 |
+| CARIBBEAN | 114 → 77 | 0 | 106 → 69 |
+| HIMALAYAS | 2247 → 2201 | 30 → 0 | 45 → 29 |
+| SOUTH_AMERICA | 108 → 102 | 3 → 0 | 83 → 78 |
+| MIDDLE_EAST | 3460 → 4170 (Arabia) | 0 | 469 → 508 |
+| AFRICA | 2164 → 2256 (Arabia) | 0 | 261 → 267 |
+
+No map gained a straight rainfall edge; the longest seam the fixes leave is six
+tiles, where the Iran exclusion meets the Gulf coast.
+
+### Worth knowing
+
+DF crashes in `SDL2.dll` after about half of command-line generations, before
+saving — with or without DFHack scripts. Worth knowing before building the
+"import a DF world" feature on `-gen`.
