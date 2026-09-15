@@ -2466,3 +2466,125 @@ preset files exactly, cell for cell; temperatures run -30 to 95 as painted.
 The exporter wrote every layer `worldManager` holds, including alignment. DF has
 no painting token for alignment and logged `Unrecognized World Gen Token: PS_AL`
 once per row. It is skipped now; the checked export has no `PS_AL` rows.
+
+---
+
+## 50. Desert stripes: found by generating every preset in Dwarf Fortress
+
+All sixteen presets were exported, generated from the command line in DF 53.16
+and read back tile by tile with DFHack. The export held up: rainfall and
+drainage came back identical, land and sea matched on 97.8–100% of tiles. What
+DF showed instead was the painted climate.
+
+### Every procedural preset had ruler-straight desert bars
+
+On all eight procedural presets the driest land sat on exactly rows 43 and 85,
+and DF put its deserts on those rows and nowhere else — flat east-west brown
+bars across every continent. The subtropical desert term in `rainfall()`
+depended on latitude alone, and rainfall is then ranked into bands, so the
+lowest-ranked tiles on the whole map were always the same two rows.
+
+Real subtropical deserts sit on the west side of continents (Namib, Atacama,
+Western Sahara) while east coasts at the same latitude are wet (Florida, eastern
+Brazil). The old formula had it backwards: subtropical west coasts averaged
+rainfall 52, east coasts 27.
+
+`rainfall()` now bends the belt's latitude with the noise field it already drew
+(moved to the top of the function, so the random sequence and every later layer
+are unchanged) and weights it by coast: drier near a west coast, wetter near an
+east coast. The wander (0.8) and width (0.18) were chosen by sweep, measuring the
+share of the driest 10% of land packed into one five-row window across the
+eight archetypes and three seeds:
+
+| | stripe | subtropic west coast | east coast |
+|---|---|---|---|
+| no desert term at all (floor) | 27% | 85 | 70 |
+| before | 44% | 52 | 27 |
+| after | 28% | 38 | 79 |
+
+The eight procedural preset files had their `PS_RF` rows rebuilt with the new
+function and the TEMPERATE profile they all use; band shares are unchanged
+(4/16/35/45) and every other layer is byte-identical.
+
+**Checked in Dwarf Fortress.** CONTINENTS regenerated from the fixed rainfall:
+the busiest five rows held 57% of DF's desert before and 25% after, and desert
+now appears on rows 29–91 in patches on the west coasts instead of on rows
+42–45 and 82–86 only. There is somewhat more desert overall (221 tiles against
+173).
+
+### The Earth presets: wrong deserts, fixed by rainfall alone
+
+DF has no token for a tile's biome, so there is no way to tell it "this is
+desert". It derives the biome from the painted layers, and across 120,000
+generated land tiles the rule is exact: rainfall under 10 with DF temperature
+above -5 is Desert every time; at -5 or colder it is Tundra or Glacier. So each
+fix sets rainfall to the value that gives the biome the real place has.
+`tools/presets/fix-earth-rainfall.cjs` records how; only `PS_RF` rows change.
+
+- **Sand desert at the poles.** Freezing land painted under rainfall 10, and
+  polar coasts painted just above freezing, came out as desert on Antarctica
+  and the Arctic islands. Floored at 10. Cold inland deserts (Gobi,
+  Taklamakan) are left dry.
+- **Desert specks on wet coasts.** Coastal tiles painted far drier than the land
+  just inland at the same height — most likely sea pixels read as zero rain in
+  the source data — are lifted to the inland level. Only isolated specks: a tile
+  is left alone when most of the coast around it is dry too, which keeps the
+  real coastal deserts. Checked tile by tile: the Peru/Atacama, Namib and
+  Western Sahara coasts are unchanged.
+- **Central Arabia painted wet.** MIDDLE_EAST had a ring of rainfall 29–51 on the
+  plateau, wetter than its own coasts, and DF grew grassland and swamp there;
+  AFRICA's corner of Arabia had 16–28. Scaled down to desert, keeping the
+  variation. Every edge of the area fades over several tiles so no new straight
+  line appears, and Yemen, Asir (above elevation 220–280), Oman, Mesopotamia and
+  the Zagros keep their rain.
+
+Predicted DF desert tiles, using DF's own temperatures from the generated
+worlds:
+
+| preset | desert | on freezing land | on coasts |
+|---|---|---|---|
+| WORLD | 2003 → 1226 | 313 → 0 | 984 → 316 |
+| NORTH_AMERICA | 591 → 397 | 41 → 0 | 426 → 274 |
+| EUROPE | 360 → 324 | 0 | 180 → 144 |
+| CARIBBEAN | 114 → 77 | 0 | 106 → 69 |
+| HIMALAYAS | 2247 → 2201 | 30 → 0 | 45 → 29 |
+| SOUTH_AMERICA | 108 → 102 | 3 → 0 | 83 → 78 |
+| MIDDLE_EAST | 3460 → 4170 (Arabia) | 0 | 469 → 508 |
+| AFRICA | 2164 → 2256 (Arabia) | 0 | 261 → 267 |
+
+No map gained a straight rainfall edge; the longest seam the fixes leave is six
+tiles, where the Iran exclusion meets the Gulf coast.
+
+### Checked in Dwarf Fortress: all sixteen presets regenerated
+
+Every fixed preset was generated again in DF (same settings, seed 1000) and read
+back. Desert tiles as DF actually typed them, before → after:
+
+| preset | desert | desert in busiest 5 rows | on coasts | on freezing land |
+|---|---|---|---|---|
+| CONTINENTS | 173 → 221 | 57% → 25% | 1 → 35 | 0 → 0 |
+| PANGAEA | 191 → 210 | 58% → 25% | 12 → 68 | 0 → 0 |
+| ARCHIPELAGO | 119 → 119 | 68% → 34% | 19 → 42 | 0 → 1 |
+| INLAND_SEA | 356 → 372 | 65% → 19% | 69 → 81 | 0 → 0 |
+| HIGHLANDS | 215 → 318 | 59% → 33% | 27 → 41 | 0 → 0 |
+| FJORDLAND | 241 → 252 | 56% → 31% | 42 → 85 | 0 → 0 |
+| GREAT_PLAINS | 399 → 399 | 49% → 22% | 7 → 83 | 0 → 0 |
+| ISLAND_ARC | 109 → 146 | 54% → 37% | 28 → 38 | 0 → 0 |
+| EUROPE | 332 → 298 | — | 175 → 139 | 0 → 0 |
+| NORTH_AMERICA | 567 → 377 | — | 419 → 267 | 40 → 0 |
+| AFRICA | 2130 → 2203 | — | 258 → 265 | 0 → 0 |
+| MIDDLE_EAST | 3387 → 4087 | — | 465 → 503 | 0 → 0 |
+| CARIBBEAN | 114 → 77 | — | 106 → 69 | 0 → 0 |
+| SOUTH_AMERICA | 68 → 65 | — | 68 → 65 | 3 → 0 |
+| HIMALAYAS | 1956 → 1888 | — | 45 → 29 | 27 → 0 |
+| WORLD | 1896 → 1138 | — | 957 → 303 | 310 → 0 |
+
+The predictions held: WORLD was predicted at 1226 desert, 316 on coasts. On the
+procedural presets coastal desert went up, which is the rainfall fix doing what
+it says — subtropical deserts now sit on west coasts instead of in bands.
+
+### Worth knowing
+
+DF crashes in `SDL2.dll` after about half of command-line generations, before
+saving — with or without DFHack scripts. Worth knowing before building the
+"import a DF world" feature on `-gen`.
