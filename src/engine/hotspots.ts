@@ -62,9 +62,13 @@ export function seedHotspots(
     if (p < 0) continue;
     area[p]++;
     const ang = ((i % size) / size) * Math.PI * 2;
-    sinX[p] += Math.sin(ang); cosX[p] += Math.cos(ang);
-    cy[p] += (i / size) | 0;
-    if (el[i] >= SEA) land[p]++;
+    // the plume sits under the plate's land, where the heat is trapped; a plate
+    // covering the whole map has no meaningful centroid of all its tiles
+    if (el[i] >= SEA) {
+      land[p]++;
+      sinX[p] += Math.sin(ang); cosX[p] += Math.cos(ang);
+      cy[p] += (i / size) | 0;
+    }
   }
   // A plate carrying a supercontinent is still mostly ocean — the African plate
   // is. The test that matters is what share of the WORLD's land this plate
@@ -83,7 +87,7 @@ export function seedHotspots(
     if (carriesMostLand && large && speed < 1.05) {
       spots.push({
         x: ((Math.atan2(sinX[p], cosX[p]) / (Math.PI * 2)) * size + size) % size,
-        y: cy[p] / area[p],
+        y: cy[p] / Math.max(1, land[p]),
         life: 6 + Math.floor(rng() * 6), plume: true,
       });
     }

@@ -511,6 +511,15 @@ export function weldCollidedPlates(
   for (const [key, n] of contact) {
     if (n < minContact) continue;
     const [a, b] = key.split("-").map(Number);
+    // A collision closes the gap; a rift opens it. Two halves of a fresh rift
+    // share a continent, so contact alone welded them straight back together
+    // and no rift ever survived.
+    let dx = plates.sx[b] - plates.sx[a];
+    if (dx > size / 2) dx -= size;
+    if (dx < -size / 2) dx += size;
+    const dy = plates.sy[b] - plates.sy[a];
+    const closing = (plates.vx[a] - plates.vx[b]) * dx + (plates.vy[a] - plates.vy[b]) * dy;
+    if (closing <= 0) continue;
     union(a, b);
   }
 
