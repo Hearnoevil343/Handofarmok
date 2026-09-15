@@ -2392,3 +2392,62 @@ elevation 196 after Fill on ocean.
   Destructive Parameters** sets `EROSION_CYCLE_COUNT` to 0.
 - Importing opens the Prepare for Painting dialog on purpose
   (`useWorldInitializer(true)`); loading from the gallery does not.
+
+---
+
+## 50. Desert stripes: found by generating every preset in Dwarf Fortress
+
+All sixteen presets were exported, generated from the command line in DF 53.16
+and read back tile by tile with DFHack. The export held up: rainfall and
+drainage came back identical, land and sea matched on 97.8–100% of tiles. What
+DF showed instead was the painted climate.
+
+### Every procedural preset had ruler-straight desert bars
+
+On all eight procedural presets the driest land sat on exactly rows 43 and 85,
+and DF put its deserts on those rows and nowhere else — flat east-west brown
+bars across every continent. The subtropical desert term in `rainfall()`
+depended on latitude alone, and rainfall is then ranked into bands, so the
+lowest-ranked tiles on the whole map were always the same two rows.
+
+Real subtropical deserts sit on the west side of continents (Namib, Atacama,
+Western Sahara) while east coasts at the same latitude are wet (Florida, eastern
+Brazil). The old formula had it backwards: subtropical west coasts averaged
+rainfall 52, east coasts 27.
+
+`rainfall()` now bends the belt's latitude with the noise field it already drew
+(moved to the top of the function, so the random sequence and every later layer
+are unchanged) and weights it by coast: drier near a west coast, wetter near an
+east coast. The wander (0.8) and width (0.18) were chosen by sweep, measuring the
+share of the driest 10% of land packed into one five-row window across the
+eight archetypes and three seeds:
+
+| | stripe | subtropic west coast | east coast |
+|---|---|---|---|
+| no desert term at all (floor) | 27% | 85 | 70 |
+| before | 44% | 52 | 27 |
+| after | 28% | 38 | 79 |
+
+The eight procedural preset files had their `PS_RF` rows rebuilt with the new
+function and the TEMPERATE profile they all use; band shares are unchanged
+(4/16/35/45) and every other layer is byte-identical.
+
+**Checked in Dwarf Fortress.** CONTINENTS regenerated from the fixed rainfall:
+the busiest five rows held 57% of DF's desert before and 25% after, and desert
+now appears on rows 29–91 in patches on the west coasts instead of on rows
+42–45 and 82–86 only. There is somewhat more desert overall (221 tiles against
+173).
+
+### Found, not yet fixed
+
+- **Dry coastlines on the Earth presets.** Land touching the sea is painted
+  under rainfall 10 far more often than inland (North America 45% vs 2%,
+  Caribbean 15% vs 0%, Europe 12% vs 2%), so DF puts desert specks on coasts
+  that should be wet.
+- **Middle East:** central Arabia painted rainfall 29–47, so DF grows grassland
+  and a swamp where the desert should be.
+- **World and North America:** most freezing land is painted under rainfall 10,
+  and DF types part of it as sand desert.
+- DF crashes in `SDL2.dll` after about half of command-line generations, before
+  saving — with or without DFHack scripts. Worth knowing before building the
+  "import a DF world" feature on `-gen`.
