@@ -241,13 +241,15 @@ and which way it spins, and the wind, rain, temperature and ice all follow.
       its own latitude cooling on top of painted temperature. Export
       accordingly so the world is not cooled twice.
 
-**Later — planet size (discussed, not scheduled):** the scale layer (section 1)
-takes planet radius, surface gravity and rotation period as parameters from the
-start, defaulting to Earth, so a planet-size setting is a UI addition rather
-than a rewrite. What size would change: km per tile, mountain heights (scale
-roughly with 1/gravity), plate count and speed, and — through rotation rate —
-how many wind bands there are (Hadley cell width scales with 1/rotation rate).
-Calibration data exists only for Earth, so Earth is tuned first.
+**Later — planet size as scale only (not scheduled):** a size choice such as
+"Mars-sized", "Earth-sized" or "twice Earth" changes only how big the planet
+is: its circumference, so km per tile and how many tiles a plate crosses per
+Myr. Everything else stays Earth-like — same sun distance, same day length and
+rotation, same water, same gravity-driven behaviour — so a small planet does not
+lose its oceans or atmosphere. The scale layer (section 1) takes the planet
+radius as a parameter from the start, defaulting to Earth, so this is a UI
+addition later rather than a rewrite. Earth is tuned first, because Earth is
+the only planet with calibration data.
 
 ## 10. Calibration data
 
