@@ -48,8 +48,13 @@ one at a time.
       POLE token (whole planet / north only / south only; random DF options
       rolled from the seed), spin direction (prograde/retrograde mirrors wind
       bands, rain shadows, currents), axial tilt; check in DF whether POLE adds
-      latitude cooling to painted temperature. Planet size noted for later:
-      radius, gravity and rotation period as parameters from the start.
+      latitude cooling to painted temperature.
+- [ ] **Later: planet size as scale only.** Presets like "Mars-sized",
+      "Earth-sized", "twice Earth" change only the planet's size (km per tile,
+      tiles a plate crosses per Myr). Same sun, day, rotation, water and
+      gravity behaviour as Earth — no "small planet loses its oceans". The
+      scale layer takes planet radius as a parameter from the start so this is
+      only a UI addition later. Not scheduled; Earth first.
 - [ ] **Shorter time steps** (dev prefers slower progression, more clicks).
       Research 2026-09-15 (both reports in the session): processes run once per
       10-Myr age at fixed strength, so drift, erosion and rare events tick
