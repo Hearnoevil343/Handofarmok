@@ -100,6 +100,8 @@ export type AgeOptions = {
   freeboardRef?: number;
   /** ocean model: how far the sea stands above where the history started, metres */
   seaLevelDatum?: number;
+  /** ocean model tuning knobs, per-age fractions (ocean.ts defaults when unset); for simlab sweeps */
+  oceanRates?: { area?: number; bathymetry?: number; shelf?: number; freeboard?: number };
   /** oceanic plates faster than continental ones (TectonicAgeOptions.plateSpeeds) */
   plateSpeeds?: boolean;
   /** pole layout, spin and axial tilt the climate follows (planet.ts); Earth by default */
@@ -366,9 +368,9 @@ export function runAge(w: World, size: number, opts: AgeOptions): AgeReport {
     motion.accreted = changed.accreted;
     motion.foundered = changed.foundered;
     if (continentalAreaRef !== undefined) {
-      motion.areaRestored = conserveContinentalArea(el, tect.crust, tect.oceanAge, size, continentalAreaRef);
+      motion.areaRestored = conserveContinentalArea(el, tect.crust, tect.oceanAge, size, continentalAreaRef, opts.oceanRates?.area);
     }
-    el = relaxBathymetry(el, tect.crust, tect.oceanAge, datum);
+    el = relaxBathymetry(el, tect.crust, tect.oceanAge, datum, opts.oceanRates?.bathymetry, opts.oceanRates?.shelf);
     opts.trace?.("bathymetry", el);
   } else {
     const sep = opts.crustSeparation ?? 0.8;
@@ -384,7 +386,7 @@ export function runAge(w: World, size: number, opts: AgeOptions): AgeReport {
   const climate = deriveClimate(el, size, opts.climate, opts.seed + 1, opts.planet);
   // crust is conserved; only how much of it is drowned may change
   if (oceanState && tect.crust && freeboardRef !== undefined) {
-    el = restoreFreeboard(el, tect.crust, freeboardRef, datum);
+    el = restoreFreeboard(el, tect.crust, freeboardRef, datum, opts.oceanRates?.freeboard);
     opts.trace?.("freeboard", el);
   } else {
     if (opts.conserveLand !== false) el = conserveCrust(el, opts.baselineLand ?? 0.3, opts.seaLevelOffset ?? 0);

@@ -1,0 +1,51 @@
+{
+  "_comment": "Overnight queue for night.cjs, in priority order: jobs near the end are the ones the time budget cuts. `from` starts a job from another job's best parameters. `seedRange` [a, b] expands to every seed between; archetypes \"ALL\" is all eight. Seed set A is 1-25, set B is 101-125; confirming a winner on B guards against tuning to one seed set.",
+  "defaults": {
+    "size": 129,
+    "ages": 100,
+    "archetypes": "ALL",
+    "climate": "TEMPERATE",
+    "plates": 6,
+    "drift": 4,
+    "mountainTarget": 0.12,
+    "upliftStart": 45,
+    "hotspots": 2,
+    "weathering": 35,
+    "riverCarving": 50,
+    "riverDensity": 5,
+    "rebound": 55
+  },
+  "jobs": [
+    { "name": "baseline-A", "mode": "sweep", "config": { "seedRange": [1, 25] },
+      "why": "current engine, 200 worlds" },
+    { "name": "baseline-B", "mode": "sweep", "config": { "seedRange": [101, 125] },
+      "why": "same engine, other seeds: measures noise" },
+    { "name": "ocean-A", "mode": "sweep", "config": { "seedRange": [1, 25], "oceanModel": true },
+      "why": "ocean model at its current rates" },
+    { "name": "ocean-grid", "mode": "sweep",
+      "config": { "seeds": [11, 22, 33], "oceanModel": true,
+        "oceanAreaRate": [0.1, 0.2, 0.4], "oceanBathyRate": [0.25, 0.5],
+        "oceanShelfRate": [0.15, 0.3, 0.6], "oceanFreeboardRate": [0.05, 0.1, 0.2] },
+      "why": "54 ocean-model rate combinations" },
+    { "name": "ocean-grid-B", "mode": "sweep", "from": "ocean-grid", "config": { "seedRange": [101, 125] },
+      "why": "best ocean rates on fresh seeds" },
+    { "name": "search-engine", "mode": "search", "rounds": 6, "keep": 3, "config": { "seeds": [11, 22, 33] },
+      "why": "hill-climb drift/uplift/weathering/carving/rebound/plates/hotspots" },
+    { "name": "search-engine-B", "mode": "sweep", "from": "search-engine", "config": { "seedRange": [101, 125] },
+      "why": "search winner on fresh seeds" },
+    { "name": "long-1000", "mode": "sweep", "config": { "seeds": [1, 2, 3], "ages": 1000 },
+      "why": "1000-age histories: drift, cycles, slow failures" },
+    { "name": "long-1000-ocean", "mode": "sweep", "config": { "seeds": [1, 2, 3], "ages": 1000, "oceanModel": true },
+      "why": "same with the ocean model" },
+    { "name": "size-257", "mode": "sweep", "config": { "size": 257, "seeds": [1, 2, 3, 4, 5, 6] },
+      "why": "does the tuning hold at 257" },
+    { "name": "search-ocean", "mode": "search", "rounds": 10, "keep": 3, "from": "ocean-grid-B", "config": { "seeds": [11, 22, 33] },
+      "why": "hill-climb engine settings with the ocean model; stopped at the deadline" }
+  ],
+  "compare": [
+    ["baseline-A", "baseline-B"],
+    ["baseline-A", "ocean-A"],
+    ["baseline-B", "ocean-grid-B"],
+    ["baseline-B", "search-engine-B"]
+  ]
+}

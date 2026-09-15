@@ -27,7 +27,8 @@
     "electron": "npm run build:electron && electron .",
     "dist": "npm run build:electron && electron-builder",
     "simlab:build": "tsc -p tools/simlab/tsconfig.json",
-    "simlab": "node tools/simlab/cli.cjs"
+    "simlab": "node tools/simlab/cli.cjs",
+    "simlab:night": "node tools/simlab/night.cjs"
   },
   "dependencies": {
     "@reduxjs/toolkit": "^2.11.2",

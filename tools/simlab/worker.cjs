@@ -55,6 +55,8 @@ function runHistory(cfg) {
       ...(cfg.conserveLand !== undefined ? { conserveLand: cfg.conserveLand } : {}),
       ...(cfg.oceanModel !== undefined ? { oceanModel: cfg.oceanModel } : {}),
       ...(cfg.plateSpeeds !== undefined ? { plateSpeeds: cfg.plateSpeeds } : {}),
+      // flat keys so a sweep can list them; undefined falls back to ocean.ts defaults
+      oceanRates: { area: cfg.oceanAreaRate, bathymetry: cfg.oceanBathyRate, shelf: cfg.oceanShelfRate, freeboard: cfg.oceanFreeboardRate },
       age,
     });
     w = r.world;

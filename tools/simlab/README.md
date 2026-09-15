@@ -54,6 +54,21 @@ npm run simlab -- search --config tools/simlab/search.json --rounds 8
 --dry              print the run count and an estimate, then stop
 ```
 
+### Overnight runs
+
+```
+npm run simlab:night -- --plan        # jobs and estimated minutes
+npm run simlab:night -- --smoke       # every job shrunk to seconds
+npm run simlab:night                  # the real thing, 7 h budget (--hours N)
+npm run simlab:night -- --resume <dir>
+node tools/simlab/compare.cjs <dirA> <dirB>
+```
+
+Jobs come from `night.queue.json` in priority order. Output goes to
+`C:\dev\hoa-simdata\night-<date>\`: one folder per job, `night.log`, and
+`SUMMARY.md` (rewritten after every job). Seed set A is 1–25 and B is 101–125;
+winners found on the small search seeds are re-checked on B.
+
 ## Hardware
 
 **Cores, not GPU.** The engine is branchy sequential math on typed arrays —

@@ -2950,6 +2950,18 @@ stroke's path anyway, as the airbrush already did.
 
 ---
 
+## 57. Overnight simulation runs
+
+- `npm run simlab:night` works through `tools/simlab/night.queue.json` for up to
+  7 hours: baselines on two seed sets, an ocean-model rate grid, parameter
+  searches, 1000-age histories and 257 maps. Results and a morning `SUMMARY.md`
+  go to `C:\dev\hoa-simdata`. The engine is frozen per run, the PC is kept awake,
+  and `--resume` continues after a crash.
+- `tools/simlab/compare.cjs` scores finished sweeps side by side.
+- The ocean model's four rates can be set per run (`oceanRates`) for sweeps.
+
+---
+
 ## 0.2.2
 
 - **The app now tells you when an update is out.** A notice on launch links to
