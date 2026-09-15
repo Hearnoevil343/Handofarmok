@@ -227,10 +227,16 @@ export class MainScene extends Phaser.Scene {
         }
       }
 
-      // A flick shorter than one airbrush tick reached pointerup before any
-      // timed deposit after the first, so only the 5x5 under the press was
-      // sculpted. Finish the path once on release.
-      if (this.stroking && !this.isPanning && this.paintMode === PaintMode.Airbrush) {
+      // Finish the path once on release. A flick shorter than one airbrush tick
+      // reached pointerup before any timed deposit after the first, so only the
+      // tiles under the press were sculpted. The plain brush had the same hole:
+      // it paints on pointermove, and a drag whose moves arrive without the
+      // button flagged as held (a flick, a laggy pointer) painted only where it
+      // was pressed — a 230-pixel glacier stroke came out as one 5x5 dab.
+      if (
+        this.stroking && !this.isPanning &&
+        (this.paintMode === PaintMode.Airbrush || this.paintMode === PaintMode.Brush)
+      ) {
         const { tx, ty } = this.getTileCoords(p);
         const last = this.lastPaintTile;
         if (last && (last.x !== tx || last.y !== ty)) this.deposit(p, this.game.loop.time);
