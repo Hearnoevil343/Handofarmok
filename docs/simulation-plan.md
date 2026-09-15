@@ -49,9 +49,22 @@ speed 1 tile/age, rift offset 9, boundary-current reach 20).
       window, orogenic collapse spread, shelf smoothing, boundary-current
       reach and blur, hotspot radii, orogen and speck areas, talus step.
       Bit-identical at 129 (0 of 6,989,220 values over 3 worlds x 20 ages).
-- [ ] Test: a 257 run and a 129 run of the same world agree on land %,
-      mountain %, hypsometry within noise. (257 is 371 ms/age — over budget.)
-- [ ] Sub-steps inside `runAge`; per-step rates (`exp(-dt/tau)` for decays).
+- [x] Test: a 257 run and a 129 run of the same world agree. Same 24 worlds,
+      100 ages: land 52.9/53.5%, mountains 11.6/11.3%, bimodality 0.89/0.94,
+      score 1.81/1.58. The simlab metrics that count tiles (landmasses of 120+
+      tiles, islands under 20, boundary persistence within 2 tiles) do not
+      scale yet, so masses and persistence read differently at 257. 257 costs
+      4.7x the time of 129 (4x the tiles).
+- [ ] Scale the tile-count metrics in `metrics.extra.cjs` the same way.
+- [ ] Sub-steps inside `runAge`. Built as the `subSteps` option (plate motion
+      and boundary relief split per step; welds, rifts, erosion, climate once
+      an age); 1 is bit-identical and stays the default. Measured against step
+      2: 2 steps score +0.05/+0.10, 200 ages +0.14 (worst 2.21 -> 3.03),
+      bimodality into target but the largest landmass 70% -> 81%; 5 steps
+      clearly worse (2.46, worst 7.3; HIGHLANDS to 27% mountain and one
+      continent). Likely cause: elevation is Int16, so small per-step changes
+      round away while collapse still runs once an age. Needs float elevation
+      inside an age before sub-steps can be the default.
 - [ ] Periodic (tileable) noise so fields have no seam at x = 0.
 - [ ] Web Worker once a step costs more than a frame.
 

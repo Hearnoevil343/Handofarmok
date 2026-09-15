@@ -46,11 +46,13 @@ export const scaleSlope = (stepAtReference: number, size: number) =>
  * Elevation units to metres relative to sea level. Provisional — step 4 of the
  * plan calibrates the ocean against depth-vs-age and step 9 against PaleoDEMs.
  * Sea level is 100. Land: 400 is about Everest (8.8 km over 300 units). Ocean:
- * the abyssal floor the engine settles sea floor toward (44) is about 3.9 km
- * deep, as Earth's abyssal plains are.
+ * 80 m a unit, so ridge crests (2.5 km) sit near 69 and the deep floor the
+ * engine has always settled toward (34-44) is 4.5-5.3 km, which reads as sea
+ * floor 30-60 Myr old — Earth's mean. At 100 m a unit the painted oceans read
+ * as 150-400 Myr old, older than any sea floor on Earth.
  */
 export const METRES_PER_UNIT_LAND = 8800 / 300;
-export const METRES_PER_UNIT_OCEAN = 3920 / 56;
+export const METRES_PER_UNIT_OCEAN = 80;
 
 export const toMetres = (el: number) =>
   el >= 100 ? (el - 100) * METRES_PER_UNIT_LAND : (el - 100) * METRES_PER_UNIT_OCEAN;

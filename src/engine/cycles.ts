@@ -34,6 +34,8 @@ export type ClimatePhase = {
   rainfall: number;
   /** whether the planet has ice sheets at all this age */
   icehouse: boolean;
+  /** sea level locked up in ice sheets, metres: ~130 at a glacial maximum, 0 in a hothouse */
+  iceMetres: number;
   label: string;
 };
 
@@ -98,6 +100,20 @@ const MEAN_WARMTH = (() => {
   return (ice * -0.45 + green * 0.5) / (ice + green);
 })();
 
+/**
+ * Water locked in ice sheets, in metres of sea level: a glacial maximum
+ * (warmth -1) holds about 130 m, as the last one did; a hothouse (warmth 0.5
+ * and up) none.
+ */
+const iceMetresFor = (warmth: number) => Math.max(0, Math.min(1, (0.5 - warmth) / 1.5)) * 130;
+
+/** Long-run mean ice, by era length: the painted world's ocean is taken to hold this. */
+export const MEAN_ICE_METRES = (() => {
+  const ice = (ICEHOUSE_MYR.min + ICEHOUSE_MYR.max) / 2;
+  const green = (GREENHOUSE_MYR.min + GREENHOUSE_MYR.max) / 2;
+  return (ice * iceMetresFor(-0.45) + green * iceMetresFor(0.5)) / (ice + green);
+})();
+
 /** Where in the glacial cycle this age lands, -1 to 1. Replays identically per seed. */
 function glacialSample(historySeed: number, age: number): number {
   const rng = makeRng((Math.imul(historySeed, 0x9e3779b1) ^ Math.imul(age + 1, 0x85ebca6b)) >>> 0);
@@ -131,7 +147,7 @@ export function climatePhase(age: number, dispersal: number, historySeed = 0): C
   if (superc > 0.7) label += ", continents dispersed";
   else if (superc < -0.7) label += ", continents assembled";
 
-  return { temperature, seaLevel, rainfall, icehouse: era.icehouse, label };
+  return { temperature, seaLevel, rainfall, icehouse: era.icehouse, iceMetres: iceMetresFor(warmth), label };
 }
 
 /**

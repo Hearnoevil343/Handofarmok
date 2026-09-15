@@ -19,7 +19,7 @@ const { measureAge, boundaryPersistence } = require("./metrics.extra.cjs");
 function runHistory(cfg) {
   const N = cfg.size;
   let w = generateWorld(N, cfg.archetype, cfg.climate, cfg.seed);
-  let plateSet, plateMap, spots, provinces, sea = 0;
+  let plateSet, plateMap, crust, oceanAge, waterVolume, spots, provinces, sea = 0;
   let uplift = cfg.upliftStart;
 
   // the world keeps its own land share rather than drifting to a global default
@@ -30,7 +30,7 @@ function runHistory(cfg) {
   const rows = [];
   for (let age = 1; age <= cfg.ages; age++) {
     const r = runAge(w, N, {
-      plateSet, plateMap, spots, provinces,
+      plateSet, plateMap, crust, oceanAge, waterVolume, spots, provinces,
       upliftStrength: uplift,
       seaLevelOffset: sea,
       baselineLand,
@@ -49,12 +49,18 @@ function runHistory(cfg) {
       // dropped and a sweep of it ran the default three times)
       ...(cfg.crustSeparation !== undefined ? { crustSeparation: cfg.crustSeparation } : {}),
       ...(cfg.deArtifact !== undefined ? { deArtifact: cfg.deArtifact } : {}),
+      ...(cfg.subSteps !== undefined ? { subSteps: cfg.subSteps } : {}),
+      ...(cfg.conserveLand !== undefined ? { conserveLand: cfg.conserveLand } : {}),
+      ...(cfg.oceanModel !== undefined ? { oceanModel: cfg.oceanModel } : {}),
       age,
     });
     w = r.world;
     plateSet = r.plateSet;
     const persist = boundaryPersistence(plateMap, r.plateMap, N);
     plateMap = r.plateMap;
+    crust = r.crust;
+    oceanAge = r.oceanAge;
+    waterVolume = r.waterVolume;
     spots = r.spots;
     provinces = r.provinces;
     uplift = r.nextUpliftStrength;
@@ -65,6 +71,7 @@ function runHistory(cfg) {
       age,
       ...m,
       boundaryPersist: persist,
+      seaRiseM: r.seaLevelMetres ?? 0,
       plates: plateSet.sx.length,
       volcanoes: r.volcanoes,
       rivers: r.riverTiles,

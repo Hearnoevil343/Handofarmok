@@ -288,6 +288,8 @@ export type TectonicResult = {
  */
 export function applyBoundaries(
   el: Int16Array, size: number, plates: Plates, strength: number, rng: () => number,
+  /** share of an age this step covers, so volcano spawning keeps its rate per Myr */
+  chance = 1,
 ): TectonicResult {
   const n = size * size;
   const { plateId, vx, vy } = plates;
@@ -394,7 +396,7 @@ export function applyBoundaries(
           const arc = Math.exp(-Math.pow((d - reach * 0.45) / (reach * 0.3), 2));
           delta = p * k * 0.95 * arc;
           uplifting[i] = 1;
-          if (arc > 0.55 && rng() < 0.045) volcanism[i] = 100;
+          if (arc > 0.55 && rng() < 0.045 * chance) volcanism[i] = 100;
         } else {
           delta = -p * k * 0.5 * fade;             // trench
         }
@@ -404,7 +406,7 @@ export function applyBoundaries(
         const arc = Math.exp(-Math.pow(d / (reach * 0.3), 2));
         delta = p * k * 0.8 * arc;
         capBelowSea = arc < 0.88;   // only the very crest breaks the surface
-        if (arc > 0.5 && rng() < 0.055) volcanism[i] = 100;
+        if (arc > 0.5 && rng() < 0.055 * chance) volcanism[i] = 100;
         break;
       }
       case "CONTINENTAL_RIFT": {
@@ -412,7 +414,7 @@ export function applyBoundaries(
         const axis = Math.exp(-Math.pow(d / (reach * 0.22), 2));
         const shoulder = Math.exp(-Math.pow((d - reach * 0.5) / (reach * 0.28), 2));
         delta = -p * k * 0.85 * axis + p * k * 0.45 * shoulder;
-        if (axis > 0.6 && rng() < 0.025) volcanism[i] = 100;
+        if (axis > 0.6 && rng() < 0.025 * chance) volcanism[i] = 100;
         break;
       }
       case "OCEAN_RIDGE": {
@@ -422,7 +424,7 @@ export function applyBoundaries(
         const crest = Math.exp(-Math.pow(d / (reach * 0.3), 2));
         delta = p * k * 0.35 * crest;
         capBelowSea = true;
-        if (crest > 0.6 && rng() < 0.018) volcanism[i] = 100;
+        if (crest > 0.6 && rng() < 0.018 * chance) volcanism[i] = 100;
         break;
       }
       case "TRANSFORM":
@@ -458,17 +460,25 @@ function catmullRom(t: number, k: number): number {
 function advect(
   el: Int16Array, size: number, plates: Plates, distance: number, rng: () => number,
   province?: Int16Array,
-): { elevation: Int16Array; plateId: Int16Array; province?: Int16Array } {
+  /** crust type (1 continental) and sea-floor age, carried like provinces */
+  crust?: Uint8Array,
+  oceanAge?: Float32Array,
+): {
+  elevation: Int16Array; plateId: Int16Array; province?: Int16Array;
+  crust?: Uint8Array; oceanAge?: Float32Array;
+} {
   const n = size * size;
   const { plateId, vx, vy, count } = plates;
   const elevation = new Int16Array(n);
   const newId = new Int16Array(n).fill(-1);
   const newProv = province ? new Int16Array(n).fill(-1) : undefined;
+  const newCrust = crust ? new Uint8Array(n).fill(255) : undefined;
+  const newAge = crust && oceanAge ? new Float32Array(n) : undefined;
 
   for (let y = 0; y < size; y++) {
     for (let x = 0; x < size; x++) {
       const i = y * size + x;
-      let claims = 0, highest = -1, sum = 0, owner = -1, srcIdx = -1;
+      let claims = 0, highest = -1, bestRank = -1, sum = 0, owner = -1, srcIdx = -1;
       for (let p = 0; p < count; p++) {
         // Wrap east-west like a globe: material leaving one edge arrives at the
         // other, so crust is conserved. Without this, plates simply shove land
@@ -517,13 +527,21 @@ function advect(
         }
         if (full) value = Math.min(hi, Math.max(lo, cub));
         claims++; sum += value;
-        if (value > highest) { highest = value; owner = p; srcIdx = si; }
+        // With crust types carried, overlap is decided by buoyancy rather than
+        // height: continental crust rides over oceanic, and between two oceanic
+        // plates the older, denser floor is the one that goes down. Without
+        // crust types the higher surface wins, as before.
+        const rank = crust && oceanAge && si >= 0
+          ? (crust[si] ? 20000 + value : 10000 - oceanAge[si])
+          : value;
+        if (rank > bestRank) { bestRank = rank; highest = value; owner = p; srcIdx = si; }
       }
       if (claims === 0) {
         elevation[i] = -1;                            // resolved below
       } else if (claims === 1) {
         elevation[i] = Math.round(highest); newId[i] = owner;
         if (newProv && srcIdx >= 0) newProv[i] = province![srcIdx];
+        if (newCrust && newAge && srcIdx >= 0) { newCrust[i] = crust![srcIdx]; newAge[i] = oceanAge![srcIdx]; }
       } else {
         // Overlap is the main source of mountain, not boundary relief, so this
         // factor matters more than any slider. Two continents arriving on the
@@ -531,6 +549,7 @@ function advect(
         elevation[i] = Math.round(Math.min(400, highest + (sum - highest) * 0.1));
         newId[i] = owner;
         if (newProv && srcIdx >= 0) newProv[i] = province![srcIdx];
+        if (newCrust && newAge && srcIdx >= 0) { newCrust[i] = crust![srcIdx]; newAge[i] = oceanAge![srcIdx]; }
       }
     }
   }
@@ -578,7 +597,9 @@ function advect(
   }
 
   if (newProv) for (let i = 0; i < n; i++) if (newProv[i] < 0) newProv[i] = province![i];
-  return { elevation, plateId: newId, province: newProv };
+  // a gap is sea floor that did not exist before: oceanic, age zero
+  if (newCrust && newAge) for (let i = 0; i < n; i++) if (newCrust[i] === 255) { newCrust[i] = 0; newAge[i] = 0; }
+  return { elevation, plateId: newId, province: newProv, crust: newCrust, oceanAge: newAge };
 }
 
 export type TectonicAgeOptions = {
@@ -594,15 +615,22 @@ export type TectonicAgeOptions = {
   distance: number;
   /** relief produced at boundaries, 0-100 */
   strength: number;
+  /** share of an age this step covers (sub-steps), scaling volcano spawning */
+  volcanoChance?: number;
   seed: number;
   /** geological provinces to carry with the crust */
   province?: Int16Array;
+  /** crust type and sea-floor age to carry with the crust (ocean model) */
+  crust?: Uint8Array;
+  oceanAge?: Float32Array;
 };
 
 /** Drift the plates, then lay down the geology their boundaries imply. */
 export function tectonicAge(
   el: Int16Array, size: number, opts: TectonicAgeOptions,
-): TectonicResult & { plateSet: PlateSet; province?: Int16Array } {
+): TectonicResult & {
+  plateSet: PlateSet; province?: Int16Array; crust?: Uint8Array; oceanAge?: Float32Array;
+} {
   const rng = makeRng(opts.seed);
   const ps = opts.plateSet
     ?? newPlateSet(size, Math.max(2, Math.min(24, opts.plates)), rng);
@@ -618,8 +646,11 @@ export function tectonicAge(
   const plates = carried ? platesFromMap(el, carried, ps) : assignPlates(el, size, ps, rng);
 
   const moved = opts.distance > 0
-    ? advect(el, size, plates, opts.distance, rng, opts.province)
-    : { elevation: Int16Array.from(el), plateId: Int16Array.from(plates.plateId), province: opts.province };
+    ? advect(el, size, plates, opts.distance, rng, opts.province, opts.crust, opts.oceanAge)
+    : {
+      elevation: Int16Array.from(el), plateId: Int16Array.from(plates.plateId), province: opts.province,
+      crust: opts.crust?.slice(), oceanAge: opts.oceanAge?.slice(),
+    };
   moved.plateId = tidyPlateIds(moved.plateId, size);
 
   // re-derive which plates are oceanic after the move
@@ -634,10 +665,13 @@ export function tectonicAge(
   const result = applyBoundaries(
     moved.elevation, size,
     { ...plates, plateId: moved.plateId, oceanic },
-    opts.strength, rng,
+    opts.strength, rng, opts.volcanoChance ?? 1,
   );
   // the seeds travel with their plates so the next age continues this one
-  return { ...result, plateSet: followPlates(ps, moved.plateId, size, opts.distance), province: moved.province };
+  return {
+    ...result, plateSet: followPlates(ps, moved.plateId, size, opts.distance), province: moved.province,
+    crust: moved.crust, oceanAge: moved.oceanAge,
+  };
 }
 
 /** A carried plate map, with which plates are mostly sea floor. */
