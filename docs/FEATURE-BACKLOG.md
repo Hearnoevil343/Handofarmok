@@ -177,6 +177,49 @@ identical, mountains 89–100% overlap. The problems are in the painted data.
         glacial one (1.0 = no suppression); mountain cover in ages 1-20
         7.7% -> 11.2% (target 12), controller pinned 28% -> 22% of ages.
         The parked "supercontinent cycle too fast" item is much closer.
+      - 200-age check of good-4 (12 worlds, PANGAEA/CONTINENTS/ARCHIPELAGO/
+        FJORDLAND): edgeBias stays in target (0.86), no degenerate ages, land
+        median 31.7%. What drifts over a long history: bimodality falls to
+        0.69 (target 0.75-1, the biggest penalty), the supercontinent cycle
+        speeds up again (7 cycles in 200 ages = 3.5 per 100 vs the clock's 2.5;
+        assembly gap median 18), and mountains fade (8.2% in ages 51-100,
+        controller pinned 34% of ages). Coast roughness 1.38 and elongation
+        2.09 sit just outside target.
+      - simlab bug: the worker passed runAge only a fixed list of options, so
+        crustSeparation (and deArtifact) in a config were silently ignored — a
+        sweep of it ran the default three times. Fixed on `sim/overnight`.
+      - crustSeparation over 200 ages (12 worlds): 0.8 (default) scores
+        1.35/4.54, bimodality 0.69; 1.0 -> 1.55/4.77, 0.61; 1.2 -> 1.55/4.58,
+        0.60. Lower is worse too: 0.4 -> 1.50/2.89, bimodality 0.49; 0.6 ->
+        1.32/3.98, 0.67. Bimodality peaks at the 0.8 default, so crustSeparation
+        is not what flattens long histories. Worker fix committed 4024dd9.
+      - By age (200-age runs, medians of 12 worlds): bimodality 0.78 in ages
+        1-25, 0.65 by 26-50, then steady 0.62-0.68 — a one-off settling from
+        the generated start, not a long decay. The mountain controller climbs
+        from uplift 53 to ~90 of 100 and still loses: mountains 10.7% -> 8.2%
+        (ages 101-150). edgeBias and plate count (~8) hold throughout.
+      - Uplift/denudation balance, 200 ages, 12 worlds, vs good-4 defaults
+        (denudeInactive rate 0.3, boundary uplift scale 340): score 1.35/4.54.
+        Denude 0.2 -> 1.20/4.34 (bimodality 0.73, mountains 10.0%); uplift
+        420 -> 1.18/3.53 (0.65, 9.1%); both -> 1.02/3.27 (0.72, 10.8%), and
+        the controller settles at uplift 60-65 instead of pinning near 90 —
+        mountains hold without it maxing out. No degenerate ages, edgeBias
+        0.90.
+      - **Accepted** (snapshot `%TEMP%\hoa-night\good-5`): denude 0.2 +
+        uplift 420 as the defaults. 96-world check vs good-4, same seeds:
+        set A score 2.51/6.82 -> 2.19/6.15, set B 2.49/5.67 -> 2.32/6.07;
+        mountains 10.1-10.4% -> 11.0%; bimodality and edgeBias unchanged
+        within noise; elongation +0.04; ARCHIPELAGO mountains 5-8% -> 8-9%.
+        Degenerate ages +1 run per set (land-heavy archetypes again). These
+        are engine defaults, so they also change the app's Run Age.
+        Committed 426d021.
+      - 200 ages on good-5 (12 worlds): score 1.02/3.27 (good-4 1.35/4.54),
+        mountains 10.8%, bimodality 0.72, no degenerate ages, edgeBias
+        0.84-0.97 throughout, controller pinned 16% of ages (was 34%).
+        Supercontinent cycle still faster than Earth: 6.6 full cycles in 200
+        ages (clock implies 5), assembly gap median 19 ages, autocorrelation
+        period 35 (target 40, Earth 40-60). Next target; drift is the obvious
+        lever and the running parameter search already varies it.
       - Parameter search restarted on good-3 (`%TEMP%\hoa-night\search3`).
         After 3 rounds its best was plates 8 + mountainTarget 0.10. Checked on
         both 48-world seed sets over 100 ages: score 3.28/7.99 -> 3.15/5.95
