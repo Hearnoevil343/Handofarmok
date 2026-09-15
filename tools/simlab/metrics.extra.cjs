@@ -26,7 +26,7 @@ function masses(el, N, minSize = 1) {
       const j = stack.pop();
       tiles.push(j);
       const x = j % N, y = (j / N) | 0;
-      const nb = [x > 0 ? j - 1 : -1, x < N - 1 ? j + 1 : -1,
+      const nb = [y * N + ((x + N - 1) % N), y * N + ((x + 1) % N),   // wraps east-west
                   y > 0 ? j - N : -1, y < N - 1 ? j + N : -1];
       for (const k of nb) if (k >= 0 && !seen[k] && el[k] >= SEA) { seen[k] = 1; stack.push(k); }
     }
@@ -46,13 +46,18 @@ function boxFill(el, N) {
   if (!big.length) return 0;
   let sum = 0;
   for (const t of big) {
-    let mnX = 1e9, mxX = -1, mnY = 1e9, mxY = -1;
+    let mnY = 1e9, mxY = -1;
+    const cols = new Uint8Array(N);
     for (const j of t) {
       const x = j % N, y = (j / N) | 0;
-      if (x < mnX) mnX = x; if (x > mxX) mxX = x;
+      cols[x] = 1;
       if (y < mnY) mnY = y; if (y > mxY) mxY = y;
     }
-    sum += t.length / ((mxX - mnX + 1) * (mxY - mnY + 1));
+    // width round the cylinder: map width minus the largest run of empty columns
+    let gap = 0, run = 0;
+    for (let k = 0; k < N * 2; k++) { if (cols[k % N]) run = 0; else { run++; gap = Math.max(gap, run); } }
+    const width = Math.max(1, N - Math.min(N, gap));
+    sum += t.length / (width * (mxY - mnY + 1));
   }
   return (100 * sum) / big.length;
 }
