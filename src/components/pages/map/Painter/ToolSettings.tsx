@@ -50,13 +50,15 @@ export function ToolSettings() {
       )}
 
       {show("climateLayer") && (
+        // LayerType is a string enum. This used to pass Number(v), which is NaN,
+        // so activeLayer became NaN and LAYER_META[NaN].min blanked the app.
         <Segmented
-          value={String(p.climateLayer)}
-          onChange={(v) => dispatch(setClimateLayer(Number(v) as unknown as ClimateLayer))}
+          value={p.climateLayer}
+          onChange={(v) => dispatch(setClimateLayer(v as ClimateLayer))}
           options={[
-            { value: String(LayerType.Rainfall), label: "Rain", icon: <CloudRain size={14} /> },
-            { value: String(LayerType.Temperature), label: "Temp", icon: <Thermometer size={14} /> },
-            { value: String(LayerType.Drainage), label: "Drain", icon: <Droplets size={14} /> },
+            { value: LayerType.Rainfall, label: "Rain", icon: <CloudRain size={14} /> },
+            { value: LayerType.Temperature, label: "Temp", icon: <Thermometer size={14} /> },
+            { value: LayerType.Drainage, label: "Drain", icon: <Droplets size={14} /> },
           ]}
         />
       )}

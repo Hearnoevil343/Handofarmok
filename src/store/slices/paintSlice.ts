@@ -1,4 +1,4 @@
-import { type ClimateLayer, type SculptMode, type Tool, SCULPT_OP } from "@helpers/tools";
+import { type ClimateLayer, type SculptMode, type Tool, SCULPT_OP, TOOLS } from "@helpers/tools";
 import { createSlice, type PayloadAction } from "@reduxjs/toolkit";
 import { Biome, LayerType } from "#types";
 import { BrushOp, type FalloffKind } from "@helpers/brushEngine";
@@ -50,8 +50,10 @@ const initialState: PaintState = {
   climateLayer: LayerType.Rainfall,
   viewMode: "biomes",
   activeLayer: LayerType.Elevation,
-  activeBiome: null,
-  lastBiome: null,
+  // The Biome tool is in hand on load. With no biome it fell through to the
+  // layer path and flattened elevation toward 100 wherever you clicked.
+  activeBiome: Biome.Grassland,
+  lastBiome: Biome.Grassland,
   lockedLayers: {},
   isLockedToBiomes: true,
   paintMode: PaintMode.Brush,
@@ -75,6 +77,55 @@ const initialState: PaintState = {
   },
 };
 
+/**
+ * Picking a tool configures the underlying brush: layer, biome mode and
+ * operation are consequences of the tool, never set independently by the UI.
+ */
+function applyTool(state: PaintState) {
+  switch (state.activeTool) {
+    case "biome":
+    case "fill":
+      state.activeBiome = state.lastBiome ?? state.activeBiome ?? Biome.Grassland;
+      state.brushOp = BrushOp.Paint;
+      break;
+    case "sculpt":
+      state.activeBiome = null;
+      state.activeLayer = LayerType.Elevation;
+      state.brushOp = SCULPT_OP[state.sculptMode];
+      break;
+    case "climate":
+      state.activeBiome = null;
+      state.activeLayer = state.climateLayer;
+      state.brushOp = BrushOp.Paint;
+      break;
+    case "volcano":
+      state.activeBiome = null;
+      state.activeLayer = LayerType.Volcanism;
+      state.brushOp = BrushOp.Paint;
+      state.layerValues[LayerType.Volcanism] = 100;
+      break;
+    case "savagery":
+      state.activeBiome = null;
+      state.activeLayer = LayerType.Savagery;
+      state.brushOp = BrushOp.Paint;
+      break;
+    case "eyedropper":
+      break;
+  }
+
+  // Line mode stayed on after switching to Fill or the Eyedropper, which have
+  // no Line button to turn it off, and the line preview kept drawing.
+  const tool = TOOLS.find((t) => t.id === state.activeTool);
+  if (state.paintMode === PaintMode.Line && !tool?.shows.includes("line")) {
+    state.paintMode = PaintMode.Brush;
+  }
+
+  // with the composite view off, show the layer the tool now writes
+  if (!state.isLockedToBiomes && state.activeBiome === null) {
+    state.viewMode = state.activeLayer;
+  }
+}
+
 export const paintSlice = createSlice({
   name: "paint",
   initialState,
@@ -96,12 +147,32 @@ export const paintSlice = createSlice({
         state.isLockedToBiomes = true;
       }
     },
+    /**
+     * The layer list and the tool palette describe the same brush. This used to
+     * change only activeLayer, so with Sculpt in hand picking Rainfall raised
+     * rainfall by 5% of its range per dab, and with Biome in hand picking any
+     * layer painted that layer toward its stored value while the bar still said
+     * Biome. Choosing a layer now picks the tool that owns it.
+     */
     setActiveLayer: (state, action: PayloadAction<LayerType>) => {
-      state.activeLayer = action.payload;
-      state.activeBiome = null;
-      if (!state.isLockedToBiomes) {
-        state.viewMode = action.payload;
+      const layer = action.payload;
+      switch (layer) {
+        case LayerType.Rainfall:
+        case LayerType.Temperature:
+        case LayerType.Drainage:
+          state.climateLayer = layer;
+          state.activeTool = "climate";
+          break;
+        case LayerType.Volcanism:
+          state.activeTool = "volcano";
+          break;
+        case LayerType.Savagery:
+          state.activeTool = "savagery";
+          break;
+        default:
+          state.activeTool = "sculpt";
       }
+      applyTool(state);
     },
     setViewMode: (state, action: PayloadAction<LayerType | "biomes">) => {
       state.viewMode = action.payload;
@@ -132,36 +203,7 @@ export const paintSlice = createSlice({
      */
     setActiveTool: (state, action: PayloadAction<Tool>) => {
       state.activeTool = action.payload;
-      switch (action.payload) {
-        case "biome":
-        case "fill":
-          state.activeBiome = state.lastBiome ?? state.activeBiome ?? Biome.Grassland;
-          state.brushOp = BrushOp.Paint;
-          break;
-        case "sculpt":
-          state.activeBiome = null;
-          state.activeLayer = LayerType.Elevation;
-          state.brushOp = SCULPT_OP[state.sculptMode];
-          break;
-        case "climate":
-          state.activeBiome = null;
-          state.activeLayer = state.climateLayer;
-          state.brushOp = BrushOp.Paint;
-          break;
-        case "volcano":
-          state.activeBiome = null;
-          state.activeLayer = LayerType.Volcanism;
-          state.brushOp = BrushOp.Paint;
-          state.layerValues[LayerType.Volcanism] = 100;
-          break;
-        case "savagery":
-          state.activeBiome = null;
-          state.activeLayer = LayerType.Savagery;
-          state.brushOp = BrushOp.Paint;
-          break;
-        case "eyedropper":
-          break;
-      }
+      applyTool(state);
     },
     setSculptMode: (state, action: PayloadAction<SculptMode>) => {
       state.sculptMode = action.payload;
@@ -169,7 +211,7 @@ export const paintSlice = createSlice({
     },
     setClimateLayer: (state, action: PayloadAction<ClimateLayer>) => {
       state.climateLayer = action.payload;
-      if (state.activeTool === "climate") state.activeLayer = action.payload;
+      if (state.activeTool === "climate") applyTool(state);
     },
     setZoomToCursor: (state, action: PayloadAction<boolean>) => {
       state.zoomToCursor = action.payload;

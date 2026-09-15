@@ -1,6 +1,6 @@
 import { BusEvent, EventBus } from "../EventBus";
+import { AIRBRUSH_TICK_MS, lineTiles } from "@helpers/brushEngine";
 
-import type { BrushScene } from "./BrushScene";
 import type { GridScene } from "./GridScene";
 import { PaintMode } from "@store/slices/paintSlice";
 import type { PaintSettings } from "@store/selectors";
@@ -16,6 +16,14 @@ export class MainScene extends Phaser.Scene {
   private paintMode: PaintMode = PaintMode.Brush;
   private activeTool: PaintSettings["activeTool"] = "biome";
 
+  /** true from a paint pointerdown until pointerup */
+  private stroking: boolean = false;
+  /** the stroke's undo snapshot is taken on its first painted tile */
+  private snapshotTaken: boolean = false;
+  /** tile the previous dab landed on, so the path between events is painted */
+  private lastPaintTile: { x: number; y: number } | null = null;
+  private lastDeposit: number = 0;
+
   constructor() {
     super("MainScene");
   }
@@ -29,6 +37,7 @@ export class MainScene extends Phaser.Scene {
     const onPresetSwitched = (presetTitle: string) => {
       worldManager.switchToPreset(presetTitle);
       this.isPanning = false;
+      this.endStroke();
       EventBus.emit("stroke-finished");
 
       if (!this.sys || !this.sys.isActive()) return;
@@ -48,6 +57,9 @@ export class MainScene extends Phaser.Scene {
       this.paintMode = state.paintMode;
       this.activeTool = state.activeTool;
       this.zoomToCursor = state.zoomToCursor;
+      // Turning Line off, or picking a tool without it, left the anchor set,
+      // so the next line needed an extra click before it started.
+      if (state.paintMode !== PaintMode.Line) this.lineAnchor = null;
     };
 
     // adopt whatever the user already had selected, rather than class defaults
@@ -71,15 +83,16 @@ export class MainScene extends Phaser.Scene {
 
   /**
    * Airbrush keeps depositing while the button is held, even with the pointer
-   * stationary — pointermove alone cannot do that.
+   * stationary — pointermove alone cannot do that. Deposits are timed so the
+   * rate does not follow the frame rate.
    */
-  update() {
+  update(time: number) {
     this.handleKeyboardPan();
-    if (this.paintMode !== PaintMode.Airbrush || this.isPanning) return;
+    if (this.paintMode !== PaintMode.Airbrush || !this.stroking || this.isPanning) return;
+    if (time - this.lastDeposit < AIRBRUSH_TICK_MS) return;
     const p = this.input?.activePointer;
-    if (!p || !p.isDown || p.middleButtonDown() || p.rightButtonDown()) return;
-    const coords = this.getTileCoords(p);
-    if (coords.isValid) this.processPaintInput(p);
+    if (!p || !p.isDown) return;
+    this.deposit(p, time);
   }
 
   private handleKeyboardPan() {
@@ -124,6 +137,20 @@ export class MainScene extends Phaser.Scene {
         return;
       }
 
+      const clickTool =
+        this.activeTool === "eyedropper" || this.activeTool === "fill";
+
+      // A brush stroke may start off the map and be dragged onto it. This used
+      // to return before the undo snapshot while pointermove painted anyway,
+      // so Ctrl+Z took back that stroke and the one before it together.
+      if (!clickTool && this.paintMode !== PaintMode.Line) {
+        this.stroking = true;
+        this.snapshotTaken = false;
+        this.lastPaintTile = null;
+        this.deposit(p, this.game.loop.time);
+        return;
+      }
+
       const coords = this.getTileCoords(p);
       if (!coords.isValid) return;
 
@@ -138,20 +165,15 @@ export class MainScene extends Phaser.Scene {
         return;
       }
 
-      if (this.paintMode === PaintMode.Line) {
-        // click once to anchor, click again to commit. Dragging works too -
-        // pointerup commits when the pointer has actually moved.
-        if (this.lineAnchor) {
-          EventBus.emit(BusEvent.LineEnd, { x: coords.tx, y: coords.ty });
-          this.lineAnchor = null;
-        } else {
-          this.lineAnchor = { x: coords.tx, y: coords.ty };
-          worldManager.saveSnapshot();
-          EventBus.emit(BusEvent.LineStart, { x: coords.tx, y: coords.ty });
-        }
+      // click once to anchor, click again to commit. Dragging works too -
+      // pointerup commits when the pointer has actually moved.
+      if (this.lineAnchor) {
+        EventBus.emit(BusEvent.LineEnd, { x: coords.tx, y: coords.ty });
+        this.lineAnchor = null;
       } else {
+        this.lineAnchor = { x: coords.tx, y: coords.ty };
         worldManager.saveSnapshot();
-        this.processPaintInput(p);
+        EventBus.emit(BusEvent.LineStart, { x: coords.tx, y: coords.ty });
       }
     });
 
@@ -180,11 +202,12 @@ export class MainScene extends Phaser.Scene {
         cam.scrollX -= (p.x - p.prevPosition.x) / cam.zoom;
         cam.scrollY -= (p.y - p.prevPosition.y) / cam.zoom;
       } else if (
+        this.stroking &&
         p.isDown &&
-        (this.paintMode === PaintMode.Brush ||
-          this.paintMode === PaintMode.Airbrush)
+        this.paintMode === PaintMode.Brush
       ) {
-        this.processPaintInput(p);
+        // the airbrush deposits on its timer in update() instead
+        this.deposit(p, this.game.loop.time);
       }
 
       if (coords.isValid) emitCoords(coords.tx, coords.ty);
@@ -204,7 +227,17 @@ export class MainScene extends Phaser.Scene {
         }
       }
 
+      // A flick shorter than one airbrush tick reached pointerup before any
+      // timed deposit after the first, so only the 5x5 under the press was
+      // sculpted. Finish the path once on release.
+      if (this.stroking && !this.isPanning && this.paintMode === PaintMode.Airbrush) {
+        const { tx, ty } = this.getTileCoords(p);
+        const last = this.lastPaintTile;
+        if (last && (last.x !== tx || last.y !== ty)) this.deposit(p, this.game.loop.time);
+      }
+
       this.isPanning = false;
+      this.endStroke();
       EventBus.emit(BusEvent.StrokeFinished);
 
       // The status bar only refreshed on pointer move, so after a click, fill
@@ -237,12 +270,39 @@ export class MainScene extends Phaser.Scene {
     return { tx, ty, isValid: gridScene.isValidTile(tx, ty) };
   }
 
-  private processPaintInput(p: Phaser.Input.Pointer) {
-    const brushScene = this.scene.get("BrushScene") as BrushScene;
-    const coords = this.getTileCoords(p);
+  private endStroke() {
+    this.stroking = false;
+    this.lastPaintTile = null;
+  }
 
-    if (coords.isValid) {
-      brushScene.handlePaintAction(coords.tx, coords.ty);
+  /**
+   * One application of the brush along the path since the previous one.
+   * Painting only the tile under each pointer event left gaps: a quick drag
+   * across the map reaches the scene as a handful of events, and a 58-tile
+   * drag changed 3 tiles.
+   */
+  private deposit(p: Phaser.Input.Pointer, time: number) {
+    const gridScene = this.scene.get("GridScene") as GridScene;
+    if (!gridScene) return;
+
+    if (this.paintMode === PaintMode.Airbrush) {
+      gridScene.beginDeposit();
+      this.lastDeposit = time;
     }
+
+    const { tx, ty } = this.getTileCoords(p);
+    const to = { x: tx, y: ty };
+    const from = this.lastPaintTile ?? to;
+    this.lastPaintTile = to;
+
+    lineTiles(from, to, (x, y) => {
+      // a brush hanging over the edge still paints the part that is on the map
+      if (!gridScene.brushTouchesMap(x, y)) return;
+      if (!this.snapshotTaken) {
+        worldManager.saveSnapshot();
+        this.snapshotTaken = true;
+      }
+      gridScene.paintTile(x, y);
+    });
   }
 }

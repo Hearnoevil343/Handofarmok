@@ -2588,3 +2588,112 @@ it says — subtropical deserts now sit on west coasts instead of in bands.
 DF crashes in `SDL2.dll` after about half of command-line generations, before
 saving — with or without DFHack scripts. Worth knowing before building the
 "import a DF world" feature on `-gen`.
+
+## 51. Painting: a crashing climate button, brushes that fought, and Sculpt as an airbrush
+
+Reported: the brushes clash, Sculpt does not build up the way the climate brushes
+do, and a rainfall / temperature control in the brush bar breaks the app. All
+tested in the running app on CONTINENTS with real mouse drags and a probe that
+diffs the layer arrays before and after each stroke. Six bugs; all fixed.
+
+### Rain / Temp / Drain blanked the whole app
+
+The climate segment passed `Number(v)` to `setClimateLayer`, but `LayerType` is a
+string enum, so clicking Temp set `activeLayer` to `NaN`, `LAYER_META[NaN].min`
+threw inside `ToolSettings`, and React unmounted everything: a blank dark page,
+`TypeError: Cannot read properties of undefined (reading 'min')`. It now passes
+the enum value. Checked: Temp sets the temperature layer, the value slider's
+range becomes -50 to 120, and the page stays up.
+
+### The layer list and the tool palette fought over the brush
+
+Choosing a layer in the sidebar changed only `activeLayer` (and cleared the
+biome). The tool stayed, and so did its operation: with Sculpt in hand, picking
+Rainfall raised rainfall by 5% of its range per dab while the bar still said
+Sculpt; with Biome in hand, picking any layer painted that layer toward its
+stored value. `setActiveLayer` now picks the tool that owns the layer and
+configures it through the same code as the palette (`applyTool`). Checked by
+real clicks: Rainfall → Climate/rainfall, Elevation → Sculpt/raise, Volcanism →
+Volcano (value 100), Savagery → Savagery, Temperature → Climate/temperature.
+
+Two smaller clashes from the same cause: Line mode stayed on after switching to
+Fill or the Eyedropper, which have no Line button to turn it off (now dropped),
+and a tool switch by shortcut key mid-stroke left the first brush's tiles marked
+as done, so the second brush skipped them. Checked: Climate then Volcano in one
+stroke over nine tiles writes both layers on all nine.
+
+### The Biome tool painted elevation on first load
+
+The Biome tool is in hand when the map opens but `activeBiome` started `null`,
+so a stroke fell through to the layer path and flattened elevation toward 100.
+A 58-tile drag changed elevation by -408 in total. It now starts on Grassland,
+as picking the tool already did.
+
+### Scenes painted with defaults until a setting was touched
+
+`paintSync` was filled only by the first paint action, so a fresh session
+painted at size 1 with no falloff while the bar showed size 5 and falloff 45.
+The store now seeds it when it is created. Before, that same 58-tile drag
+touched 3 single tiles.
+
+### Fast drags left gaps; strokes started off the map could not be undone alone
+
+Each pointer event painted only the tile under it, and a quick drag reaches the
+scene as a handful of events. `MainScene` now paints the straight line of tiles
+since the previous event (`lineTiles` in `brushEngine.ts`). A real fast drag
+across 55 tiles now changes 239 rainfall tiles in a band 5 wide, not 3 tiles.
+
+A stroke pressed off the map returned before the undo snapshot, but pointermove
+painted once it crossed the edge, so Ctrl+Z took back that stroke and the one
+before it. The snapshot is now taken on the first tile a stroke actually paints,
+and a brush hanging over the edge paints the part on the map. Checked: pressed
+15 tiles left of the map and dragged in, 65 tiles painted, one undo step, one
+Ctrl+Z restores exactly and leaves the previous stroke alone. Redo restores it
+exactly.
+
+### Sculpt now airbrushes
+
+Measured first, at size 5, falloff 45, strength 100%:
+
+| | click | hold 1 s | scrub | second scrub |
+|---|---|---|---|---|
+| Climate (rain → 100), total change | +776 | +195 | +614 | +183 |
+| Sculpt raise before, total / centre | +308 / +20 | +308 / +20 | +500 / +20 | +500 / +20 |
+| Sculpt raise after, total / centre | +43 / +3 | +774 / +54 | +202 / +10 | +217 / +10 |
+
+The climate brush does not keep building while held either — holding still for a
+second is the same as clicking again. What makes it feel soft is that each pass
+moves a tile part of the way toward the target, so repeated passes converge.
+Sculpt added a fixed +20 per pass and did nothing while held, which stacks into
+hard terraces. Sculpt now uses the airbrush path that already existed but could
+not be reached from the new tool bar: deposits every 50 ms while the button is
+held, 15% of the strength per deposit (about +60 elevation a second under the
+centre at full strength; Smooth and Flatten close 15% of the gap per deposit).
+Deposits are timed, not per frame, and each tile takes one application per
+deposit — the old airbrush code skipped that check, so its rate followed the
+frame rate and the brush overlap. The switch is made in `selectPaintSettings`,
+so every scene sees Sculpt as an airbrush.
+
+Mistake along the way: the first version only deposited on the timer, and a real
+flick shorter than one tick sculpted just the 5x5 under the press (25 tiles for
+every direction). Release now finishes the path. Checked with real drags:
+horizontal 273 tiles, vertical 322, diagonal 494, off the right edge 100 (stops
+at column 128), zoomed in 191.
+
+### How it was checked, and what was not
+
+- Every drag, click and key above was a real input in the in-app browser except
+  the off-map start, the mid-stroke tool switch, Line, and the Eyedropper, which
+  used synthetic mouse events on the canvas. Line: two clicks, 144 tiles, one
+  undo step. Eyedropper: picked rainfall 72 from a tile holding 72.
+- The browser checks ran on the 0.2.1 base before the branch was moved onto
+  `develop`; none of the seven changed files differ between the two.
+  `check-types`, `lint` and `build` pass on `develop`.
+- A trap for anyone probing the store from the console: after Vite hot-reloads
+  `store.ts`, `import('/src/store/store.ts')` returns a second store. It still
+  drives the canvas through the shared EventBus but not the React UI. Import the
+  exact `?t=` URL from `performance.getEntriesByType('resource')`.
+- There is no east-west wrap in the painter: tiles past either edge are simply
+  off the map, so there is no seam to paint across.
+- Not decided: whether the Climate brush should also airbrush while held. It is
+  unchanged.
