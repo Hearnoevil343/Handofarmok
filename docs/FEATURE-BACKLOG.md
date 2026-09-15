@@ -36,6 +36,14 @@ one at a time.
       the app: undo 5 then run gives Age 1; replay reproduces age 5 exactly.
 
 ### To build
+- [x] **Sub-tile plate motion** (bilinear) — accepted on `sim/overnight`:
+      score 2.19/6.15 -> 1.76/3.37 (set A), 2.32/6.07 -> 1.71/5.84 (set B),
+      coastline dimension into target (1.33-1.34), degenerate runs 20/22 -> 2/2.
+- [ ] **Full simulation plan: `C:\dev\hoa-sim\docs\simulation-plan.md`** —
+      every part of the model (time and scale in real units, plates, erosion
+      and sediment, ocean floor and sea level, temperature, wind and rainfall,
+      water and ice, biomes, calibration data) with current problems, research,
+      steps and order of work. Items below are folded into it.
 - [ ] **Shorter time steps** (dev prefers slower progression, more clicks).
       Research 2026-09-15 (both reports in the session): processes run once per
       10-Myr age at fixed strength, so drift, erosion and rare events tick
@@ -55,6 +63,18 @@ one at a time.
          Zenodo 5460860): per-slice land %, hypsometry, mountain %, coastline
          dimension at our own resolution. Attribution required.
       7. Move the engine into a Web Worker if sub-steps make ages slow.
+- [ ] **Sediment transport and coastal deposition.** Erosion only deletes:
+      carveRivers never touches ocean tiles, thermalErosion clamps land to sea
+      level and leaves the ocean alone, denudeInactive's removed height
+      vanishes; the droplet hydraulicErosion (the only one that deposits) is not
+      in Run Age. So deltas, coastal plains and continental shelves never form
+      and coasts can only be cut back — a likely contributor to ragged,
+      speckled mid-history coastlines. conserveCrust then moves sea level to
+      hold land share, which hides the loss. On Earth rivers carry ~19 Gt/yr of
+      sediment, mostly deposited near coasts; wind ~1-5 Gt/yr, mostly thin
+      far-ocean dust and inland dunes. Plan: track removed material, route it
+      down the river network, deposit where rivers meet the sea and spread it
+      as marine diffusion (goSPL-style); optional aeolian term later for dunes.
 - [ ] **Import a world DF generated** — so players can take a world they like and
       reshape it. Route: DFHack script dumps the six layers per tile
       (`Dwarf Fortress\dfhack-config\scripts\dump-regions.lua` already does this),
