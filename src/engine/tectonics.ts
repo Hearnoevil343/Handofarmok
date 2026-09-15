@@ -463,10 +463,17 @@ function advect(
   /** crust type (1 continental) and sea-floor age, carried like provinces */
   crust?: Uint8Array,
   oceanAge?: Float32Array,
+  /** per-plate multiplier on `distance`; all plates move alike when absent */
+  speed?: number[],
 ): {
   elevation: Int16Array; plateId: Int16Array; province?: Int16Array;
   crust?: Uint8Array; oceanAge?: Float32Array;
+  /** tiles no plate reached (new sea floor) and extra claims where plates overlapped */
+  gaps: number; overlaps: number;
+  /** continental tiles that lost an overlap and so vanished (crust types only) */
+  lostContinental: number;
 } {
+  let gaps = 0, overlaps = 0, lostContinental = 0;
   const n = size * size;
   const { plateId, vx, vy, count } = plates;
   const elevation = new Int16Array(n);
@@ -478,13 +485,14 @@ function advect(
   for (let y = 0; y < size; y++) {
     for (let x = 0; x < size; x++) {
       const i = y * size + x;
-      let claims = 0, highest = -1, bestRank = -1, sum = 0, owner = -1, srcIdx = -1;
+      let claims = 0, highest = -1, bestRank = -1, sum = 0, owner = -1, srcIdx = -1, contClaims = 0;
       for (let p = 0; p < count; p++) {
         // Wrap east-west like a globe: material leaving one edge arrives at the
         // other, so crust is conserved. Without this, plates simply shove land
         // off the side of the map and every run is a net loss. North-south
         // clamps instead, since a sphere has poles rather than a seam.
-        const fx = x - vx[p] * distance, fy = y - vy[p] * distance;
+        const dist = speed ? distance * speed[p] : distance;
+        const fx = x - vx[p] * dist, fy = y - vy[p] * dist;
         // Sub-tile motion: the source point falls between four tiles, so blend
         // the ones this plate owns by distance (bilinear). Rounding to the
         // nearest tile moved every plate in whole-tile jumps. Against that, on
@@ -527,6 +535,7 @@ function advect(
         }
         if (full) value = Math.min(hi, Math.max(lo, cub));
         claims++; sum += value;
+        if (crust && si >= 0 && crust[si]) contClaims++;
         // With crust types carried, overlap is decided by buoyancy rather than
         // height: continental crust rides over oceanic, and between two oceanic
         // plates the older, denser floor is the one that goes down. Without
@@ -537,6 +546,7 @@ function advect(
         if (rank > bestRank) { bestRank = rank; highest = value; owner = p; srcIdx = si; }
       }
       if (claims === 0) {
+        gaps++;
         elevation[i] = -1;                            // resolved below
       } else if (claims === 1) {
         elevation[i] = Math.round(highest); newId[i] = owner;
@@ -546,6 +556,8 @@ function advect(
         // Overlap is the main source of mountain, not boundary relief, so this
         // factor matters more than any slider. Two continents arriving on the
         // same ground thicken the crust; they do not simply stack.
+        overlaps += claims - 1;
+        if (crust && srcIdx >= 0) lostContinental += contClaims - crust[srcIdx];
         elevation[i] = Math.round(Math.min(400, highest + (sum - highest) * 0.1));
         newId[i] = owner;
         if (newProv && srcIdx >= 0) newProv[i] = province![srcIdx];
@@ -599,7 +611,10 @@ function advect(
   if (newProv) for (let i = 0; i < n; i++) if (newProv[i] < 0) newProv[i] = province![i];
   // a gap is sea floor that did not exist before: oceanic, age zero
   if (newCrust && newAge) for (let i = 0; i < n; i++) if (newCrust[i] === 255) { newCrust[i] = 0; newAge[i] = 0; }
-  return { elevation, plateId: newId, province: newProv, crust: newCrust, oceanAge: newAge };
+  return {
+    elevation, plateId: newId, province: newProv, crust: newCrust, oceanAge: newAge,
+    gaps, overlaps, lostContinental,
+  };
 }
 
 export type TectonicAgeOptions = {
@@ -623,6 +638,12 @@ export type TectonicAgeOptions = {
   /** crust type and sea-floor age to carry with the crust (ocean model) */
   crust?: Uint8Array;
   oceanAge?: Float32Array;
+  /**
+   * Oceanic plates move faster than continental ones — the Pacific plate
+   * 8-10 cm/yr, Eurasia about 2 — with the mean kept near the drift setting.
+   * Off: every plate moves at the drift setting.
+   */
+  plateSpeeds?: boolean;
 };
 
 /** Drift the plates, then lay down the geology their boundaries imply. */
@@ -630,6 +651,7 @@ export function tectonicAge(
   el: Int16Array, size: number, opts: TectonicAgeOptions,
 ): TectonicResult & {
   plateSet: PlateSet; province?: Int16Array; crust?: Uint8Array; oceanAge?: Float32Array;
+  motion: { gaps: number; overlaps: number; lostContinental: number };
 } {
   const rng = makeRng(opts.seed);
   const ps = opts.plateSet
@@ -645,11 +667,23 @@ export function tectonicAge(
     ? opts.plateMap : undefined;
   const plates = carried ? platesFromMap(el, carried, ps) : assignPlates(el, size, ps, rng);
 
+  let speed: number[] | undefined;
+  if (opts.plateSpeeds) {
+    const sea = new Array(plates.count).fill(0), tot = new Array(plates.count).fill(0);
+    for (let i = 0; i < el.length; i++) {
+      const p = plates.plateId[i];
+      if (p < 0) continue;
+      tot[p]++; if (el[i] < SEA) sea[p]++;
+    }
+    // 0.55 for an all-continent plate to 1.45 for an all-ocean one
+    speed = tot.map((t, p) => (t ? 0.55 + 0.9 * (sea[p] / t) : 1));
+  }
+
   const moved = opts.distance > 0
-    ? advect(el, size, plates, opts.distance, rng, opts.province, opts.crust, opts.oceanAge)
+    ? advect(el, size, plates, opts.distance, rng, opts.province, opts.crust, opts.oceanAge, speed)
     : {
       elevation: Int16Array.from(el), plateId: Int16Array.from(plates.plateId), province: opts.province,
-      crust: opts.crust?.slice(), oceanAge: opts.oceanAge?.slice(),
+      crust: opts.crust?.slice(), oceanAge: opts.oceanAge?.slice(), gaps: 0, overlaps: 0, lostContinental: 0,
     };
   moved.plateId = tidyPlateIds(moved.plateId, size);
 
@@ -671,6 +705,7 @@ export function tectonicAge(
   return {
     ...result, plateSet: followPlates(ps, moved.plateId, size, opts.distance), province: moved.province,
     crust: moved.crust, oceanAge: moved.oceanAge,
+    motion: { gaps: moved.gaps, overlaps: moved.overlaps, lostContinental: moved.lostContinental },
   };
 }
 

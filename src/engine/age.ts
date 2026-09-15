@@ -16,7 +16,8 @@ import { makeRng } from "./noise";
 import { thermalErosion } from "./erosion";
 import { scaleArea } from "./scale";
 import {
-  applySeaLevelRise, initOcean, oceanTiles, oceanVolume, relaxBathymetry, seaLevelRise, updateCrust,
+  applySeaLevelRise, basinReferenceRate, conserveContinentalArea, continentalExposure, initOcean, meanOceanDepthMetres,
+  relaxBathymetry, restoreFreeboard, seaLevelFromBasins, updateCrust,
 } from "./ocean";
 import { MYR_PER_AGE } from "./timescale";
 
@@ -85,15 +86,21 @@ export type AgeOptions = {
   trace?: (stage: string, el: Int16Array) => void;
   /**
    * Ocean model (plan step 4): crust type and sea-floor age carried with the
-   * plates, sea-floor depth from age, sea level from water volume. Replaces
-   * separateCrust, thermal subsidence, the forced land share and the drawn
-   * sea-level offset.
+   * plates, sea-floor depth from age, sea level from basin depth and ice,
+   * continental freeboard. Replaces separateCrust, thermal subsidence, the
+   * forced land share and the drawn sea-level offset.
    */
   oceanModel?: boolean;
   /** carried ocean-model state (AgeReport fields of the same name) */
+  continentalAreaRef?: number;
   crust?: Uint8Array;
   oceanAge?: Float32Array;
-  waterVolume?: number;
+  basinDepthRef?: number;
+  freeboardRef?: number;
+  /** ocean model: how far the sea stands above where the history started, metres */
+  seaLevelDatum?: number;
+  /** oceanic plates faster than continental ones (TectonicAgeOptions.plateSpeeds) */
+  plateSpeeds?: boolean;
   /** sea-level offset already baked into EL from the previous age */
   seaLevelOffset?: number;
 };
@@ -122,11 +129,24 @@ export type AgeReport = {
   seaLevelOffset: number;
   specksDrowned: number;
   /** ocean model state, to pass back in next age */
+  continentalAreaRef?: number;
   crust?: Uint8Array;
   oceanAge?: Float32Array;
-  waterVolume?: number;
+  basinDepthRef?: number;
+  freeboardRef?: number;
   /** ocean model: how far the sea rose this age, metres (negative: fell) */
   seaLevelMetres?: number;
+  /** ocean model: how far the sea now stands above where the history started */
+  seaLevelDatum?: number;
+  /**
+   * this age: tiles of new sea floor opened, extra claims where plates
+   * overlapped, continental tiles lost in overlaps, and (ocean model) tiles
+   * that turned continental or oceanic
+   */
+  motion: {
+    gaps: number; overlaps: number; lostContinental: number;
+    accreted: number; foundered: number; areaRestored: number;
+  };
 };
 
 export function runAge(w: World, size: number, opts: AgeOptions): AgeReport {
@@ -152,6 +172,17 @@ export function runAge(w: World, size: number, opts: AgeOptions): AgeReport {
         ? { crust: opts.crust, oceanAge: opts.oceanAge }
         : initOcean(w.EL))
     : null;
+  const datum = opts.seaLevelDatum ?? 0;
+  // the share of continent above the sea this world started with
+  const freeboardRef = oceanState
+    ? opts.freeboardRef ?? continentalExposure(w.EL, oceanState.crust, datum)
+    : undefined;
+  // and the continental crust area it started with, which is conserved
+  let continentalAreaRef = opts.continentalAreaRef;
+  if (oceanState && continentalAreaRef === undefined) {
+    continentalAreaRef = 0;
+    for (let i = 0; i < oceanState.crust.length; i++) continentalAreaRef += oceanState.crust[i];
+  }
   const steps = Math.max(1, Math.round(opts.subSteps ?? 1));
   const distance = (opts.drift / 100) * (size / 3);
   const strength = opts.upliftStrength ?? 45;
@@ -166,7 +197,9 @@ export function runAge(w: World, size: number, opts: AgeOptions): AgeReport {
     province: provinces.id,
     crust: oceanState?.crust,
     oceanAge: oceanState?.oceanAge,
+    plateSpeeds: opts.plateSpeeds,
   });
+  const motion = { ...tect.motion, accreted: 0, foundered: 0, areaRestored: 0 };
   for (let s = 1; s < steps; s++) {
     const prev = tect;
     tect = tectonicAge(prev.elevation, size, {
@@ -180,7 +213,11 @@ export function runAge(w: World, size: number, opts: AgeOptions): AgeReport {
       province: prev.province,
       crust: prev.crust,
       oceanAge: prev.oceanAge,
+      plateSpeeds: opts.plateSpeeds,
     });
+    motion.gaps += tect.motion.gaps;
+    motion.overlaps += tect.motion.overlaps;
+    motion.lostContinental += tect.motion.lostContinental;
     // what the age as a whole lifted, erupted and found
     for (let i = 0; i < tect.uplifting.length; i++) {
       if (prev.uplifting[i]) tect.uplifting[i] = 1;
@@ -311,8 +348,13 @@ export function runAge(w: World, size: number, opts: AgeOptions): AgeReport {
   if (oceanState && tect.crust && tect.oceanAge) {
     // the sea floor's depth comes from its age: shallow at the ridges, deepening
     // as it cools; the gap between shelf and abyss follows from crust type
-    updateCrust(el, tect.crust, tect.oceanAge);
-    el = relaxBathymetry(el, tect.crust, tect.oceanAge);
+    const changed = updateCrust(el, tect.crust, tect.oceanAge);
+    motion.accreted = changed.accreted;
+    motion.foundered = changed.foundered;
+    if (continentalAreaRef !== undefined) {
+      motion.areaRestored = conserveContinentalArea(el, tect.crust, tect.oceanAge, size, continentalAreaRef);
+    }
+    el = relaxBathymetry(el, tect.crust, tect.oceanAge, datum);
     opts.trace?.("bathymetry", el);
   } else {
     const sep = opts.crustSeparation ?? 0.8;
@@ -327,8 +369,13 @@ export function runAge(w: World, size: number, opts: AgeOptions): AgeReport {
   // 6. climate, with the rivers it just cut
   const climate = deriveClimate(el, size, opts.climate, opts.seed + 1);
   // crust is conserved; only how much of it is drowned may change
-  if (!oceanState && opts.conserveLand !== false) el = conserveCrust(el, opts.baselineLand ?? 0.3, opts.seaLevelOffset ?? 0);
-  opts.trace?.("conserveCrust", el);
+  if (oceanState && tect.crust && freeboardRef !== undefined) {
+    el = restoreFreeboard(el, tect.crust, freeboardRef, datum);
+    opts.trace?.("freeboard", el);
+  } else {
+    if (opts.conserveLand !== false) el = conserveCrust(el, opts.baselineLand ?? 0.3, opts.seaLevelOffset ?? 0);
+    opts.trace?.("conserveCrust", el);
+  }
 
   const world: World = { EL: el, ...climate, VL };
 
@@ -350,14 +397,16 @@ export function runAge(w: World, size: number, opts: AgeOptions): AgeReport {
     world.RF[i] = Math.min(100, Math.max(0, Math.round(world.RF[i] * phase.rainfall)));
     world.EL[i] = Math.min(400, Math.max(0, Math.round(world.EL[i] + seaDelta)));
   }
-  // Ocean model: sea level from the water that exists. The ocean holds a fixed
-  // volume less what the ice sheets lock up, and fills whatever basins the sea
-  // floor and continents leave — young shallow sea floor raises it, ice lowers
-  // it. The painted world's ocean is taken to hold the long-run mean ice.
-  let waterVolume = opts.waterVolume, seaRise = 0;
-  if (oceanState) {
-    if (waterVolume === undefined) waterVolume = oceanVolume(w.EL) + MEAN_ICE_METRES * oceanTiles(w.EL);
-    seaRise = seaLevelRise(world.EL, waterVolume - phase.iceMetres * oceanTiles(world.EL));
+  // Ocean model: sea level from how deep the basins are and how much water the
+  // ice holds, against where this world's basins settle (ocean.ts).
+  let seaRise = 0, seaLevelDatum = datum, basinDepthRef = opts.basinDepthRef;
+  if (oceanState && tect.crust && tect.oceanAge) {
+    const depth = meanOceanDepthMetres(tect.crust, tect.oceanAge);
+    basinDepthRef = basinDepthRef === undefined
+      ? depth
+      : basinDepthRef + (depth - basinDepthRef) * basinReferenceRate(opts.age ?? 1, MYR_PER_AGE);
+    seaLevelDatum = seaLevelFromBasins(depth, basinDepthRef, phase.iceMetres, MEAN_ICE_METRES);
+    seaRise = seaLevelDatum - datum;
     world.EL = applySeaLevelRise(world.EL, seaRise);
   }
   opts.trace?.("seaLevel", world.EL);
@@ -415,7 +464,11 @@ export function runAge(w: World, size: number, opts: AgeOptions): AgeReport {
     specksDrowned,
     crust: tect.crust,
     oceanAge: tect.oceanAge,
-    waterVolume,
+    basinDepthRef,
+    freeboardRef,
+    continentalAreaRef,
     seaLevelMetres: seaRise,
+    seaLevelDatum: oceanState ? seaLevelDatum : undefined,
+    motion,
   };
 }
