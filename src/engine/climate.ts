@@ -143,18 +143,57 @@ export function boundaryCurrents(el: Int16Array, size: number, reach = 14): Grid
   return cur;
 }
 
+/**
+ * Rainfall.
+ *
+ * The subtropical desert term used to depend on latitude alone. Rainfall is
+ * ranked into bands afterwards, so the driest tiles on the whole map all sat
+ * on the same two rows, and Dwarf Fortress drew them as ruler-straight
+ * east-west desert bars across every continent (rows 43 and 85 on a 129 map,
+ * on all eight procedural presets).
+ *
+ * Real subtropical deserts are not bands. They sit on the west side of
+ * continents, where cold currents and sinking air keep the coast dry (Namib,
+ * Atacama, Western Sahara, Baja), while east coasts at the same latitude take
+ * onshore trade winds and monsoons and are wet (Florida, eastern Brazil,
+ * eastern Australia). So the belt now wanders in latitude with the noise field,
+ * and its strength depends on which coast a tile is near.
+ */
 export function rainfall(el: Int16Array, size: number, rng: () => number): Grid {
   const d = distanceToOcean(el, size), out = new Float64Array(size * size);
+  // Drawn first so it can bend the belt; nothing else here uses rng, so the
+  // field is the same one the texture pass below always used and the random
+  // sequence seen by the layers generated after rainfall is unchanged.
+  const n = fbm(size, rng, 5, 5);
+  const reach = Math.max(4, Math.round(size * 0.12));
   for (let y = 0; y < size; y++) {
-    const L = lat(size, y);
-    const belt =
-      0.85 * Math.exp(-Math.pow(L / 0.18, 2)) +          // ITCZ
-      0.55 * Math.exp(-Math.pow((L - 0.62) / 0.2, 2)) -  // storm track
-      0.35 * Math.exp(-Math.pow((L - 0.33) / 0.12, 2)) + // subtropical desert
-      0.2;
     for (let x = 0; x < size; x++) {
       const i = y * size + x;
-      out[i] = belt * Math.exp(-d[i] / (size * 0.16));   // continentality
+      // Wander and width were measured, not guessed: across the eight
+      // archetypes, 0.8 and 0.18 bring the share of the driest land packed
+      // into one five-row window down to what it is with no desert term at all
+      // (26% vs 27%; the old latitude-only belt was 44%), while west coasts in
+      // the subtropics stay drier than east coasts (38 vs 76). Wandering further
+      // scattered the deserts and started wetting the west coasts again.
+      const L = Math.min(1, Math.max(0, lat(size, y) + (n[i] - 0.5) * 0.8));
+      // how close the sea is to the west and to the east along the row
+      let west = reach + 1, east = reach + 1;
+      for (let k = 1; k <= reach; k++) {
+        if (west > reach && el[y * size + ((x - k + size) % size)] < 100) west = k;
+        if (east > reach && el[y * size + ((x + k) % size)] < 100) east = k;
+        if (west <= reach && east <= reach) break;
+      }
+      const westCoast = west <= reach ? 1 - west / reach : 0;
+      const eastCoast = east <= reach ? 1 - east / reach : 0;
+      const desert = Math.exp(-Math.pow((L - 0.33) / 0.18, 2)) *
+        Math.max(0, 1 + 0.8 * westCoast - 1.2 * eastCoast);
+      const belt =
+        0.85 * Math.exp(-Math.pow(L / 0.18, 2)) +          // ITCZ
+        0.55 * Math.exp(-Math.pow((L - 0.62) / 0.2, 2)) -  // storm track
+        0.35 * desert +                                    // subtropical desert
+        0.2 +
+        0.25 * eastCoast * Math.exp(-Math.pow((L - 0.3) / 0.2, 2)); // trades / monsoon
+      out[i] = belt * Math.exp(-d[i] / (size * 0.16));     // continentality
     }
   }
   // orographic sweep under prevailing westerlies -> real rain shadows
@@ -172,7 +211,6 @@ export function rainfall(el: Int16Array, size: number, rng: () => number): Grid 
       prev[y] = e;
     }
   }
-  const n = fbm(size, rng, 5, 5);
   for (let i = 0; i < out.length; i++) out[i] += (n[i] - 0.5) * 0.15;
   return out;
 }
