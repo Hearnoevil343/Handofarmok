@@ -194,7 +194,62 @@ rain-shadowed), interiors beyond moisture reach become grassland.
 - [ ] Drainage from the real flow field and rock type, not slope plus noise.
 - [ ] Verify against DF itself (the DF regeneration harness in the backlog).
 
-## 9. Calibration data
+## 9. Planet settings: pole layout, spin direction, axial tilt
+
+**Now:** the simulation ignores the Pole setting. Every map is treated as the
+whole planet — equator across the middle row, poles at the top and bottom —
+while the app exports `POLE:NONE`. Wind direction is hard-coded west to east.
+
+**Idea (from the developer):** the player chooses how the planet is laid out
+and which way it spins, and the wind, rain, temperature and ice all follow.
+
+**Settings:**
+- **Pole layout**, tied to DF's `POLE` token (World Settings already offers
+  None, North Only, South Only, North and South, North or South,
+  North and/or South):
+  - *North and South* — whole planet: equator mid-map, ice at both edges.
+  - *North Only* — the map is one hemisphere: equator along the bottom edge,
+    north pole at the top, a single ice cap.
+  - *South Only* — mirrored.
+  - *North or South*, *North and/or South* — DF picks at random. The
+    simulation needs a definite layout, so roll one from the world seed and
+    show the player which it became (or leave these out of the simulation).
+  - *None* — latitude does not drive climate (painted worlds). The simulation
+    still needs a layout: run it as whole-planet while exporting None, or
+    disable climate evolution.
+- **Spin direction** — prograde (Earth) or retrograde (Venus). Retrograde
+  mirrors the wind bands: trades blow west to east, mid-latitude winds east to
+  west, so rain shadows, coastal deserts and warm/cold ocean currents swap to
+  the opposite sides of continents.
+- **Axial tilt** (obliquity) — how far the tropics and polar circles reach and
+  how strong the seasons and ice caps are. Earth 23.4 degrees. Above about 55
+  degrees the equator gets less sunlight than the poles and ice forms in an
+  equatorial belt instead of caps (Rose et al. 2017).
+
+**Plan:**
+- [ ] `planet.ts`: layout (latitude of the top and bottom rows), spin sign,
+      tilt. Every latitude lookup in the engine (temperature, wind table,
+      ITCZ, ice, ocean currents, the supercontinent drive's north-south
+      handling) reads latitude from here instead of assuming the middle row is
+      the equator.
+- [ ] Wind table (section 6) built from layout and spin sign; insolation and
+      the energy balance (section 5) from tilt.
+- [ ] Controls in Run Age and World Settings; pole layout kept in sync with
+      the DF `POLE` token on export.
+- [ ] **Check in DF first:** generate a painted world with `POLE:NORTH` and
+      compare against `NONE` using the DF test harness, to see whether DF adds
+      its own latitude cooling on top of painted temperature. Export
+      accordingly so the world is not cooled twice.
+
+**Later — planet size (discussed, not scheduled):** the scale layer (section 1)
+takes planet radius, surface gravity and rotation period as parameters from the
+start, defaulting to Earth, so a planet-size setting is a UI addition rather
+than a rewrite. What size would change: km per tile, mountain heights (scale
+roughly with 1/gravity), plate count and speed, and — through rotation rate —
+how many wind bands there are (Hadley cell width scales with 1/rotation rate).
+Calibration data exists only for Earth, so Earth is tuned first.
+
+## 10. Calibration data
 
 - [ ] Scotese & Wright 2018 PaleoDEMs (CC-BY-4.0, 1 degree, every 5 Myr,
       Zenodo 5460860): per-slice land %, hypsometry, mountain %, coastline
@@ -211,8 +266,10 @@ rain-shadowed), interiors beyond moisture reach become grassland.
 4. Ocean age and sea level from water volume (section 4) — removes the forced
    land share.
 5. Sediment routing and deposition (section 3).
-6. Wind table and moisture advection (section 6), then the EBM (section 5).
-7. Ice as state (section 7), drainage from flow (section 8).
-8. PaleoDEM calibration (section 9) across all of it.
+6. Planet settings (section 9) — layout and spin sign first, so the wind table
+   is built on them from the start.
+7. Wind table and moisture advection (section 6), then the EBM (section 5).
+8. Ice as state (section 7), drainage from flow (section 8).
+9. PaleoDEM calibration (section 10) across all of it.
 
 Budget check after each: time per age at 129 and 257, in simlab and the app.
