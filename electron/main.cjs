@@ -1,4 +1,4 @@
-const { app, protocol, net, BrowserWindow } = require("electron");
+const { app, protocol, net, shell, BrowserWindow } = require("electron");
 const path = require("path");
 const { pathToFileURL } = require("url");
 
@@ -17,6 +17,15 @@ function createWindow() {
     autoHideMenuBar: true,
     webPreferences: { contextIsolation: true, nodeIntegration: false },
   });
+
+  // Links that ask for a new window (the update notice, the GitHub link on the
+  // About page) belong in the system browser. Electron would otherwise open them
+  // in a bare window of its own, with no address bar and no way to download.
+  win.webContents.setWindowOpenHandler(({ url }) => {
+    if (url.startsWith("https://")) shell.openExternal(url);
+    return { action: "deny" };
+  });
+
   win.loadURL("app://local/index.html");
 }
 

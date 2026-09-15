@@ -9,6 +9,7 @@ import { MapPage } from "@components/pages/map/page";
 import { ModalManager } from "@components/Modal/ModalManager";
 import type { RootState } from "@store/store";
 import { StartPage } from "@components/pages/start/page";
+import { UpdateNotice } from "@components/main/UpdateNotice/UpdateNotice";
 import { WorldSettingsPage } from "@components/pages/world-settings/page";
 import { useEffect } from "react";
 import { useSelector } from "react-redux";
@@ -33,6 +34,7 @@ export function App() {
   return (
     <>
       <ModalManager />
+      <UpdateNotice />
       <HashRouter>
         <Routes>
           <Route
