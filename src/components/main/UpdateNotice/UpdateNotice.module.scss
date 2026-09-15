@@ -1,0 +1,71 @@
+@use "@styles/variables" as *;
+
+.base {
+  position: fixed;
+  right: 16px;
+  bottom: 16px;
+  z-index: 1000;
+  max-width: min(460px, calc(100vw - 32px));
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px 12px;
+  padding: 14px 16px;
+  background: $panel-bg;
+  border: 1px solid $ui-accent;
+  border-radius: 6px;
+  box-shadow: 0 10px 30px rgba($ui-black, 0.6);
+  color: $ui-silver;
+  font-size: 0.85rem;
+  line-height: 1.4;
+}
+
+.message {
+  flex: 1 1 100%;
+  margin: 0;
+
+  strong {
+    color: $ui-accent;
+  }
+}
+
+.primary {
+  background: $ui-accent;
+  color: $ui-black;
+  padding: 6px 12px;
+  border-radius: 4px;
+  font-weight: 600;
+  text-decoration: none;
+
+  &:hover {
+    filter: brightness(1.1);
+  }
+}
+
+.secondary {
+  background: transparent;
+  color: $ui-silver;
+  border: 1px solid $panel-border;
+  padding: 6px 12px;
+  border-radius: 4px;
+  cursor: pointer;
+
+  &:hover {
+    border-color: $ui-accent;
+  }
+}
+
+.skip {
+  margin-left: auto;
+  padding: 0;
+  background: none;
+  border: none;
+  color: $text-gray;
+  font-size: 0.8rem;
+  text-decoration: underline;
+  cursor: pointer;
+
+  &:hover {
+    color: $ui-silver;
+  }
+}

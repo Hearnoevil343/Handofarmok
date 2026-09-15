@@ -2392,3 +2392,45 @@ elevation 196 after Fill on ocean.
   Destructive Parameters** sets `EROSION_CYCLE_COUNT` to 0.
 - Importing opens the Prepare for Painting dialog on purpose
   (`useWorldInitializer(true)`); loading from the gallery does not.
+
+---
+
+## 48. Telling people when there is a newer version
+
+0.2.0 and 0.2.1 have no way to learn that a newer release exists, so anyone who
+downloaded one keeps running it. The 0.2.0 release page now carries a warning
+linking to `/releases/latest`, but that only reaches people who go back to the
+page. From the next release on, the app tells them itself.
+
+**On launch** (`UpdateNotice`), the app asks GitHub for the latest release
+(`/repos/Hearnoevil343/Handofarmok/releases/latest`) and compares its tag with
+`__APP_VERSION__`. When the release is newer, a notice sits in the corner — not a
+modal — with **Get the update** (the release page), **Later** (gone until next
+launch) and **Skip this version** (remembered in `localStorage` until an even
+newer release). Offline, rate-limited or any other failure shows nothing.
+
+**On demand**, the About page has **Check for updates**, which always reports:
+the new version with a link, "You're on the latest version", or "Couldn't reach
+GitHub".
+
+**In the .exe**, links that open a new window now go to the system browser
+(`setWindowOpenHandler` → `shell.openExternal`) instead of a bare Electron window
+with no address bar.
+
+Versions compare numerically (`0.10.0` is newer than `0.9.9`), ignore a leading
+`v` and any pre-release suffix, and treat `0.2` as `0.2.0`. The link is only ever
+taken from this repository's own releases.
+
+### Checked
+
+- Comparison cases: 0.2.2 > 0.2.1, v0.3.0 > 0.2.9, 0.2.1 = 0.2.1, 0.2.0 < 0.2.1,
+  0.10.0 > 0.9.9, 1.0.0-beta.1 > 0.9.0, 0.2 = 0.2.0.
+- Against real GitHub (latest 0.2.1, build 0.2.1): no notice; About says "You're on
+  the latest version (0.2.1)".
+- With GitHub's reply replaced by a 9.9.9 release: the notice reads "A new version
+  of Hand of Armok is out: 9.9.9 (you have 0.2.1)" and links to that release in a
+  new tab; Later hides it until the next mount; Skip keeps it hidden on the next
+  mount; About reports "Version 9.9.9 is available".
+- With GitHub answering 403: nothing is shown.
+- Not yet checked: the system-browser hand-off inside a packaged .exe, which needs
+  the next `npm run dist`.
