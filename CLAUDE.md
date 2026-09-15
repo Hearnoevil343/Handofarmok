@@ -72,10 +72,21 @@ electron-builder's symlink step. (Not re-verified.)
   `HTMLAnchorElement.prototype.click` in the page to capture the export's blob URL
   and `fetch` it (CHANGES §45).
 
+## Branches
+
+- `main` — what is released. Only release merges and version tags land here.
+- `develop` — finished work waiting for the next release. `npm run check-types`,
+  `npm run lint` and `npm run build` pass on every merge.
+- `feature/<name>` or `fix/<name>` — one piece of work, branched from `develop`,
+  merged back into it, then deleted.
+- Release: merge `develop` into `main`, tag `vX.Y.Z`, push both.
+- Ideas and open items: `docs/FEATURE-BACKLOG.md`. Simulation steps:
+  `docs/simulation-plan.md`. Both are edited on branches like any other file.
+
 ## Before a release
 
-Review `C:\dev\FEATURE-BACKLOG.md` (Hand of Armok section) first: build, defer or
-drop every item on purpose, then move shipped items to Done with the version.
+Review `docs/FEATURE-BACKLOG.md` first: build, defer or drop every item on
+purpose, then move shipped items to Done with the version.
 
 ## How to work here
 
