@@ -122,6 +122,16 @@ the simulation's own step list is `docs/simulation-plan.md`.
       the dev's sister. Scope not decided.
 
 ## Found by generating every preset in DF (2026-09-14)
+- [x] **Painted biomes and weather survive DF** (2026-09-15): rainfall and
+      drainage identical; painted desert -> 98% Desert, forest 99%, wetland
+      98%, mountains 96%. DF cools temperature above elevation 228 (up to -22 at
+      400); the exporter now compensates (§55). POLE other than NONE replaces
+      painted temperature entirely, so the export must stay POLE:NONE.
+- [ ] DF test leftovers to clean when the dev says: `dfhack-config/init/
+      onLoad.hoa-dump.init` (dumps every world that loads), the `hoa-dumps`
+      folder, test save folders (region8xx/9xx), and `prefs/world_gen.txt`
+      (currently a test file; the original is
+      `world_gen.before-hand-of-armok-test-2026-09-15.txt`).
 Export is faithful: land/sea 97.8–100%, rainfall and drainage read back
 identical, mountains 89–100% overlap. The problems are in the painted data.
 - [x] **Desert stripes on all 8 procedural presets** — fixed on branch
