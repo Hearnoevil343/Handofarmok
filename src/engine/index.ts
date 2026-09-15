@@ -16,4 +16,5 @@ export * from "./artifacts";
 export * from "./metrics";
 export * from "./cycles";
 export * from "./provinces";
+export * from "./planet";
 export * as climate from "./climate";

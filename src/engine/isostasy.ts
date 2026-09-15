@@ -9,6 +9,8 @@
  * elevation of 262 against an interior of 84 — the grey band down the side of
  * the world.
  */
+import { scaleLength } from "./scale";
+
 const wrapX = (x: number, size: number) => (x + size) % size;
 const clampY = (y: number, size: number) => (y < 0 ? 0 : y >= size ? size - 1 : y);
 const at = (x: number, y: number, size: number) =>
@@ -31,8 +33,10 @@ export function isostaticRebound(
   after: Int16Array,
   size: number,
   strength = 0.55,
-  radius = 6,
+  /** how far the load spreads, in tiles; ~1,900 km (6 tiles at 129) by default */
+  radiusTiles?: number,
 ): Int16Array {
+  const radius = radiusTiles ?? Math.round(scaleLength(6, size));
   const n = size * size;
   const removed = new Float64Array(n);
   for (let i = 0; i < n; i++) removed[i] = Math.max(0, before[i] - after[i]);
@@ -84,10 +88,12 @@ export function orogenicCollapse(
   el: Int16Array,
   size: number,
   ceiling = 340,
-  passes = 6,
+  /** each pass spreads one tile further, so this is a distance: 6 tiles at 129 */
+  passesTiles?: number,
   /** share of the excess lost downward into the mantle root each pass */
   subsidence = 0.12,
 ): Int16Array {
+  const passes = passesTiles ?? Math.max(1, Math.round(scaleLength(6, size)));
   const cur = Int16Array.from(el);
 
   for (let p = 0; p < passes; p++) {
@@ -156,6 +162,8 @@ export function denudeInactive(
 ): Int16Array {
   const SEA = 100;
   const out = Int16Array.from(el);
+  // the surrounding ground: ~930 km either way (3 tiles at 129)
+  const w = Math.max(1, Math.round(scaleLength(3, size)));
 
   for (let y = 0; y < size; y++) {
     for (let x = 0; x < size; x++) {
@@ -166,8 +174,8 @@ export function denudeInactive(
 
       // local base level: the mean of the surrounding ground
       let sum = 0, n = 0;
-      for (let dy = -3; dy <= 3; dy++) {
-        for (let dx = -3; dx <= 3; dx++) {
+      for (let dy = -w; dy <= w; dy++) {
+        for (let dx = -w; dx <= w; dx++) {
           sum += el[at(x + dx, y + dy, size)]; n++;
         }
       }
