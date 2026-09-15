@@ -176,10 +176,21 @@ export function runAge(w: World, size: number, opts: AgeOptions): AgeReport {
         : initOcean(w.EL))
     : null;
   const datum = opts.seaLevelDatum ?? 0;
-  // the share of continent above the sea this world started with
-  const freeboardRef = oceanState
-    ? opts.freeboardRef ?? continentalExposure(w.EL, oceanState.crust, datum)
-    : undefined;
+  // The share of continent above the sea this world started with — scaled down
+  // when the world starts with more land than its baseline allows. Callers cap
+  // the baseline (60%), and the default path pulls land to it every age; without
+  // the same cap the ocean model held generated highland worlds at their
+  // starting ~70% land, where simlab counts a world as degenerate.
+  let freeboardRef = opts.freeboardRef;
+  if (oceanState && freeboardRef === undefined) {
+    let land = 0;
+    for (let i = 0; i < w.EL.length; i++) if (w.EL[i] >= 100) land++;
+    const startShare = land / w.EL.length;
+    const cap = opts.baselineLand !== undefined && startShare > 0
+      ? Math.min(1, opts.baselineLand / startShare)
+      : 1;
+    freeboardRef = continentalExposure(w.EL, oceanState.crust, datum) * cap;
+  }
   // and the continental crust area it started with, which is conserved
   let continentalAreaRef = opts.continentalAreaRef;
   if (oceanState && continentalAreaRef === undefined) {

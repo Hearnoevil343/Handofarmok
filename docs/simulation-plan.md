@@ -184,9 +184,17 @@ young sea floor; glacial lowstand ~125 m; hydro-isostatic factor ~0.7.
 - [x] `hypsometricBimodality` rebuilt in metres (deep mode below -2.5 km,
       continental mode -1..+2 km); the old one looked for the upper mode among
       the mountains and only rewarded separateCrust's narrow sea-floor band.
-- [ ] A/B the ocean model against the default on the fixed metric; tune the
-      mountain controller (it hunts 0-100 on the ocean model); sediment into
-      the oceans (step 5) is the physical replacement for area conservation.
+- [~] A/B on the fixed metric, 96 worlds + 200 ages: default 1.45 / 1.39 /
+      0.49; ocean model 3.30 / 2.96 / 0.73, then 2.20 / 2.22 after capping the
+      freeboard target at the baseline land share (highland worlds are
+      generated near 70% land; the default path caps them at 60%). Still 13-14
+      degenerate runs (land on highland worlds swings ~10 points), coastline
+      dimension 1.37 (target up to 1.34), flat land patches 1.3% (default
+      0.08%). Stays opt-in. Next: damp the land swing on small-ocean worlds,
+      find the source of the rough coasts and flats (tectonics leaves 1.3-2.5%
+      flat; separateCrust's smoothing used to remove it), tune the mountain
+      controller; sediment into the oceans (step 5) is the physical
+      replacement for area conservation.
 
 ## 5. Climate: temperature
 
@@ -295,15 +303,22 @@ and which way it spins, and the wind, rain, temperature and ice all follow.
   equatorial belt instead of caps (Rose et al. 2017).
 
 **Plan:**
-- [ ] `planet.ts`: layout (latitude of the top and bottom rows), spin sign,
-      tilt. Every latitude lookup in the engine (temperature, wind table,
-      ITCZ, ice, ocean currents, the supercontinent drive's north-south
-      handling) reads latitude from here instead of assuming the middle row is
-      the equator.
-- [ ] Wind table (section 6) built from layout and spin sign; insolation and
-      the energy balance (section 5) from tilt.
-- [ ] Controls in Run Age and World Settings; pole layout kept in sync with
-      the DF `POLE` token on export.
+- [x] `planet.ts`: layout, spin sign, tilt, and the POLE token mapping (the
+      random "or" options rolled from the seed). Temperature and rainfall read
+      latitude from it. Earth defaults bit-identical. Checked: north-only puts
+      the pole on the top row and the equator on the bottom; tilt 80 makes the
+      poles the warmest rows; retrograde flips wet and dry coasts (west/east
+      rainfall 72/90 -> 89/70).
+- [x] Retrograde spin: climate derived on the mirrored map and mirrored back,
+      which swaps every east-west asymmetry at once (sweep, currents, coasts).
+- [x] Tilt: North (1975) two-term annual insolation, added to the latitude
+      term as the difference from Earth's 23.44 degrees.
+- [ ] Wind table (section 6) built from layout and spin sign; the energy
+      balance (section 5) from tilt.
+- [x] Controls in Run Age and Derive Climate: pole layout (follows the Poles
+      setting unless overridden), spin, axial tilt.
+- [ ] Export: still `POLE:NONE` until the DF check below says whether DF
+      cools a painted world by latitude on its own.
 - [ ] **Check in DF first:** generate a painted world with `POLE:NORTH` and
       compare against `NONE` using the DF test harness, to see whether DF adds
       its own latitude cooling on top of painted temperature. Export

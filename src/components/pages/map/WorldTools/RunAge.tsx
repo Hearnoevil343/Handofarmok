@@ -4,6 +4,7 @@ import { formatYears, worldWidthKm, yearsForTiles } from "@helpers/scale";
 import { useRef, useState } from "react";
 
 import { MYR_PER_AGE } from "@engine/timescale";
+import { usePlanet } from "./usePlanet";
 import { SeedField } from "./SeedField";
 import { Selector } from "@components/widgets/Selector/Selector";
 import { Slider } from "@components/widgets/Slider/Slider";
@@ -29,6 +30,7 @@ export function RunAge() {
   const [report, setReport] = useState<string | null>(null);
   const stopRequested = useRef(false);
   const { busy, write, runAsync, seed, setSeed } = useWorldWrite("RunAge");
+  const { planet, fields: planetFields } = usePlanet(seed);
 
   /** One age: advance the session, write the world, describe what happened. */
   const stepAge = (): string => {
@@ -61,6 +63,7 @@ export function RunAge() {
       riverDensity: density,
       rebound,
       climate,
+      planet,
       seed: seed + session.age,
       age: session.age + 1,
     });
@@ -163,6 +166,7 @@ export function RunAge() {
         options={CLIMATE_NAMES.map((c) => ({ label: titleCase(c), value: c }))}
         onChange={setClimate}
       />
+      {planetFields}
       <SeedField seed={seed} onChange={setSeed} label="Seed" />
 
       <Slider min={1} max={100} currentValue={agesToRun} onChange={setAgesToRun} label="Ages To Run"
