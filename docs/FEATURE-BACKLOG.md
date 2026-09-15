@@ -241,6 +241,18 @@ identical, mountains 89–100% overlap. The problems are in the painted data.
         `helpers/scale.ts` ageDuration wording would need updating. Recommended:
         drift 3 (improves every failing metric on both seed sets, best worst
         case). Not changed overnight because it is a user-facing default.
+      - 200-age reference, all 6 archetypes, 48 worlds per drift, good-5:
+        drift 4 -> 3: score 3.08/9.70 -> 2.29/5.62, bimodality 0.84 -> 0.88,
+        elongation 2.14 -> 2.30, mountains 11.3% -> 11.7%, largest landmass
+        76% -> 64%, degenerate runs 22 -> 20, edgeBias 0.89 at both.
+        Correction to the 12-world result: drift does NOT slow the
+        supercontinent cycle. At both settings the autocorrelation period is 40
+        ages (the engine clock) and the assembly gap median is 21-26 ages. The
+        case for drift 3 is terrain quality, not cycle timing.
+      - Still open in simulation: land share on the land-heavy archetypes
+        (scoring question above); coast roughness 1.40-1.43 (target 1.18-1.34)
+        unchanged by everything tried tonight; assembly gap shorter than the
+        clock (21-26 vs 40 ages).
       - Parameter search restarted on good-3 (`%TEMP%\hoa-night\search3`).
         After 3 rounds its best was plates 8 + mountainTarget 0.10. Checked on
         both 48-world seed sets over 100 ages: score 3.28/7.99 -> 3.15/5.95
