@@ -2940,3 +2940,13 @@ world data before and after, with an undo check after every stroke:
 Every undo restored the map exactly. The gappy strokes seen earlier came from the
 test tool sending drags without the mouse button held; release now finishes the
 stroke's path anyway, as the airbrush already did.
+
+---
+
+## 56. Dwarf Fortress's original world_gen.txt, in the Export Vault
+
+- Added **Download Original DF World Gen File** to the Export Vault: DF's own
+  default `world_gen.txt` (ten standard regions), bundled in the app, for
+  replacing a broken `prefs/world_gen.txt`.
+- Checked the bundled copy against the settings DF itself uses when no
+  world_gen.txt exists.

@@ -1,3 +1,4 @@
+import { OriginalWorldGenCard } from "./Cards/OriginalWorldGenCard";
 import { PerfectWorldCard } from "./Cards/PerfectWorldCard";
 import { WorldGenCard } from "./Cards/WorldGenCard";
 import styles from "./page.module.scss";
@@ -14,6 +15,7 @@ export function ExportPage() {
       <div className={styles.exportGrid}>
         <WorldGenCard />
         <PerfectWorldCard />
+        <OriginalWorldGenCard />
       </div>
     </div>
   );

@@ -91,5 +91,6 @@ purpose, then move shipped items to Done with the version.
 ## How to work here
 
 - Explain plainly, with numbers. Say what was measured and what was not.
-- Record changes in `CHANGES.md` in its existing style: what changed, why, the
-  measurement behind it, and mistakes made along the way.
+- Record changes in `CHANGES.md` as short bullets ("fixed brushes", "added X").
+  Measurements and investigation detail go in commit messages, the backlog or
+  `docs/simulation-plan.md`, not the changelog.
