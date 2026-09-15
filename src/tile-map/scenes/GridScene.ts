@@ -1,6 +1,8 @@
 import Phaser from "phaser";
 import { BusEvent, EventBus } from "../EventBus";
-import { BrushOp, applyOp, brushWeight, type FalloffKind } from "@helpers/brushEngine";
+import {
+  AIRBRUSH_STRENGTH, BrushOp, applyOp, brushWeight, type FalloffKind,
+} from "@helpers/brushEngine";
 import { BrushShape, PaintMode } from "@store/slices/paintSlice";
 import { GLYPH_MIN_ZOOM, GLYPH_OF, glyphInk } from "@helpers/glyphs";
 import { getSession } from "@engine/session";
@@ -68,6 +70,16 @@ export class GridScene extends Phaser.Scene {
     };
 
     const onBrushUpdated = (state: PaintSettings) => {
+      // A tool or layer switch mid-stroke (by shortcut key) left the old
+      // brush's touched tiles in the set, so the new brush skipped them.
+      if (
+        state.activeLayer !== this.currentLayer ||
+        state.brushOp !== this.brushOp ||
+        state.activeBiome !== this.activeBiome
+      ) {
+        this.touchedTiles.clear();
+        this.flattenAnchor = null;
+      }
       this.currentLayer = state.activeLayer;
       this.activeBiome = state.activeBiome;
       this.lockedLayers = state.lockedLayers;
@@ -270,6 +282,18 @@ export class GridScene extends Phaser.Scene {
     this.flattenAnchor = null;
   }
 
+  /** Airbrush: a timed deposit starts, so every tile may take one more application. */
+  public beginDeposit() {
+    this.touchedTiles.clear();
+  }
+
+  /** true when a brush centred here covers at least one tile of the map */
+  public brushTouchesMap(x: number, y: number) {
+    const half = Math.floor(this.brushWidth / 2);
+    const size = worldManager.gridSize;
+    return x + half >= 0 && x - half < size && y + half >= 0 && y - half < size;
+  }
+
   /**
    * Eyedropper: pick up whatever is under the cursor. In biome mode that is the
    * biome; in a layer tool it is that layer's value. Either way the tool you
@@ -354,9 +378,11 @@ export class GridScene extends Phaser.Scene {
 
         const index = ty * size + tx;
 
-        // dab applies once per tile per stroke; airbrush keeps building
-        const repeating = this.paintMode === PaintMode.Airbrush;
-        if (!repeating && this.touchedTiles.has(index)) continue;
+        // One application per tile per stroke for a dab, per timed deposit for
+        // the airbrush (MainScene calls beginDeposit). The airbrush used to skip
+        // this check, so the brush dabs overlapping along a drag each applied.
+        const airbrush = this.paintMode === PaintMode.Airbrush;
+        if (this.touchedTiles.has(index)) continue;
 
         const weight = brushWeight(
           dx, dy, radius, this.falloff, this.brushShape, this.falloffKind,
@@ -371,7 +397,7 @@ export class GridScene extends Phaser.Scene {
           continue;
         }
 
-        if (!repeating) this.touchedTiles.add(index);
+        this.touchedTiles.add(index);
 
         // A step layer has no meaningful in-between value -- volcanism 60 is
         // not "most of a volcano" -- so it is always written at full strength.
@@ -379,7 +405,7 @@ export class GridScene extends Phaser.Scene {
           !this.activeBiome && LAYER_META[this.currentLayer].control === "steps";
         const strength = discrete
           ? 1
-          : this.brushOpacity * weight * (repeating ? 0.25 : 1);
+          : this.brushOpacity * weight * (airbrush ? AIRBRUSH_STRENGTH : 1);
 
         if (this.activeBiome) {
           this.paintBiome(index, strength);

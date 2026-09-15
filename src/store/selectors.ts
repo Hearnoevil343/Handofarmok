@@ -1,5 +1,5 @@
 import type { Tool } from "@helpers/tools";
-import type { BrushShape, PaintMode } from "./slices/paintSlice";
+import { type BrushShape, PaintMode } from "./slices/paintSlice";
 import { Biome, LayerType } from "#types";
 import type { BrushOp, FalloffKind } from "@helpers/brushEngine";
 import { type RootState } from "./store";
@@ -51,7 +51,6 @@ export const selectPaintSettings = (state: RootState): PaintSettings => {
     activeBiome,
     lockedLayers,
     viewMode,
-    paintMode,
     brushOp,
     activeTool,
     falloff,
@@ -59,6 +58,13 @@ export const selectPaintSettings = (state: RootState): PaintSettings => {
     scatter,
     zoomToCursor,
     showPlates,
+    // Sculpt builds up while the button is held, like a terrain editor's
+    // brush. As a once-per-stroke dab each pass added a fixed +20 elevation and
+    // holding still did nothing. Derived here so every scene agrees.
+    paintMode:
+      paintMode === PaintMode.Brush && activeTool === "sculpt"
+        ? PaintMode.Airbrush
+        : paintMode,
     brushValue: selectActiveBrushValue(state),
     brushWidth,
     brushShape,

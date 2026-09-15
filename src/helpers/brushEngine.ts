@@ -37,6 +37,41 @@ export const FALLOFF_KINDS: Array<{ id: FalloffKind; label: string }> = [
   { id: "tip", label: "Tip" },
 ];
 
+/**
+ * Airbrush deposits are timed rather than per frame or per pointer event, so
+ * the build-up rate does not depend on frame rate or on how fast you move.
+ */
+export const AIRBRUSH_TICK_MS = 50;
+
+/**
+ * Share of the brush strength one airbrush deposit applies. At 20 deposits a
+ * second, Raise at full strength adds about 60 elevation a second under the
+ * centre of the brush, and Smooth or Flatten close 15% of the gap per deposit.
+ */
+export const AIRBRUSH_STRENGTH = 0.15;
+
+/** Every tile on the straight line from a to b, ends included (Bresenham). */
+export function lineTiles(
+  a: { x: number; y: number },
+  b: { x: number; y: number },
+  visit: (x: number, y: number) => void,
+) {
+  let x = a.x;
+  let y = a.y;
+  const dx = Math.abs(b.x - x);
+  const dy = Math.abs(b.y - y);
+  const sx = x < b.x ? 1 : -1;
+  const sy = y < b.y ? 1 : -1;
+  let err = dx - dy;
+  for (;;) {
+    visit(x, y);
+    if (x === b.x && y === b.y) return;
+    const e2 = 2 * err;
+    if (e2 > -dy) { err -= dy; x += sx; }
+    if (e2 < dx) { err += dx; y += sy; }
+  }
+}
+
 const clamp01 = (v: number) => (v < 0 ? 0 : v > 1 ? 1 : v);
 
 /**
