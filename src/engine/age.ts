@@ -162,7 +162,7 @@ export function runAge(w: World, size: number, opts: AgeOptions): AgeReport {
   }
 
   if ((opts.hotspots ?? 2) > 0 && spots.length) {
-    const hot = applyHotspots(el, size, spots, tect.plateSet, plateMap.plateId, {
+    const hot = applyHotspots(el, size, spots, {
       strength: 70, seed: opts.seed + 7,
     });
     el = hot.elevation;
@@ -184,7 +184,8 @@ export function runAge(w: World, size: number, opts: AgeOptions): AgeReport {
   // 3 + 4. one flow field, used for both carving and climate
   const hydro = analyse(el, size, w.RF, opts.riverDensity);
   if (opts.riverCarving > 0) {
-    el = carveRivers(el, size, opts.riverCarving, w.RF, opts.riverDensity).elevation;
+    // same surface as the analysis just above, so reuse it rather than run it twice
+    el = carveRivers(el, size, opts.riverCarving, w.RF, opts.riverDensity, hydro).elevation;
   }
 
   // 5. the crust rises again where weight came off it

@@ -117,7 +117,8 @@ export function climatePhase(age: number, dispersal: number, historySeed = 0): C
   // ice locks water up, so cold withdraws the sea and exposes land; young ocean
   // floor between dispersed continents is shallow and raises it
   const anomaly = warmth - MEAN_WARMTH;
-  const temperature = anomaly * 10 + superc * 4;
+  // assembled continents (superc < 0) run hot, dispersed ones mild
+  const temperature = anomaly * 10 - superc * 4;
   const seaLevel = -anomaly * 15 - superc * 7;
 
   // assembled continents are dry; dispersed ones are wet
