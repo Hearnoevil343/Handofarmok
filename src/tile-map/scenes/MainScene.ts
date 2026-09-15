@@ -155,6 +155,17 @@ export class MainScene extends Phaser.Scene {
       }
     });
 
+    const emitCoords = (tx: number, ty: number) => {
+      const index = ty * worldManager.gridSize + tx;
+      EventBus.emit(BusEvent.UpdateCoords, {
+        x: tx,
+        y: ty,
+        biome: worldManager.getBiome(index),
+        biomeDescriptor: worldManager.getBiomeDescriptor(index),
+        layerValues: worldManager.getPointLayersData(index),
+      });
+    };
+
     this.input.on("pointermove", (p: Phaser.Input.Pointer) => {
       const coords = this.getTileCoords(p);
 
@@ -176,16 +187,7 @@ export class MainScene extends Phaser.Scene {
         this.processPaintInput(p);
       }
 
-      if (coords.isValid) {
-        const index = coords.ty * worldManager.gridSize + coords.tx;
-        EventBus.emit(BusEvent.UpdateCoords, {
-          x: coords.tx,
-          y: coords.ty,
-          biome: worldManager.getBiome(index),
-          biomeDescriptor: worldManager.getBiomeDescriptor(index),
-          layerValues: worldManager.getPointLayersData(index),
-        });
-      }
+      if (coords.isValid) emitCoords(coords.tx, coords.ty);
     });
 
     this.input.on("pointerup", (p: Phaser.Input.Pointer) => {
@@ -204,6 +206,11 @@ export class MainScene extends Phaser.Scene {
 
       this.isPanning = false;
       EventBus.emit(BusEvent.StrokeFinished);
+
+      // The status bar only refreshed on pointer move, so after a click, fill
+      // or eyedropper it kept showing the tile as it was before.
+      const after = this.getTileCoords(p);
+      if (after.isValid) emitCoords(after.tx, after.ty);
     });
 
     this.input.on(

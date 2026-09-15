@@ -45,13 +45,18 @@ export function QuickSetup() {
   const [history, setHistory] = useState<number | null>(null);
   const [mineral, setMineral] = useState<number | null>(null);
 
+  // Measured from the selected blueprint by name, not from whatever worldManager
+  // has active: it used to measure once and keep the first world's land after
+  // switching in the sidebar.
   const land = useMemo(() => {
     try {
-      return measureWorld(worldManager.worldData, worldManager.gridSize).land;
+      const data = activePresetTitle ? worldManager.getPresetData(activePresetTitle) : undefined;
+      if (!data) return undefined;
+      return measureWorld(data, Math.sqrt(data.elevation.length)).land;
     } catch {
       return undefined;
     }
-  }, []);
+  }, [activePresetTitle]);
 
   if (!preset) return null;
   const dim = preset.size;

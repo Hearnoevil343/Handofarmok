@@ -22,6 +22,17 @@ export function WorldAdvisor() {
   const [chosen, setChosen] = useState<Record<string, boolean>>({});
   const [summary, setSummary] = useState<string>("");
 
+  // Findings belong to the blueprint they were read from. They used to survive
+  // switching in the sidebar, and Apply Selected then wrote one world's
+  // proposals into another.
+  const [readFor, setReadFor] = useState(activePresetTitle);
+  if (readFor !== activePresetTitle) {
+    setReadFor(activePresetTitle);
+    setFindings(null);
+    setChosen({});
+    setSummary("");
+  }
+
   const size = worldManager.gridSize;
 
   const read = useMemo(
