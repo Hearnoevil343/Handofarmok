@@ -2481,6 +2481,34 @@ worlds:
 No map gained a straight rainfall edge; the longest seam the fixes leave is six
 tiles, where the Iran exclusion meets the Gulf coast.
 
+### Checked in Dwarf Fortress: all sixteen presets regenerated
+
+Every fixed preset was generated again in DF (same settings, seed 1000) and read
+back. Desert tiles as DF actually typed them, before → after:
+
+| preset | desert | desert in busiest 5 rows | on coasts | on freezing land |
+|---|---|---|---|---|
+| CONTINENTS | 173 → 221 | 57% → 25% | 1 → 35 | 0 → 0 |
+| PANGAEA | 191 → 210 | 58% → 25% | 12 → 68 | 0 → 0 |
+| ARCHIPELAGO | 119 → 119 | 68% → 34% | 19 → 42 | 0 → 1 |
+| INLAND_SEA | 356 → 372 | 65% → 19% | 69 → 81 | 0 → 0 |
+| HIGHLANDS | 215 → 318 | 59% → 33% | 27 → 41 | 0 → 0 |
+| FJORDLAND | 241 → 252 | 56% → 31% | 42 → 85 | 0 → 0 |
+| GREAT_PLAINS | 399 → 399 | 49% → 22% | 7 → 83 | 0 → 0 |
+| ISLAND_ARC | 109 → 146 | 54% → 37% | 28 → 38 | 0 → 0 |
+| EUROPE | 332 → 298 | — | 175 → 139 | 0 → 0 |
+| NORTH_AMERICA | 567 → 377 | — | 419 → 267 | 40 → 0 |
+| AFRICA | 2130 → 2203 | — | 258 → 265 | 0 → 0 |
+| MIDDLE_EAST | 3387 → 4087 | — | 465 → 503 | 0 → 0 |
+| CARIBBEAN | 114 → 77 | — | 106 → 69 | 0 → 0 |
+| SOUTH_AMERICA | 68 → 65 | — | 68 → 65 | 3 → 0 |
+| HIMALAYAS | 1956 → 1888 | — | 45 → 29 | 27 → 0 |
+| WORLD | 1896 → 1138 | — | 957 → 303 | 310 → 0 |
+
+The predictions held: WORLD was predicted at 1226 desert, 316 on coasts. On the
+procedural presets coastal desert went up, which is the rainfall fix doing what
+it says — subtropical deserts now sit on west coasts instead of in bands.
+
 ### Worth knowing
 
 DF crashes in `SDL2.dll` after about half of command-line generations, before
