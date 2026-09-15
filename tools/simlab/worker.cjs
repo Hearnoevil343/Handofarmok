@@ -44,6 +44,11 @@ function runHistory(cfg) {
       hotspots: cfg.hotspots,
       climate: cfg.climate,
       seed: cfg.seed * 1000 + age,
+      // optional AgeOptions: pass them through when a config sets them, so they
+      // can be swept like the rest (before this, crustSeparation was silently
+      // dropped and a sweep of it ran the default three times)
+      ...(cfg.crustSeparation !== undefined ? { crustSeparation: cfg.crustSeparation } : {}),
+      ...(cfg.deArtifact !== undefined ? { deArtifact: cfg.deArtifact } : {}),
       age,
     });
     w = r.world;
