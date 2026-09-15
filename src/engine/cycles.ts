@@ -192,7 +192,9 @@ export function drownSpecks(
       }
     }
     if (group.length < floor) {
-      for (const j of group) out[j] = SEA - 6 - Math.round(Math.random() * 8);
+      // A fixed hash of the tile, not Math.random: the one unseeded random call in
+      // the engine meant no history could be replayed from its seed.
+      for (const j of group) out[j] = SEA - 6 - (Math.imul(j + 1, 0x9e3779b1) >>> 0) % 9;
       removed++;
     }
   }
