@@ -2948,3 +2948,19 @@ stroke's path anyway, as the airbrush already did.
 - Added an **Original DF World Gen File** card to the Export Vault that links to
   the DF Wiki's default `world_gen.txt`, for replacing a broken
   `prefs/world_gen.txt`.
+
+---
+
+## 0.2.2
+
+- **The app now tells you when an update is out.** A notice on launch links to
+  the new release, and About has a Check for updates button. From 0.2.2 on, you
+  won't need to watch GitHub.
+- Fixed painting: climate buttons crash, brushes clashing, gaps in fast strokes;
+  Sculpt builds up while held; the Climate brush stamps exact values.
+- Fixed export: freezing temperatures, the PS_AL warning, and mountains coming out
+  colder in Dwarf Fortress than painted.
+- Fixed desert stripes on generated presets and wrong deserts on the Earth maps.
+- Run Age: several ages in a row with undo per age, plate boundaries that last,
+  and planet settings (pole layout, spin, axial tilt).
+- Export Vault links to Dwarf Fortress's default world_gen.txt.

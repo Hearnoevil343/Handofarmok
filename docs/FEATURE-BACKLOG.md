@@ -13,7 +13,11 @@ the simulation's own step list is `docs/simulation-plan.md`.
 
 ---
 
-## On `develop`, waiting for the next release (0.2.2)
+## Shipped in 0.2.2 (2026-09-15)
+Update notice checked in the packaged .exe: the startup notice appeared and "Get
+the update" opened the GitHub release page in the browser. The ocean model is not
+in this release (opt-in, still on `feature/ocean-model`).
+
 - [x] **Export fix: freezing temperatures were corrupted** — the exporter built
       rows in a `Uint16Array`, so every negative temperature wrapped (-1 became
       65535) in every exported world_gen.txt, 0.2.1 included. Fixed with
@@ -22,10 +26,9 @@ the simulation's own step list is `docs/simulation-plan.md`.
 - [x] **Export fix: PS_AL rows** — the exporter wrote an alignment layer DF has
       no token for; DF logged "Unrecognized World Gen Token: PS_AL" per row.
       Alignment is now skipped.
-- [ ] **Update notice** — app checks GitHub on launch and offers the new version;
-      About page gets "Check for updates". Built and tested in the dev build.
-      Before release: test the "Get the update" link opening the browser from
-      the packaged .exe.
+- [x] **Update notice** — app checks GitHub on launch and offers the new version;
+      About page gets "Check for updates". "Get the update" checked in the
+      packaged .exe (opens the release page in the browser).
 - [x] **Desert stripes and Earth preset rainfall** — see "Found by generating
       every preset in DF" below. CHANGES.md §50.
 - [x] **Step-1 engine fixes** — one flow analysis per age, supercontinent
