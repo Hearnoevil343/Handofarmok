@@ -39,7 +39,15 @@ export function hypsometricBimodality(el: Int16Array, bins = 40): number {
   return lower > 0 ? 1 - valley / lower : 0;
 }
 
-/** Mean ratio of long axis to short axis across mountain components. */
+/**
+ * Mean ratio of long axis to short axis across mountain components.
+ *
+ * Principal axes, not the bounding box: a bounding box only sees elongation
+ * along the map axes, so a straight belt sixty tiles long scored 20.7 running
+ * east-west and 1.00 — the same as a round blob — running diagonally. Belts form
+ * along plate boundaries at every angle. x is unwrapped across the seam first,
+ * so a belt crossing it is measured as one piece.
+ */
 export function rangeElongation(el: Int16Array, size: number): number {
   const seen = new Uint8Array(el.length);
   const ratios: number[] = [];
@@ -47,21 +55,44 @@ export function rangeElongation(el: Int16Array, size: number): number {
     if (seen[i] || el[i] < 300) continue;
     const stack = [i];
     seen[i] = 1;
-    let minX = size, maxX = 0, minY = size, maxY = 0, n = 0;
+    const tiles: number[] = [];
+    const cols = new Uint8Array(size);
     while (stack.length) {
       const j = stack.pop()!;
+      tiles.push(j);
       const x = j % size, y = (j / size) | 0;
-      n++;
-      if (x < minX) minX = x; if (x > maxX) maxX = x;
-      if (y < minY) minY = y; if (y > maxY) maxY = y;
-      for (const k of [x > 0 ? j - 1 : -1, x < size - 1 ? j + 1 : -1,
+      cols[x] = 1;
+      for (const k of [y * size + ((x + size - 1) % size), y * size + ((x + 1) % size),
                        y > 0 ? j - size : -1, y < size - 1 ? j + size : -1]) {
         if (k >= 0 && !seen[k] && el[k] >= 300) { seen[k] = 1; stack.push(k); }
       }
     }
-    if (n < 8) continue;
-    const w = maxX - minX + 1, h = maxY - minY + 1;
-    ratios.push(Math.max(w, h) / Math.max(1, Math.min(w, h)));
+    if (tiles.length < 8) continue;
+
+    // cut the cylinder at the largest run of empty columns
+    let bestRun = 0, run = 0, cut = 0;
+    for (let k = 0; k < size * 2; k++) {
+      if (cols[k % size]) run = 0;
+      else { run++; if (run > bestRun) { bestRun = run; cut = (k + 1) % size; } }
+    }
+    let mx = 0, my = 0;
+    const px = new Float64Array(tiles.length), py = new Float64Array(tiles.length);
+    tiles.forEach((j, t) => {
+      px[t] = ((j % size) - cut + size) % size;
+      py[t] = (j / size) | 0;
+      mx += px[t]; my += py[t];
+    });
+    mx /= tiles.length; my /= tiles.length;
+    let sxx = 0, syy = 0, sxy = 0;
+    for (let t = 0; t < tiles.length; t++) {
+      const dx = px[t] - mx, dy = py[t] - my;
+      sxx += dx * dx; syy += dy * dy; sxy += dx * dy;
+    }
+    // eigenvalues of the 2x2 covariance; +1/12 per axis is a tile's own extent
+    const tr = (sxx + syy) / tiles.length, det = (sxx * syy - sxy * sxy) / (tiles.length * tiles.length);
+    const disc = Math.sqrt(Math.max(0, (tr * tr) / 4 - det));
+    const major = tr / 2 + disc + 1 / 12, minor = Math.max(0, tr / 2 - disc) + 1 / 12;
+    ratios.push(Math.sqrt(major / minor));
   }
   return ratios.length ? ratios.reduce((a, b) => a + b, 0) / ratios.length : 1;
 }

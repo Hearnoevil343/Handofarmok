@@ -164,8 +164,10 @@ export function analyse(
 export function carveRivers(
   el: Int16Array, size: number, strength: number, rainfall?: Int16Array,
   riverDensity = 4,
+  /** the analysis of this same surface, if the caller already has it */
+  hydrology?: Hydrology,
 ): { elevation: Int16Array; river: Uint8Array; lakeDepth: Float64Array } {
-  const { accumulation, lakeDepth, river } = analyse(el, size, rainfall, riverDensity);
+  const { accumulation, lakeDepth, river } = hydrology ?? analyse(el, size, rainfall, riverDensity);
   const n = size * size;
   const out = new Int16Array(n);
   const k = (strength / 100) * 26;
