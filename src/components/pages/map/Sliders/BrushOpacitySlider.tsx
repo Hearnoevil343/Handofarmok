@@ -7,9 +7,10 @@ import { Slider } from "@components/widgets/Slider/Slider";
 export function BrushOpacitySlider() {
   const dispatch = useDispatch();
   const { opacity } = useSelector((state: RootState) => state.paint);
-  const { activeLayer, activeBiome } = useSelector((st: RootState) => st.paint);
-  // meaningless on a two-state layer
+  const { activeLayer, activeBiome, activeTool } = useSelector((st: RootState) => st.paint);
+  // meaningless on a two-state layer, and the Climate brush stamps its value
   if (activeBiome === null && LAYER_META[activeLayer].control === "steps") return null;
+  if (activeTool === "climate") return null;
 
   return (
     <Slider

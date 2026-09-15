@@ -308,6 +308,11 @@ identical, mountains 89–100% overlap. The problems are in the painted data.
         target), mountains 11.0% -> 11.8-12.2%, degenerate runs 20/22 -> 12/17.
         drift 2 — means 1.89 / 1.97 but worst worlds slightly worse (6.40,
         6.71), bimodality 0.90, elongation 2.33, degenerate 9/16.
+      - **Re-measured 2026-09-15 on the current engine** (persistent plates,
+        cubic resampling, fixed bimodality metric) — drift 3 is no longer
+        better: set A 1.45 -> 1.65, set B 1.39 -> 1.64 (both past the ~0.15
+        noise), largest landmass 84-88% -> 90-92%, edgeBias below target
+        (0.71-0.75); 200 ages improves 0.49 -> 0.28. Keep drift 4.
       - **Decision for the dev: change the default drift from 4 to 3?** It is
         the Run Age slider default (`RunAge.tsx` useState(4)), and
         `timescale.ts` calibrates it: drift 4 = Earth's plates covering ~1.5
