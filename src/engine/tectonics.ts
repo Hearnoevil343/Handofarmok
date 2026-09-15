@@ -116,6 +116,76 @@ export function advancePlateSet(ps: PlateSet, size: number, distance: number): P
   };
 }
 
+/**
+ * Seeds follow the plates they belong to: each moves to the centre of its
+ * plate's tiles (x as a circular mean, so a plate on the seam stays on the
+ * seam). A plate wrapped most of the way round the world has no meaningful
+ * centre, so it keeps the seed advanced along its heading instead.
+ */
+function followPlates(ps: PlateSet, plateId: Int16Array, size: number, distance: number): PlateSet {
+  const next = advancePlateSet(ps, size, distance);
+  const count = ps.sx.length;
+  const sinX = new Float64Array(count), cosX = new Float64Array(count);
+  const sumY = new Float64Array(count), area = new Float64Array(count);
+  for (let i = 0; i < plateId.length; i++) {
+    const p = plateId[i];
+    if (p < 0 || p >= count) continue;
+    const a = ((i % size) / size) * Math.PI * 2;
+    sinX[p] += Math.sin(a); cosX[p] += Math.cos(a); sumY[p] += (i / size) | 0; area[p]++;
+  }
+  for (let p = 0; p < count; p++) {
+    if (!area[p]) continue;
+    next.sy[p] = sumY[p] / area[p];
+    if (Math.hypot(sinX[p], cosX[p]) / area[p] > 0.2) {
+      next.sx[p] = ((Math.atan2(sinX[p], cosX[p]) / (Math.PI * 2)) * size + size) % size;
+    }
+  }
+  return next;
+}
+
+/**
+ * Drop plates that own no tiles any more — consumed by subduction, or emptied
+ * by a weld — and renumber the map to match. Mutates both.
+ */
+export function compactPlates(ps: PlateSet, plateId: Int16Array): void {
+  const count = ps.sx.length;
+  const area = new Array(count).fill(0);
+  for (let i = 0; i < plateId.length; i++) if (plateId[i] >= 0 && plateId[i] < count) area[plateId[i]]++;
+  if (area.every((a) => a > 0)) return;
+  const remap = new Array(count).fill(-1);
+  let k = 0;
+  for (let p = 0; p < count; p++) if (area[p] > 0) remap[p] = k++;
+  for (let i = 0; i < plateId.length; i++) plateId[i] = Math.max(0, remap[plateId[i]] ?? 0);
+  const keep = (_: number, p: number) => area[p] > 0;
+  ps.sx = ps.sx.filter(keep); ps.sy = ps.sy.filter(keep);
+  ps.vx = ps.vx.filter(keep); ps.vy = ps.vy.filter(keep);
+}
+
+/**
+ * A tile whose neighbours mostly belong to one other plate joins it. Advection
+ * picks an owner per tile, so without this, single stray tiles of one plate
+ * are left inside another and, now that the map is carried, never go away.
+ */
+function tidyPlateIds(plateId: Int16Array, size: number): Int16Array {
+  const out = Int16Array.from(plateId);
+  for (let y = 0; y < size; y++) {
+    for (let x = 0; x < size; x++) {
+      const i = y * size + x, own = plateId[i];
+      const nb = [
+        plateId[y * size + ((x + size - 1) % size)], plateId[y * size + ((x + 1) % size)],
+        y > 0 ? plateId[i - size] : own, y < size - 1 ? plateId[i + size] : own,
+      ];
+      for (const c of nb) {
+        if (c === own) continue;
+        let same = 0;
+        for (const d of nb) if (d === c) same++;
+        if (same >= 3) { out[i] = c; break; }
+      }
+    }
+  }
+  return out;
+}
+
 export type Plates = {
   plateId: Int16Array;
   vx: number[];
@@ -218,6 +288,8 @@ export type TectonicResult = {
  */
 export function applyBoundaries(
   el: Int16Array, size: number, plates: Plates, strength: number, rng: () => number,
+  /** share of an age this step covers, so volcano spawning keeps its rate per Myr */
+  chance = 1,
 ): TectonicResult {
   const n = size * size;
   const { plateId, vx, vy } = plates;
@@ -324,7 +396,7 @@ export function applyBoundaries(
           const arc = Math.exp(-Math.pow((d - reach * 0.45) / (reach * 0.3), 2));
           delta = p * k * 0.95 * arc;
           uplifting[i] = 1;
-          if (arc > 0.55 && rng() < 0.045) volcanism[i] = 100;
+          if (arc > 0.55 && rng() < 0.045 * chance) volcanism[i] = 100;
         } else {
           delta = -p * k * 0.5 * fade;             // trench
         }
@@ -334,7 +406,7 @@ export function applyBoundaries(
         const arc = Math.exp(-Math.pow(d / (reach * 0.3), 2));
         delta = p * k * 0.8 * arc;
         capBelowSea = arc < 0.88;   // only the very crest breaks the surface
-        if (arc > 0.5 && rng() < 0.055) volcanism[i] = 100;
+        if (arc > 0.5 && rng() < 0.055 * chance) volcanism[i] = 100;
         break;
       }
       case "CONTINENTAL_RIFT": {
@@ -342,7 +414,7 @@ export function applyBoundaries(
         const axis = Math.exp(-Math.pow(d / (reach * 0.22), 2));
         const shoulder = Math.exp(-Math.pow((d - reach * 0.5) / (reach * 0.28), 2));
         delta = -p * k * 0.85 * axis + p * k * 0.45 * shoulder;
-        if (axis > 0.6 && rng() < 0.025) volcanism[i] = 100;
+        if (axis > 0.6 && rng() < 0.025 * chance) volcanism[i] = 100;
         break;
       }
       case "OCEAN_RIDGE": {
@@ -352,7 +424,7 @@ export function applyBoundaries(
         const crest = Math.exp(-Math.pow(d / (reach * 0.3), 2));
         delta = p * k * 0.35 * crest;
         capBelowSea = true;
-        if (crest > 0.6 && rng() < 0.018) volcanism[i] = 100;
+        if (crest > 0.6 && rng() < 0.018 * chance) volcanism[i] = 100;
         break;
       }
       case "TRANSFORM":
@@ -373,27 +445,54 @@ export function applyBoundaries(
   return { elevation, volcanism, plateId, counts, uplifting };
 }
 
+/** Catmull-Rom weight of tap k (-1..2) at fraction t between taps 0 and 1. */
+function catmullRom(t: number, k: number): number {
+  const t2 = t * t, t3 = t2 * t;
+  switch (k) {
+    case -1: return (-t3 + 2 * t2 - t) / 2;
+    case 0: return (3 * t3 - 5 * t2 + 2) / 2;
+    case 1: return (-3 * t3 + 4 * t2 + t) / 2;
+    default: return (t3 - t2) / 2;
+  }
+}
+
 /** Move plate material along its velocity, carrying the plate map with it. */
 function advect(
   el: Int16Array, size: number, plates: Plates, distance: number, rng: () => number,
   province?: Int16Array,
-): { elevation: Int16Array; plateId: Int16Array; province?: Int16Array } {
+  /** crust type (1 continental) and sea-floor age, carried like provinces */
+  crust?: Uint8Array,
+  oceanAge?: Float32Array,
+  /** per-plate multiplier on `distance`; all plates move alike when absent */
+  speed?: number[],
+): {
+  elevation: Int16Array; plateId: Int16Array; province?: Int16Array;
+  crust?: Uint8Array; oceanAge?: Float32Array;
+  /** tiles no plate reached (new sea floor) and extra claims where plates overlapped */
+  gaps: number; overlaps: number;
+  /** continental tiles that lost an overlap and so vanished (crust types only) */
+  lostContinental: number;
+} {
+  let gaps = 0, overlaps = 0, lostContinental = 0;
   const n = size * size;
   const { plateId, vx, vy, count } = plates;
   const elevation = new Int16Array(n);
   const newId = new Int16Array(n).fill(-1);
   const newProv = province ? new Int16Array(n).fill(-1) : undefined;
+  const newCrust = crust ? new Uint8Array(n).fill(255) : undefined;
+  const newAge = crust && oceanAge ? new Float32Array(n) : undefined;
 
   for (let y = 0; y < size; y++) {
     for (let x = 0; x < size; x++) {
       const i = y * size + x;
-      let claims = 0, highest = -1, sum = 0, owner = -1, srcIdx = -1;
+      let claims = 0, highest = -1, bestRank = -1, sum = 0, owner = -1, srcIdx = -1, contClaims = 0;
       for (let p = 0; p < count; p++) {
         // Wrap east-west like a globe: material leaving one edge arrives at the
         // other, so crust is conserved. Without this, plates simply shove land
         // off the side of the map and every run is a net loss. North-south
         // clamps instead, since a sphere has poles rather than a seam.
-        const fx = x - vx[p] * distance, fy = y - vy[p] * distance;
+        const dist = speed ? distance * speed[p] : distance;
+        const fx = x - vx[p] * dist, fy = y - vy[p] * dist;
         // Sub-tile motion: the source point falls between four tiles, so blend
         // the ones this plate owns by distance (bilinear). Rounding to the
         // nearest tile moved every plate in whole-tile jumps. Against that, on
@@ -418,22 +517,51 @@ function advect(
         }
         // the plate must own most of the source point, as rounding required
         if (wsum < 0.5) continue;
-        const value = vsum / wsum;
+        let value = vsum / wsum;
+        // Inside the plate, sample with Catmull-Rom over the 4x4 neighbourhood
+        // instead: bilinear averages every age, so relief blurred a little more
+        // each step and landmasses slowly merged. Clamped to the four inner tiles
+        // so it never overshoots into new peaks or pits. At plate edges, where
+        // the neighbourhood reaches another plate, bilinear stays.
+        let cub = 0, lo = Infinity, hi = -Infinity, full = true;
+        for (let b = -1; b <= 2 && full; b++) {
+          const sy = Math.min(size - 1, Math.max(0, y0 + b)), wy = catmullRom(ty, b);
+          for (let a = -1; a <= 2; a++) {
+            const j = sy * size + ((((x0 + a) % size) + size) % size);
+            if (plateId[j] !== p) { full = false; break; }
+            cub += catmullRom(tx, a) * wy * el[j];
+            if (a >= 0 && a <= 1 && b >= 0 && b <= 1) { lo = Math.min(lo, el[j]); hi = Math.max(hi, el[j]); }
+          }
+        }
+        if (full) value = Math.min(hi, Math.max(lo, cub));
         claims++; sum += value;
-        if (value > highest) { highest = value; owner = p; srcIdx = si; }
+        if (crust && si >= 0 && crust[si]) contClaims++;
+        // With crust types carried, overlap is decided by buoyancy rather than
+        // height: continental crust rides over oceanic, and between two oceanic
+        // plates the older, denser floor is the one that goes down. Without
+        // crust types the higher surface wins, as before.
+        const rank = crust && oceanAge && si >= 0
+          ? (crust[si] ? 20000 + value : 10000 - oceanAge[si])
+          : value;
+        if (rank > bestRank) { bestRank = rank; highest = value; owner = p; srcIdx = si; }
       }
       if (claims === 0) {
+        gaps++;
         elevation[i] = -1;                            // resolved below
       } else if (claims === 1) {
         elevation[i] = Math.round(highest); newId[i] = owner;
         if (newProv && srcIdx >= 0) newProv[i] = province![srcIdx];
+        if (newCrust && newAge && srcIdx >= 0) { newCrust[i] = crust![srcIdx]; newAge[i] = oceanAge![srcIdx]; }
       } else {
         // Overlap is the main source of mountain, not boundary relief, so this
         // factor matters more than any slider. Two continents arriving on the
         // same ground thicken the crust; they do not simply stack.
+        overlaps += claims - 1;
+        if (crust && srcIdx >= 0) lostContinental += contClaims - crust[srcIdx];
         elevation[i] = Math.round(Math.min(400, highest + (sum - highest) * 0.1));
         newId[i] = owner;
         if (newProv && srcIdx >= 0) newProv[i] = province![srcIdx];
+        if (newCrust && newAge && srcIdx >= 0) { newCrust[i] = crust![srcIdx]; newAge[i] = oceanAge![srcIdx]; }
       }
     }
   }
@@ -481,34 +609,83 @@ function advect(
   }
 
   if (newProv) for (let i = 0; i < n; i++) if (newProv[i] < 0) newProv[i] = province![i];
-  return { elevation, plateId: newId, province: newProv };
+  // a gap is sea floor that did not exist before: oceanic, age zero
+  if (newCrust && newAge) for (let i = 0; i < n; i++) if (newCrust[i] === 255) { newCrust[i] = 0; newAge[i] = 0; }
+  return {
+    elevation, plateId: newId, province: newProv, crust: newCrust, oceanAge: newAge,
+    gaps, overlaps, lostContinental,
+  };
 }
 
 export type TectonicAgeOptions = {
   /** existing plates to advance; a new set is rolled when absent */
   plateSet?: PlateSet;
+  /**
+   * which plate owns each tile, carried from the previous age; grown from the
+   * seeds only when absent (the first age, or a new plate set)
+   */
+  plateMap?: Int16Array;
   plates: number;
   /** how far the plates travel, in tiles */
   distance: number;
   /** relief produced at boundaries, 0-100 */
   strength: number;
+  /** share of an age this step covers (sub-steps), scaling volcano spawning */
+  volcanoChance?: number;
   seed: number;
   /** geological provinces to carry with the crust */
   province?: Int16Array;
+  /** crust type and sea-floor age to carry with the crust (ocean model) */
+  crust?: Uint8Array;
+  oceanAge?: Float32Array;
+  /**
+   * Oceanic plates move faster than continental ones — the Pacific plate
+   * 8-10 cm/yr, Eurasia about 2 — with the mean kept near the drift setting.
+   * Off: every plate moves at the drift setting.
+   */
+  plateSpeeds?: boolean;
 };
 
 /** Drift the plates, then lay down the geology their boundaries imply. */
 export function tectonicAge(
   el: Int16Array, size: number, opts: TectonicAgeOptions,
-): TectonicResult & { plateSet: PlateSet; province?: Int16Array } {
+): TectonicResult & {
+  plateSet: PlateSet; province?: Int16Array; crust?: Uint8Array; oceanAge?: Float32Array;
+  motion: { gaps: number; overlaps: number; lostContinental: number };
+} {
   const rng = makeRng(opts.seed);
   const ps = opts.plateSet
     ?? newPlateSet(size, Math.max(2, Math.min(24, opts.plates)), rng);
-  const plates = assignPlates(el, size, ps, rng);
+
+  // Plate ownership is carried state. It used to be regrown from the seeds
+  // every age with freshly rolled noise, so boundaries re-routed each age and a
+  // collision belt was lifted along a different line every time. Now the map
+  // moves with the crust, gaps take a neighbour's plate, and boundaries change
+  // only through events: welding, rifting, one plate overriding another.
+  const carried = opts.plateMap && opts.plateMap.length === el.length && opts.plateSet
+    && opts.plateMap.every((p) => p >= 0 && p < ps.sx.length)
+    ? opts.plateMap : undefined;
+  const plates = carried ? platesFromMap(el, carried, ps) : assignPlates(el, size, ps, rng);
+
+  let speed: number[] | undefined;
+  if (opts.plateSpeeds) {
+    const sea = new Array(plates.count).fill(0), tot = new Array(plates.count).fill(0);
+    for (let i = 0; i < el.length; i++) {
+      const p = plates.plateId[i];
+      if (p < 0) continue;
+      tot[p]++; if (el[i] < SEA) sea[p]++;
+    }
+    // 0.55 for an all-continent plate to 1.45 for an all-ocean one
+    speed = tot.map((t, p) => (t ? 0.55 + 0.9 * (sea[p] / t) : 1));
+  }
 
   const moved = opts.distance > 0
-    ? advect(el, size, plates, opts.distance, rng, opts.province)
-    : { elevation: Int16Array.from(el), plateId: plates.plateId, province: opts.province };
+    ? advect(el, size, plates, opts.distance, rng, opts.province, opts.crust, opts.oceanAge, speed)
+    : {
+      elevation: Int16Array.from(el), plateId: Int16Array.from(plates.plateId), province: opts.province,
+      crust: opts.crust?.slice(), oceanAge: opts.oceanAge?.slice(), gaps: 0, overlaps: 0, lostContinental: 0,
+    };
+  moved.plateId = tidyPlateIds(moved.plateId, size);
 
   // re-derive which plates are oceanic after the move
   const sea = new Array(plates.count).fill(0), total = new Array(plates.count).fill(0);
@@ -522,10 +699,23 @@ export function tectonicAge(
   const result = applyBoundaries(
     moved.elevation, size,
     { ...plates, plateId: moved.plateId, oceanic },
-    opts.strength, rng,
+    opts.strength, rng, opts.volcanoChance ?? 1,
   );
   // the seeds travel with their plates so the next age continues this one
-  return { ...result, plateSet: advancePlateSet(ps, size, opts.distance), province: moved.province };
+  return {
+    ...result, plateSet: followPlates(ps, moved.plateId, size, opts.distance), province: moved.province,
+    crust: moved.crust, oceanAge: moved.oceanAge,
+    motion: { gaps: moved.gaps, overlaps: moved.overlaps, lostContinental: moved.lostContinental },
+  };
+}
+
+/** A carried plate map, with which plates are mostly sea floor. */
+function platesFromMap(el: Int16Array, plateId: Int16Array, ps: PlateSet): Plates {
+  const count = ps.sx.length;
+  const sea = new Array(count).fill(0), total = new Array(count).fill(0);
+  for (let i = 0; i < el.length; i++) { total[plateId[i]]++; if (el[i] < SEA) sea[plateId[i]]++; }
+  const oceanic = total.map((t, p) => (t ? sea[p] / t > 0.6 : true));
+  return { plateId, vx: ps.vx, vy: ps.vy, oceanic, count };
 }
 
 /**

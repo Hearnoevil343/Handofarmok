@@ -13,6 +13,8 @@
  *    1.25. Below that reads as machine-made; far above reads as static.
  */
 
+import { toMetres } from "./scale";
+
 const SEA = 100;
 
 export type Metrics = {
@@ -23,20 +25,34 @@ export type Metrics = {
   mountainShare: number;
 };
 
-/** Dip between the two modes of the elevation histogram; higher is more Earth-like. */
-export function hypsometricBimodality(el: Int16Array, bins = 40): number {
+/**
+ * Dip between the two modes of the elevation histogram; higher is more
+ * Earth-like. Earth's modes are the abyssal plain (about -4.5 km) and the
+ * continents (about +0.1 km), with the continental slope between them scarce.
+ *
+ * Measured in metres, in 500 m bins: the deep mode is the fullest bin below
+ * -2.5 km, the continental mode the fullest between -1 and +2 km, and the dip
+ * the emptiest bin between them. The previous version split the 0-400 scale in
+ * half and looked for the upper mode above 200 — among the mountains — so it
+ * rewarded the sea floor being piled into one narrow band and read a sea floor
+ * spread out by age as not bimodal at all.
+ */
+export function hypsometricBimodality(el: Int16Array): number {
+  const BIN = 500, LO = -9000, HI = 9000;
+  const bins = (HI - LO) / BIN;
   const h = new Float64Array(bins);
   for (let i = 0; i < el.length; i++) {
-    h[Math.min(bins - 1, Math.floor((el[i] / 400) * bins))]++;
+    h[Math.max(0, Math.min(bins - 1, Math.floor((toMetres(el[i]) - LO) / BIN)))]++;
   }
-  let peakA = 0, peakAIdx = 0;
-  for (let b = 0; b < bins / 2; b++) if (h[b] > peakA) { peakA = h[b]; peakAIdx = b; }
-  let peakB = 0, peakBIdx = bins - 1;
-  for (let b = Math.floor(bins / 2); b < bins; b++) if (h[b] > peakB) { peakB = h[b]; peakBIdx = b; }
+  const bin = (m: number) => Math.floor((m - LO) / BIN);
+  let deep = 0, deepIdx = 0;
+  for (let b = 0; b < bin(-2500); b++) if (h[b] > deep) { deep = h[b]; deepIdx = b; }
+  let cont = 0, contIdx = bin(-1000);
+  for (let b = bin(-1000); b < bin(2000); b++) if (h[b] > cont) { cont = h[b]; contIdx = b; }
   let valley = Infinity;
-  for (let b = peakAIdx; b <= peakBIdx; b++) valley = Math.min(valley, h[b]);
-  const lower = Math.min(peakA, peakB);
-  return lower > 0 ? 1 - valley / lower : 0;
+  for (let b = deepIdx + 1; b < contIdx; b++) valley = Math.min(valley, h[b]);
+  const lower = Math.min(deep, cont);
+  return lower > 0 && valley < Infinity ? Math.max(0, 1 - valley / lower) : 0;
 }
 
 /**

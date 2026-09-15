@@ -21,6 +21,7 @@
 
 import { makeRng } from "./noise";
 import { GREENHOUSE_MYR, ICEHOUSE_MYR, SUPERCONTINENT_AGES, ages } from "./timescale";
+import { scaleLength } from "./scale";
 
 export type ClimatePhase = {
   /** degrees added to every tile */
@@ -33,6 +34,8 @@ export type ClimatePhase = {
   rainfall: number;
   /** whether the planet has ice sheets at all this age */
   icehouse: boolean;
+  /** sea level locked up in ice sheets, metres: ~130 at a glacial maximum, 0 in a hothouse */
+  iceMetres: number;
   label: string;
 };
 
@@ -97,6 +100,20 @@ const MEAN_WARMTH = (() => {
   return (ice * -0.45 + green * 0.5) / (ice + green);
 })();
 
+/**
+ * Water locked in ice sheets, in metres of sea level: a glacial maximum
+ * (warmth -1) holds about 130 m, as the last one did; a hothouse (warmth 0.5
+ * and up) none.
+ */
+const iceMetresFor = (warmth: number) => Math.max(0, Math.min(1, (0.5 - warmth) / 1.5)) * 130;
+
+/** Long-run mean ice, by era length: the painted world's ocean is taken to hold this. */
+export const MEAN_ICE_METRES = (() => {
+  const ice = (ICEHOUSE_MYR.min + ICEHOUSE_MYR.max) / 2;
+  const green = (GREENHOUSE_MYR.min + GREENHOUSE_MYR.max) / 2;
+  return (ice * iceMetresFor(-0.45) + green * iceMetresFor(0.5)) / (ice + green);
+})();
+
 /** Where in the glacial cycle this age lands, -1 to 1. Replays identically per seed. */
 function glacialSample(historySeed: number, age: number): number {
   const rng = makeRng((Math.imul(historySeed, 0x9e3779b1) ^ Math.imul(age + 1, 0x85ebca6b)) >>> 0);
@@ -130,7 +147,7 @@ export function climatePhase(age: number, dispersal: number, historySeed = 0): C
   if (superc > 0.7) label += ", continents dispersed";
   else if (superc < -0.7) label += ", continents assembled";
 
-  return { temperature, seaLevel, rainfall, icehouse: era.icehouse, label };
+  return { temperature, seaLevel, rainfall, icehouse: era.icehouse, iceMetres: iceMetresFor(warmth), label };
 }
 
 /**
@@ -281,8 +298,11 @@ export function separateCrust(
  * only the shelf band leaves the abyssal plain and the interior untouched.
  */
 export function smoothShelf(
-  el: Int16Array, size: number, lo = 92, hi = 145, passes = 3,
+  el: Int16Array, size: number, lo = 92, hi = 145,
+  /** each pass smooths one tile further out: 3 tiles at 129 */
+  passesTiles?: number,
 ): Int16Array {
+  const passes = passesTiles ?? Math.max(1, Math.round(scaleLength(3, size)));
   let cur = Int16Array.from(el);
   for (let p = 0; p < passes; p++) {
     const next = Int16Array.from(cur);
@@ -483,7 +503,7 @@ export function weldCollidedPlates(
   plateId: Int16Array,
   size: number,
   minContact = 6,
-): { welded: number; merged: boolean } {
+): { welded: number; merged: boolean; remap: number[] } {
   const SEA = 100;
   const count = plates.sx.length;
   const parent = Array.from({ length: count }, (_, i) => i);
@@ -509,8 +529,15 @@ export function weldCollidedPlates(
       }
     }
   }
-  for (const [key, n] of contact) {
-    if (n < minContact) continue;
+  // One weld per age, strongest contact first, and contact scaled to the map.
+  // With the plate map carried, plates in contact stay in contact, and welding
+  // every touching pair at once collapsed several boundaries in a single age.
+  // A real suture takes tens of Myr; this is the cheap first step toward
+  // collisions as events with a duration.
+  const need = Math.max(minContact, Math.round(size / 8));
+  let unions = 0;
+  for (const [key, n] of [...contact].sort((p, q) => q[1] - p[1])) {
+    if (n < need || unions >= 1) break;
     const [a, b] = key.split("-").map(Number);
     // A collision closes the gap; a rift opens it. Two halves of a fresh rift
     // share a continent, so contact alone welded them straight back together
@@ -522,6 +549,7 @@ export function weldCollidedPlates(
     const closing = (plates.vx[a] - plates.vx[b]) * dx + (plates.vy[a] - plates.vy[b]) * dy;
     if (closing <= 0) continue;
     union(a, b);
+    unions++;
   }
 
   const landOf = new Array(count).fill(0);
@@ -542,9 +570,11 @@ export function weldCollidedPlates(
   // after which no new rift could form. On Earth the suture between India and
   // Asia is not a plate boundary any more; it is inside a plate.
   const keep = new Set<number>();
+  /** group root -> the plate that survives the merge */
+  const survivor = new Map<number, number>();
   let welded = 0;
-  for (const members of groups.values()) {
-    if (members.length < 2) { keep.add(members[0]); continue; }
+  for (const [root, members] of groups) {
+    if (members.length < 2) { keep.add(members[0]); survivor.set(root, members[0]); continue; }
     let wx = 0, wy = 0, total = 0, best = members[0];
     for (const p of members) {
       const w = landOf[p] + 1;
@@ -564,16 +594,21 @@ export function weldCollidedPlates(
     plates.sy[best] = cy / total;
     plates.vx[best] = (wx / total) / m; plates.vy[best] = (wy / total) / m;
     keep.add(best);
+    survivor.set(root, best);
     welded += members.length - 1;
   }
 
-  if (welded === 0) return { welded: 0, merged: false };
+  if (welded === 0) return { welded: 0, merged: false, remap: Array.from({ length: count }, (_, p) => p) };
   const idx = [...keep].sort((a, b) => a - b);
+  const newIndex = new Map(idx.map((p, k) => [p, k]));
+  // old plate index -> new index, so a carried plate map can be renumbered:
+  // every member of a welded group now belongs to its survivor
+  const remap = Array.from({ length: count }, (_, p) => newIndex.get(survivor.get(find(p))!)!);
   plates.sx = idx.map((p) => plates.sx[p]);
   plates.sy = idx.map((p) => plates.sy[p]);
   plates.vx = idx.map((p) => plates.vx[p]);
   plates.vy = idx.map((p) => plates.vy[p]);
-  return { welded, merged: true };
+  return { welded, merged: true, remap };
 }
 
 /**

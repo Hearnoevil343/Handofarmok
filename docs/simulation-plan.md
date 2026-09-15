@@ -43,10 +43,28 @@ talus threshold per tile, drownSpecks 10 tiles, stampOrogen 200 tiles, hotspot
 speed 1 tile/age, rift offset 9, boundary-current reach 20).
 
 **Plan:**
-- [ ] `scale.ts`: `kmPerTile(size)`, `metresPerUnit`, `myrPerStep`; convert
-      every constant through it. Test: a 257 run and a 129 run of the same
-      world agree on land %, mountain %, hypsometry within noise.
-- [ ] Sub-steps inside `runAge`; per-step rates (`exp(-dt/tau)` for decays).
+- [x] `scale.ts`: planet radius, `kmPerTile(size)`, metres per elevation unit
+      (provisional), and `scaleLength` / `scaleArea` / `scaleSlope` for
+      constants written in tiles at 129. Converted: rebound radius, denudation
+      window, orogenic collapse spread, shelf smoothing, boundary-current
+      reach and blur, hotspot radii, orogen and speck areas, talus step.
+      Bit-identical at 129 (0 of 6,989,220 values over 3 worlds x 20 ages).
+- [x] Test: a 257 run and a 129 run of the same world agree. Same 24 worlds,
+      100 ages: land 52.9/53.5%, mountains 11.6/11.3%, bimodality 0.89/0.94,
+      score 1.81/1.58. The simlab metrics that count tiles (landmasses of 120+
+      tiles, islands under 20, boundary persistence within 2 tiles) do not
+      scale yet, so masses and persistence read differently at 257. 257 costs
+      4.7x the time of 129 (4x the tiles).
+- [ ] Scale the tile-count metrics in `metrics.extra.cjs` the same way.
+- [ ] Sub-steps inside `runAge`. Built as the `subSteps` option (plate motion
+      and boundary relief split per step; welds, rifts, erosion, climate once
+      an age); 1 is bit-identical and stays the default. Measured against step
+      2: 2 steps score +0.05/+0.10, 200 ages +0.14 (worst 2.21 -> 3.03),
+      bimodality into target but the largest landmass 70% -> 81%; 5 steps
+      clearly worse (2.46, worst 7.3; HIGHLANDS to 27% mountain and one
+      continent). Likely cause: elevation is Int16, so small per-step changes
+      round away while collapse still runs once an age. Needs float elevation
+      inside an age before sub-steps can be the default.
 - [ ] Periodic (tileable) noise so fields have no seam at x = 0.
 - [ ] Web Worker once a step costs more than a frame.
 
@@ -77,17 +95,24 @@ migrate slowly; here collision belts get uplift along a different line each
 age.
 
 **Plan:**
-- [ ] **Persistent plate map (first in this section).** Carry each tile's plate
-      ID in the simulation state and advect it with the crust. Stop regrowing
-      plates from seeds every age: fill only gaps (new sea floor opening behind
-      a moving plate) from their neighbours. Boundaries change only through
-      events — welding merges two IDs, a rift splits a plate along the rift
-      axis, subduction consumes crust. Boundary noise fixed per history
-      (`seed - age`), not re-rolled. New simlab metric: boundary persistence
-      (share of boundary tiles still on a boundary the next age). Done together
-      with per-plate frames below.
-- [ ] Per-plate crust frames with float offsets; clamped cubic resampling;
-      erosion/deposition deltas written back to plate space once per step.
+- [x] **Persistent plate map.** The plate map is carried state (session and
+      simlab), advected with the crust; gaps take a neighbour's plate; a
+      weld renumbers it, a plume rift cuts the host plate in two along the
+      rift line, consumed plates are dropped, seeds sit at their plate's
+      centre. Two things this exposed, both fixed: welds only ever lowered the
+      count (6 plates fell to 2 in twenty ages), so the largest plate now
+      rifts at a random point when the count is below the setting; and every
+      touching pair welded at once, so welds are one per age, strongest
+      contact first, contact scaled to map size. New simlab metric
+      `boundaryPersist`: 49% -> 89% of boundary tiles still within 2 tiles of
+      a boundary the next age.
+- [x] Clamped Catmull-Rom resampling inside plates (bilinear only where the
+      4x4 neighbourhood crosses a plate edge). With the persistent map, 96
+      worlds: score 1.83/1.66 -> 1.73/1.63, 200 ages 0.99 -> 0.94 (worst
+      2.86 -> 2.21); flat 2x2 patches roughly halved. Largest landmass over
+      200 ages still 63% -> 70% of land: watch.
+- [ ] Per-plate crust frames with float offsets, if blur still shows after
+      sub-steps multiply the number of resamples.
 - [ ] Plate speeds as cm/yr per plate (continental plates slower), not unit
       vectors.
 - [ ] Collision thickens crust (conserve volume) instead of deleting 90%.
@@ -143,10 +168,33 @@ young sea floor; glacial lowstand ~125 m; hydro-isostatic factor ~0.7.
       1.76 -> 5.28, B 1.71 -> 5.12, 200 ages 0.84 -> 2.70): the buggy mapping
       is what currently holds the shelf and slope shape up, so it has to go
       out in the same change that gives bathymetry a real source.
-- [ ] `oceanAge` field advected with plates, 0 at ridges; bathymetry from
-      depth-vs-age.
-- [ ] Sea level from constant water volume (bisection) minus ice volume, x0.7;
-      remove the forced land share.
+- [x] `oceanAge` and crust type advected with plates, 0 at ridges;
+      bathymetry from depth-vs-age (Parsons & Sclater), measured from the
+      starting sea level. Behind the `oceanModel` option while it is tuned.
+- [~] Sea level. Constant water volume was tried first and failed: painted
+      oceans start far shallower than their ages imply and rigid plates never
+      consume their interiors, so the basins deepened for tens of ages and the
+      sea fell 600-4,000 m. Now: 0.7 x (reference - mean basin depth) minus
+      the ice anomaly, the reference settling early (paleo sea-level method).
+      Sea stays within ~-330..+90 m of start.
+- [~] Forced land share replaced by slow (~100 Myr) continental freeboard and
+      continental-area conservation on crust type (crust budget: rifts open
+      ~150 tiles of sea floor inside continents an age; accretion, collision
+      and foundering roughly cancel), plus shelf depth for submerged continent.
+- [x] `hypsometricBimodality` rebuilt in metres (deep mode below -2.5 km,
+      continental mode -1..+2 km); the old one looked for the upper mode among
+      the mountains and only rewarded separateCrust's narrow sea-floor band.
+- [~] A/B on the fixed metric, 96 worlds + 200 ages: default 1.45 / 1.39 /
+      0.49; ocean model 3.30 / 2.96 / 0.73, then 2.20 / 2.22 after capping the
+      freeboard target at the baseline land share (highland worlds are
+      generated near 70% land; the default path caps them at 60%). Still 13-14
+      degenerate runs (land on highland worlds swings ~10 points), coastline
+      dimension 1.37 (target up to 1.34), flat land patches 1.3% (default
+      0.08%). Stays opt-in. Next: damp the land swing on small-ocean worlds,
+      find the source of the rough coasts and flats (tectonics leaves 1.3-2.5%
+      flat; separateCrust's smoothing used to remove it), tune the mountain
+      controller; sediment into the oceans (step 5) is the physical
+      replacement for area conservation.
 
 ## 5. Climate: temperature
 
@@ -255,15 +303,22 @@ and which way it spins, and the wind, rain, temperature and ice all follow.
   equatorial belt instead of caps (Rose et al. 2017).
 
 **Plan:**
-- [ ] `planet.ts`: layout (latitude of the top and bottom rows), spin sign,
-      tilt. Every latitude lookup in the engine (temperature, wind table,
-      ITCZ, ice, ocean currents, the supercontinent drive's north-south
-      handling) reads latitude from here instead of assuming the middle row is
-      the equator.
-- [ ] Wind table (section 6) built from layout and spin sign; insolation and
-      the energy balance (section 5) from tilt.
-- [ ] Controls in Run Age and World Settings; pole layout kept in sync with
-      the DF `POLE` token on export.
+- [x] `planet.ts`: layout, spin sign, tilt, and the POLE token mapping (the
+      random "or" options rolled from the seed). Temperature and rainfall read
+      latitude from it. Earth defaults bit-identical. Checked: north-only puts
+      the pole on the top row and the equator on the bottom; tilt 80 makes the
+      poles the warmest rows; retrograde flips wet and dry coasts (west/east
+      rainfall 72/90 -> 89/70).
+- [x] Retrograde spin: climate derived on the mirrored map and mirrored back,
+      which swaps every east-west asymmetry at once (sweep, currents, coasts).
+- [x] Tilt: North (1975) two-term annual insolation, added to the latitude
+      term as the difference from Earth's 23.44 degrees.
+- [ ] Wind table (section 6) built from layout and spin sign; the energy
+      balance (section 5) from tilt.
+- [x] Controls in Run Age and Derive Climate: pole layout (follows the Poles
+      setting unless overridden), spin, axial tilt.
+- [ ] Export: still `POLE:NONE` until the DF check below says whether DF
+      cools a painted world by latitude on its own.
 - [ ] **Check in DF first:** generate a painted world with `POLE:NORTH` and
       compare against `NONE` using the DF test harness, to see whether DF adds
       its own latitude cooling on top of painted temperature. Export

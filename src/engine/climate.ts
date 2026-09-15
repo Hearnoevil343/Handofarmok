@@ -1,5 +1,9 @@
 import { fbm, norm01 } from "./noise";
 import type { Grid } from "./noise";
+import { scaleLength } from "./scale";
+import {
+  DEFAULT_PLANET, EARTH_INSOLATION_RANGE, EARTH_TILT_DEG, type Planet, absLatitude, annualInsolation,
+} from "./planet";
 
 /** Exact squared EDT (Felzenszwalb & Huttenlocher). Replaces scipy's
  *  distance_transform_edt -- exact, not a chamfer approximation. */
@@ -43,9 +47,12 @@ export function distanceToOcean(el: Int16Array, size: number): Grid {
   return out;
 }
 
-const lat = (size: number, y: number) => Math.abs(-1 + (2 * y) / (size - 1));
+/** Distance from the equator for a row, 0 to 1, by the planet's pole layout. */
+const lat = (size: number, y: number, planet: Planet) => absLatitude(size, y, planet);
 
-export function temperature(el: Int16Array, size: number, rng: () => number): Grid {
+export function temperature(
+  el: Int16Array, size: number, rng: () => number, planet: Planet = DEFAULT_PLANET,
+): Grid {
   const n = fbm(size, rng, 4, 4), out = new Float64Array(size * size);
   // a second, coarser field for the open ocean: gyres and fronts, which are
   // large and slow rather than the fine texture the land noise supplies
@@ -58,10 +65,17 @@ export function temperature(el: Int16Array, size: number, rng: () => number): Gr
   // a satellite image is anything but a straight line. Breaking the contour up
   // is what stops the ocean looking ruled.
   const eddies = fbm(size, rng, 5, 16);
-  const cur = boundaryCurrents(el, size, 20);
+  // currents reach ~6,000 km off a coast (20 tiles at 129)
+  const cur = boundaryCurrents(el, size, Math.max(1, Math.round(scaleLength(20, size))));
   for (let y = 0; y < size; y++) {
-    const base = 1 - Math.pow(lat(size, y), 1.25);
-    const tropical = 1 - Math.min(1, lat(size, y) / 0.75);
+    const L = lat(size, y, planet);
+    // a different axial tilt spreads the year's sunlight differently over
+    // latitude; added as the difference from Earth's, so Earth is unchanged
+    const tilt = planet.tiltDeg === EARTH_TILT_DEG
+      ? 0
+      : (annualInsolation(L, planet.tiltDeg) - annualInsolation(L, EARTH_TILT_DEG)) / EARTH_INSOLATION_RANGE;
+    const base = 1 - Math.pow(L, 1.25) + tilt;
+    const tropical = 1 - Math.min(1, L / 0.75);
     for (let x = 0; x < size; x++) {
       const i = y * size + x;
       out[i] = base
@@ -126,7 +140,8 @@ export function boundaryCurrents(el: Int16Array, size: number, reach = 14): Grid
   // Atlantic Drift, thousands of kilometres past Newfoundland — so the field is
   // smeared along the flow to match.
   let cur = out;
-  for (let pass = 0; pass < 4; pass++) {
+  const passes = Math.max(1, Math.round(scaleLength(4, size)));
+  for (let pass = 0; pass < passes; pass++) {
     const next = new Float64Array(size * size);
     for (let y = 0; y < size; y++) {
       for (let x = 0; x < size; x++) {
@@ -159,7 +174,9 @@ export function boundaryCurrents(el: Int16Array, size: number, reach = 14): Grid
  * eastern Australia). So the belt now wanders in latitude with the noise field,
  * and its strength depends on which coast a tile is near.
  */
-export function rainfall(el: Int16Array, size: number, rng: () => number): Grid {
+export function rainfall(
+  el: Int16Array, size: number, rng: () => number, planet: Planet = DEFAULT_PLANET,
+): Grid {
   const d = distanceToOcean(el, size), out = new Float64Array(size * size);
   // Drawn first so it can bend the belt; nothing else here uses rng, so the
   // field is the same one the texture pass below always used and the random
@@ -175,7 +192,7 @@ export function rainfall(el: Int16Array, size: number, rng: () => number): Grid 
       // (26% vs 27%; the old latitude-only belt was 44%), while west coasts in
       // the subtropics stay drier than east coasts (38 vs 76). Wandering further
       // scattered the deserts and started wetting the west coasts again.
-      const L = Math.min(1, Math.max(0, lat(size, y) + (n[i] - 0.5) * 0.8));
+      const L = Math.min(1, Math.max(0, lat(size, y, planet) + (n[i] - 0.5) * 0.8));
       // how close the sea is to the west and to the east along the row
       let west = reach + 1, east = reach + 1;
       for (let k = 1; k <= reach; k++) {

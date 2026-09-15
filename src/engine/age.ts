@@ -5,15 +5,22 @@ import type { PlateSet } from "./tectonics";
 import { denudeInactive, isostaticRebound, orogenicCollapse } from "./isostasy";
 import { tectonicAge } from "./tectonics";
 import { type Hotspot, applyHotspots, riftAtPlumes, seedHotspots } from "./hotspots";
-import { assignPlates } from "./tectonics";
+import { compactPlates } from "./tectonics";
 import { deStraighten, measureStraightness } from "./artifacts";
 import {
-  climatePhase, conserveCrust, dispersal, drownSpecks,
+  MEAN_ICE_METRES, climatePhase, conserveCrust, dispersal, drownSpecks,
   separateCrust, thermalSubsidence, weldCollidedPlates, wilsonDrive,
 } from "./cycles";
 import { type Provinces, seedProvinces, stampOrogen } from "./provinces";
 import { makeRng } from "./noise";
 import { thermalErosion } from "./erosion";
+import { scaleArea } from "./scale";
+import {
+  applySeaLevelRise, basinReferenceRate, conserveContinentalArea, continentalExposure, initOcean, meanOceanDepthMetres,
+  relaxBathymetry, restoreFreeboard, seaLevelFromBasins, updateCrust,
+} from "./ocean";
+import { MYR_PER_AGE } from "./timescale";
+import type { Planet } from "./planet";
 
 /**
  * One age of the world, run as a chain rather than a pile of separate buttons.
@@ -35,6 +42,13 @@ const EXTINCTION_SURVIVAL = 0.35;
 
 export type AgeOptions = {
   plateSet?: PlateSet;
+  /** plate ownership per tile from the previous age (AgeReport.plateMap) */
+  plateMap?: Int16Array;
+  /**
+   * how many steps the age's plate motion is split into; 1 is one 10 Myr jump,
+   * 5 is five 2 Myr steps (docs/simulation-plan.md, one clock)
+   */
+  subSteps?: number;
   plates: number;
   /** how far plates travel, as a share of the map */
   drift: number;
@@ -64,6 +78,32 @@ export type AgeOptions = {
   crustSeparation?: number;
   /** land share this world should hold, before the climate cycle moves it */
   baselineLand?: number;
+  /**
+   * restore the land share every age (conserveCrust). Off only to measure how
+   * much crust the other processes lose, ahead of sea level from water volume.
+   */
+  conserveLand?: boolean;
+  /** called with the elevation after each stage, for simlab's crust budget */
+  trace?: (stage: string, el: Int16Array) => void;
+  /**
+   * Ocean model (plan step 4): crust type and sea-floor age carried with the
+   * plates, sea-floor depth from age, sea level from basin depth and ice,
+   * continental freeboard. Replaces separateCrust, thermal subsidence, the
+   * forced land share and the drawn sea-level offset.
+   */
+  oceanModel?: boolean;
+  /** carried ocean-model state (AgeReport fields of the same name) */
+  continentalAreaRef?: number;
+  crust?: Uint8Array;
+  oceanAge?: Float32Array;
+  basinDepthRef?: number;
+  freeboardRef?: number;
+  /** ocean model: how far the sea stands above where the history started, metres */
+  seaLevelDatum?: number;
+  /** oceanic plates faster than continental ones (TectonicAgeOptions.plateSpeeds) */
+  plateSpeeds?: boolean;
+  /** pole layout, spin and axial tilt the climate follows (planet.ts); Earth by default */
+  planet?: Planet;
   /** sea-level offset already baked into EL from the previous age */
   seaLevelOffset?: number;
 };
@@ -91,6 +131,25 @@ export type AgeReport = {
   /** sea-level offset now baked into EL; pass back in next age */
   seaLevelOffset: number;
   specksDrowned: number;
+  /** ocean model state, to pass back in next age */
+  continentalAreaRef?: number;
+  crust?: Uint8Array;
+  oceanAge?: Float32Array;
+  basinDepthRef?: number;
+  freeboardRef?: number;
+  /** ocean model: how far the sea rose this age, metres (negative: fell) */
+  seaLevelMetres?: number;
+  /** ocean model: how far the sea now stands above where the history started */
+  seaLevelDatum?: number;
+  /**
+   * this age: tiles of new sea floor opened, extra claims where plates
+   * overlapped, continental tiles lost in overlaps, and (ocean model) tiles
+   * that turned continental or oceanic
+   */
+  motion: {
+    gaps: number; overlaps: number; lostContinental: number;
+    accreted: number; foundered: number; areaRestored: number;
+  };
 };
 
 export function runAge(w: World, size: number, opts: AgeOptions): AgeReport {
@@ -106,20 +165,89 @@ export function runAge(w: World, size: number, opts: AgeOptions): AgeReport {
   const provinces: Provinces = opts.provinces
     ?? seedProvinces(size, 14, opts.seed);
 
-  const tect = tectonicAge(w.EL, size, {
+  // Sub-steps: the age's drift and boundary relief are split into equal parts,
+  // each moving the plates and applying boundaries on the surface the step
+  // before left, so a collision builds as the plates close rather than in one
+  // ten-million-year jump. Welds, rifts, erosion and climate still run once an
+  // age. One step is exactly the old behaviour.
+  const oceanState = opts.oceanModel
+    ? (opts.crust && opts.oceanAge && opts.crust.length === w.EL.length
+        ? { crust: opts.crust, oceanAge: opts.oceanAge }
+        : initOcean(w.EL))
+    : null;
+  const datum = opts.seaLevelDatum ?? 0;
+  // The share of continent above the sea this world started with — scaled down
+  // when the world starts with more land than its baseline allows. Callers cap
+  // the baseline (60%), and the default path pulls land to it every age; without
+  // the same cap the ocean model held generated highland worlds at their
+  // starting ~70% land, where simlab counts a world as degenerate.
+  let freeboardRef = opts.freeboardRef;
+  if (oceanState && freeboardRef === undefined) {
+    let land = 0;
+    for (let i = 0; i < w.EL.length; i++) if (w.EL[i] >= 100) land++;
+    const startShare = land / w.EL.length;
+    const cap = opts.baselineLand !== undefined && startShare > 0
+      ? Math.min(1, opts.baselineLand / startShare)
+      : 1;
+    freeboardRef = continentalExposure(w.EL, oceanState.crust, datum) * cap;
+  }
+  // and the continental crust area it started with, which is conserved
+  let continentalAreaRef = opts.continentalAreaRef;
+  if (oceanState && continentalAreaRef === undefined) {
+    continentalAreaRef = 0;
+    for (let i = 0; i < oceanState.crust.length; i++) continentalAreaRef += oceanState.crust[i];
+  }
+  const steps = Math.max(1, Math.round(opts.subSteps ?? 1));
+  const distance = (opts.drift / 100) * (size / 3);
+  const strength = opts.upliftStrength ?? 45;
+  let tect = tectonicAge(w.EL, size, {
     plateSet: opts.plateSet,
+    plateMap: opts.plateMap,
     plates: opts.plates,
-    distance: (opts.drift / 100) * (size / 3),
-    strength: opts.upliftStrength ?? 45,
+    distance: distance / steps,
+    strength: strength / steps,
+    volcanoChance: 1 / steps,
     seed: opts.seed,
     province: provinces.id,
+    crust: oceanState?.crust,
+    oceanAge: oceanState?.oceanAge,
+    plateSpeeds: opts.plateSpeeds,
   });
+  const motion = { ...tect.motion, accreted: 0, foundered: 0, areaRestored: 0 };
+  for (let s = 1; s < steps; s++) {
+    const prev = tect;
+    tect = tectonicAge(prev.elevation, size, {
+      plateSet: prev.plateSet,
+      plateMap: prev.plateId,
+      plates: opts.plates,
+      distance: distance / steps,
+      strength: strength / steps,
+      volcanoChance: 1 / steps,
+      seed: opts.seed + 7919 * s,
+      province: prev.province,
+      crust: prev.crust,
+      oceanAge: prev.oceanAge,
+      plateSpeeds: opts.plateSpeeds,
+    });
+    motion.gaps += tect.motion.gaps;
+    motion.overlaps += tect.motion.overlaps;
+    motion.lostContinental += tect.motion.lostContinental;
+    // what the age as a whole lifted, erupted and found
+    for (let i = 0; i < tect.uplifting.length; i++) {
+      if (prev.uplifting[i]) tect.uplifting[i] = 1;
+      if (prev.volcanism[i] === 100) tect.volcanism[i] = 100;
+    }
+    for (const k of Object.keys(tect.counts) as (keyof typeof tect.counts)[]) tect.counts[k] += prev.counts[k];
+  }
   if (tect.province) provinces.id = tect.province;
+  // the sea floor that survived the age is ten million years older
+  if (tect.oceanAge) for (let i = 0; i < tect.oceanAge.length; i++) tect.oceanAge[i] += MYR_PER_AGE;
 
   // a belt raised by one collision is one geological unit, even after a later
   // rift tears it in two
-  stampOrogen(provinces, tect.uplifting, opts.age ?? 0);
+  stampOrogen(provinces, tect.uplifting, opts.age ?? 0, Math.round(scaleArea(200, size)));
   let el = tect.elevation;
+  opts.trace?.("tectonics", el);
 
   // Volcanoes go extinct. Over twenty ages an un-decayed field climbed from
   // 176 active cones to 631, because every age added some and nothing ever
@@ -136,16 +264,19 @@ export function runAge(w: World, size: number, opts: AgeOptions): AgeReport {
   const rng = makeRng(opts.seed ^ 0x1105);
   // collided continents travel as one from here on — and become one plate, so
   // the count comes back down after a collision and rifting can continue
-  let plateMap = assignPlates(el, size, tect.plateSet, makeRng(opts.seed));
-  const weld = weldCollidedPlates(tect.plateSet, el, plateMap.plateId, size);
-  if (weld.merged) plateMap = assignPlates(el, size, tect.plateSet, makeRng(opts.seed + 1));
+  // The plate map is the one tectonics just moved with the crust. It used to be
+  // regrown from the seeds here, and again after a weld, so boundaries never
+  // lasted; now a weld renumbers it and a rift cuts it, and nothing else does.
+  const plateId = tect.plateId;
+  const weld = weldCollidedPlates(tect.plateSet, el, plateId, size);
+  if (weld.merged) for (let i = 0; i < plateId.length; i++) plateId[i] = weld.remap[plateId[i]];
 
   // Plumes were seeded once and never replaced, so by the time a supercontinent
   // had assembled there was no plume left to rift it apart. They are topped up
   // every age instead, which also lets a plume appear *because* a continent has
   // assembled — the actual mechanism.
   let spots = opts.spots ?? [];
-  const fresh = seedHotspots(el, size, tect.plateSet, plateMap.plateId,
+  const fresh = seedHotspots(el, size, tect.plateSet, plateId,
                              Math.max(0, (opts.hotspots ?? 2) - spots.filter((s) => !s.plume).length), rng);
   const hasPlume = spots.some((s) => s.plume);
   for (const f of fresh) {
@@ -158,7 +289,28 @@ export function runAge(w: World, size: number, opts: AgeOptions): AgeReport {
   // the return is snapshotted before this point, so mutating the input here
   // threw the new seeds away every age.
   if (spots.some((s) => s.plume) && tect.plateSet.sx.length < 24) {
-    riftAtPlumes(tect.plateSet, spots, plateMap.plateId, size);
+    riftAtPlumes(tect.plateSet, spots, plateId, size);
+  }
+  compactPlates(tect.plateSet, plateId);
+
+  // Welds only ever reduce the plate count, and with the map carried a plume
+  // rift adds one plate, not two phantom seeds — so a 6-plate world wound down
+  // to 2 within twenty ages, and with two plates any single event redrew every
+  // boundary at once. Earth keeps a roughly steady count because big plates
+  // break. When the count is below the setting, the largest plate rifts across
+  // a random point on it, at most once an age.
+  if (tect.plateSet.sx.length < Math.max(2, opts.plates)) {
+    const count = tect.plateSet.sx.length;
+    const area = new Array(count).fill(0);
+    for (let i = 0; i < plateId.length; i++) area[plateId[i]]++;
+    const big = area.indexOf(Math.max(...area));
+    const pick = makeRng(opts.seed ^ 0x2177);
+    let k = Math.floor(pick() * area[big]);
+    for (let i = 0; i < plateId.length; i++) {
+      if (plateId[i] !== big || k-- > 0) continue;
+      riftAtPlumes(tect.plateSet, [{ x: i % size, y: (i / size) | 0, life: 1, plume: true }], plateId, size);
+      break;
+    }
   }
 
   if ((opts.hotspots ?? 2) > 0 && spots.length) {
@@ -170,16 +322,21 @@ export function runAge(w: World, size: number, opts: AgeOptions): AgeReport {
     for (let i = 0; i < VL.length; i++) if (hot.volcanism[i] === 100) VL[i] = 100;
   }
 
+  opts.trace?.("hotspots", el);
+
   // crust past the limit spreads sideways instead of stacking into a plateau
   el = orogenicCollapse(el, size);
+  opts.trace?.("collapse", el);
 
   // and anything no longer being pushed starts wearing down
   el = denudeInactive(el, size, tect.uplifting);
+  opts.trace?.("denude", el);
 
   const beforeErosion = Int16Array.from(el);
 
   // 2. weathering
   if (opts.weathering > 0) el = thermalErosion(el, size, opts.weathering);
+  opts.trace?.("weathering", el);
 
   // 3 + 4. one flow field, used for both carving and climate
   const hydro = analyse(el, size, w.RF, opts.riverDensity);
@@ -187,28 +344,52 @@ export function runAge(w: World, size: number, opts: AgeOptions): AgeReport {
     // same surface as the analysis just above, so reuse it rather than run it twice
     el = carveRivers(el, size, opts.riverCarving, w.RF, opts.riverDensity, hydro).elevation;
   }
+  opts.trace?.("rivers", el);
 
   // 5. the crust rises again where weight came off it
   if (opts.rebound > 0) {
     el = isostaticRebound(beforeErosion, el, size, opts.rebound / 100);
   }
+  opts.trace?.("rebound", el);
 
   // 5b. scrub the straight seams rigid operations leave behind
   const straightBefore = measureStraightness(el, size).straightShare;
   if (opts.deArtifact !== false) el = deStraighten(el, size, 1, opts.seed + 3);
+  opts.trace?.("deStraighten", el);
   const straightAfter = measureStraightness(el, size).straightShare;
 
   // 5b2. two kinds of crust, not one hump around the shoreline
-  const sep = opts.crustSeparation ?? 0.8;
-  if (sep > 0) el = separateCrust(el, sep);
+  if (oceanState && tect.crust && tect.oceanAge) {
+    // the sea floor's depth comes from its age: shallow at the ridges, deepening
+    // as it cools; the gap between shelf and abyss follows from crust type
+    const changed = updateCrust(el, tect.crust, tect.oceanAge);
+    motion.accreted = changed.accreted;
+    motion.foundered = changed.foundered;
+    if (continentalAreaRef !== undefined) {
+      motion.areaRestored = conserveContinentalArea(el, tect.crust, tect.oceanAge, size, continentalAreaRef);
+    }
+    el = relaxBathymetry(el, tect.crust, tect.oceanAge, datum);
+    opts.trace?.("bathymetry", el);
+  } else {
+    const sep = opts.crustSeparation ?? 0.8;
+    if (sep > 0) el = separateCrust(el, sep);
+    opts.trace?.("separateCrust", el);
 
-  // 5b3. and old sea floor sinks as it cools
-  el = thermalSubsidence(el);
+    // 5b3. and old sea floor sinks as it cools
+    el = thermalSubsidence(el);
+    opts.trace?.("subsidence", el);
+  }
 
   // 6. climate, with the rivers it just cut
-  const climate = deriveClimate(el, size, opts.climate, opts.seed + 1);
+  const climate = deriveClimate(el, size, opts.climate, opts.seed + 1, opts.planet);
   // crust is conserved; only how much of it is drowned may change
-  el = conserveCrust(el, opts.baselineLand ?? 0.3, opts.seaLevelOffset ?? 0);
+  if (oceanState && tect.crust && freeboardRef !== undefined) {
+    el = restoreFreeboard(el, tect.crust, freeboardRef, datum);
+    opts.trace?.("freeboard", el);
+  } else {
+    if (opts.conserveLand !== false) el = conserveCrust(el, opts.baselineLand ?? 0.3, opts.seaLevelOffset ?? 0);
+    opts.trace?.("conserveCrust", el);
+  }
 
   const world: World = { EL: el, ...climate, VL };
 
@@ -224,12 +405,25 @@ export function runAge(w: World, size: number, opts: AgeOptions): AgeReport {
   // glacial sample is fresh each age the ocean floor became a random walk —
   // it wandered from 9 to 61 over eighty ages. Temperature and rainfall do not
   // have this problem because deriveClimate rebuilds them from scratch.
-  const seaDelta = phase.seaLevel - (opts.seaLevelOffset ?? 0);
+  const seaDelta = oceanState ? 0 : phase.seaLevel - (opts.seaLevelOffset ?? 0);
   for (let i = 0; i < el.length; i++) {
     world.TP[i] = Math.round(world.TP[i] + phase.temperature);
     world.RF[i] = Math.min(100, Math.max(0, Math.round(world.RF[i] * phase.rainfall)));
     world.EL[i] = Math.min(400, Math.max(0, Math.round(world.EL[i] + seaDelta)));
   }
+  // Ocean model: sea level from how deep the basins are and how much water the
+  // ice holds, against where this world's basins settle (ocean.ts).
+  let seaRise = 0, seaLevelDatum = datum, basinDepthRef = opts.basinDepthRef;
+  if (oceanState && tect.crust && tect.oceanAge) {
+    const depth = meanOceanDepthMetres(tect.crust, tect.oceanAge);
+    basinDepthRef = basinDepthRef === undefined
+      ? depth
+      : basinDepthRef + (depth - basinDepthRef) * basinReferenceRate(opts.age ?? 1, MYR_PER_AGE);
+    seaLevelDatum = seaLevelFromBasins(depth, basinDepthRef, phase.iceMetres, MEAN_ICE_METRES);
+    seaRise = seaLevelDatum - datum;
+    world.EL = applySeaLevelRise(world.EL, seaRise);
+  }
+  opts.trace?.("seaLevel", world.EL);
 
   // river valleys are wetter and drain poorly
   for (let i = 0; i < el.length; i++) {
@@ -242,10 +436,12 @@ export function runAge(w: World, size: number, opts: AgeOptions): AgeReport {
   // shift: culling before it left every speck the falling sea had just exposed.
   let specksDrowned = 0;
   if (opts.cullSpecks !== false) {
-    const culled = drownSpecks(world.EL, size, 10);
+    // under ~1 million km² (10 tiles at 129) is a speck, not a landmass
+    const culled = drownSpecks(world.EL, size, Math.max(1, Math.round(scaleArea(10, size))));
     world.EL = culled.elevation;
     specksDrowned = culled.removed;
   }
+  opts.trace?.("specks", world.EL);
 
   let land = 0, mtn = 0, rivers = 0, lakes = 0, volc = 0;
   for (let i = 0; i < world.EL.length; i++) {
@@ -264,7 +460,7 @@ export function runAge(w: World, size: number, opts: AgeOptions): AgeReport {
     lakeTiles: lakes,
     volcanoes: volc,
     boundaries: tect.counts,
-    plateMap: plateMap.plateId,
+    plateMap: plateId,
     nextUpliftStrength: (() => {
       const got = land ? mtn / land : 0;
       const err = opts.mountainTarget - got;
@@ -278,7 +474,15 @@ export function runAge(w: World, size: number, opts: AgeOptions): AgeReport {
     straightBefore,
     straightAfter,
     phase: phase.label,
-    seaLevelOffset: phase.seaLevel,
+    seaLevelOffset: oceanState ? 0 : phase.seaLevel,
     specksDrowned,
+    crust: tect.crust,
+    oceanAge: tect.oceanAge,
+    basinDepthRef,
+    freeboardRef,
+    continentalAreaRef,
+    seaLevelMetres: seaRise,
+    seaLevelDatum: oceanState ? seaLevelDatum : undefined,
+    motion,
   };
 }

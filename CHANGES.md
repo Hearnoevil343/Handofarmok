@@ -2589,6 +2589,8 @@ DF crashes in `SDL2.dll` after about half of command-line generations, before
 saving — with or without DFHack scripts. Worth knowing before building the
 "import a DF world" feature on `-gen`.
 
+---
+
 ## 51. Painting: a crashing climate button, brushes that fought, and Sculpt as an airbrush
 
 Reported: the brushes clash, Sculpt does not build up the way the climate brushes
@@ -2697,3 +2699,153 @@ at column 128), zoomed in 191.
   off the map, so there is no seam to paint across.
 - Not decided: whether the Climate brush should also airbrush while held. It is
   unchanged.
+
+---
+
+## 52. Plate boundaries that last, and real units for the map
+
+Step 2 of `docs/simulation-plan.md`, and the first part of step 3.
+
+### Boundaries were redrawn every age
+
+Only each plate's seed point and heading carried from one age to the next.
+Which tile belonged to which plate was grown again from the seeds every age,
+with noise rolled fresh from the age number, and then grown a second time after
+welding. So the boundaries re-routed every ten million years even when the
+plates had barely moved, and a collision belt was lifted along a different line
+each age. `session.plateMap` was saved, but only to draw the overlay.
+
+Now the plate map is carried state, in the session and in simlab:
+
+- it moves with the crust; new sea floor opening behind a plate takes a
+  neighbour's plate;
+- a weld renumbers it, a plume rift cuts the host plate in two along the rift
+  line (tiles beyond the line become the new plate), and a plate with no tiles
+  left is dropped;
+- each seed sits at the centre of its plate's tiles.
+
+Two problems showed up only once the map persisted. Welds only ever reduced the
+plate count, and a rift now adds one real plate instead of two phantom seeds,
+so a 6-plate world wound down to 2 in twenty ages — and with two plates any
+event redraws every boundary at once. When the count is below the Plates
+setting, the largest plate now rifts across a random point on it. And every
+touching pair welded in the same age; welds are now one per age, strongest
+contact first, with the contact needed scaled to the map.
+
+A new simlab metric, `boundaryPersist`, is the share of last age's boundary
+tiles still within two tiles of a boundary: **49% → 89%**.
+
+### Less blur from moving plates
+
+Plates have moved by fractions of a tile since the overnight simulation work
+(that replaced whole-tile jumps and brought the coastline dimension into
+target), sampled bilinearly, which averages the relief a little every age. Inside a plate the sample is now
+clamped Catmull-Rom over the 4×4 neighbourhood, never above or below the four
+nearest tiles; bilinear stays only where the neighbourhood reaches another
+plate.
+
+Measured on the 96-world sets and the 200-age set against `develop`:
+
+| | set A | set B | 200 ages |
+|---|---|---|---|
+| score (mean) | 1.83 → 1.73 | 1.66 → 1.63 | 0.99 → 0.94 |
+| worst world | 3.86 → 3.61 | 4.16 → 3.54 | 2.86 → 2.21 |
+| flat 2×2 patches % | 0.15 → 0.08 | 0.16 → 0.08 | 0.11 → 0.09 |
+| boundary persistence % | 49 → 89 | 50 → 88 | 49 → 89 |
+
+Within noise on the score, clearly better on boundaries and blockiness. Not
+fixed: over 200 ages the largest landmass holds 70% of land against 63% before.
+
+### Real units
+
+`src/engine/scale.ts` defines the planet (radius 6,371 km), km per tile and a
+provisional metres-per-unit scale. Constants that were a number of tiles at 129
+— rebound radius, denudation window, collapse spread, shelf smoothing,
+boundary-current reach, hotspot radii, orogen and speck areas, the talus step —
+now scale with map size, so a 257 map is the same planet in more detail instead
+of a planet where everything reaches half as far. The conversion is exactly 1 at
+129: three worlds over twenty ages came out identical, 0 of 6,989,220 values.
+Not yet checked: whether a 257 and a 129 history now agree, and 257 runs at 371
+ms an age, over the 300 ms budget.
+
+Checked since: the same 24 worlds at 129 and 257 over 100 ages agree on land
+(52.9 / 53.5%), mountains (11.6 / 11.3%) and bimodality. The simlab metrics that
+count tiles (landmasses over 120 tiles, islands, the 2-tile persistence window)
+do not scale yet, so those read differently at 257.
+
+---
+
+## 53. Planet settings, sub-steps, and an ocean that is still being built
+
+Steps 3, 4 and 6 of `docs/simulation-plan.md`. The planet settings are on; the
+other two are options, off by default, because they do not yet beat what they
+would replace. Every default stays bit-identical to §52 (0 of 3,494,610 values
+differ over three worlds and ten ages).
+
+### Pole layout, spin and axial tilt
+
+Run Age and Derive Climate now have a Pole Layout (following the Poles setting on
+the World Settings page unless overridden), a Spin and an Axial Tilt.
+
+- **Pole layout.** The whole planet, or one hemisphere: north with the pole
+  along the top edge and the equator along the bottom, or south mirrored. DF's
+  random "or" options are rolled from the seed, so the simulation has one answer.
+- **Spin.** A retrograde planet is the mirror image of a prograde one, since
+  the Coriolis force reverses: the climate is derived on the mirrored map and
+  mirrored back, which swaps every east-west asymmetry at once. Land rainfall on
+  west and east coasts: 72 and 90 prograde, 89 and 70 retrograde.
+- **Axial tilt.** Annual sunlight by latitude from the two-term form used in
+  energy-balance models (North 1975), added as the difference from Earth's 23.44
+  degrees. At 80 degrees the warmest rows are the poles.
+
+Export still writes `POLE:NONE`: whether DF adds its own latitude cooling to a
+painted world has to be checked in DF first, or a world would be cooled twice.
+
+### Sub-steps (option `subSteps`)
+
+An age's plate motion and boundary relief split into equal steps. Two steps: score
+within noise but continents clump more (largest landmass over 200 ages 70% ->
+81%). Five: clearly worse. Elevation is whole numbers, so small per-step changes
+round away; sub-steps need fractional elevation inside an age first.
+
+### The ocean model (option `oceanModel`)
+
+Crust type and sea-floor age carried with the plates; depth from age (Parsons &
+Sclater); sea level from basin depth and ice; continents keeping their freeboard
+and their area. It replaces `separateCrust`, thermal subsidence and the forced
+land share. What it took to get this far:
+
+- **A crust budget first.** With crust read off elevation, tectonics lifted
+  4.6% of the map into the "continental" band each age and `separateCrust`
+  pushed 8% back out.
+- **Overlap by buoyancy.** The higher surface used to win an overlap, so old
+  sea floor never subducted. Continent now rides over ocean, and the older
+  ocean goes under the younger.
+- **Sea level from water volume failed.** Painted oceans start far shallower
+  than their ages imply, and rigid plates never consume their interiors, so the
+  basins deepened for tens of ages and a conserved ocean fell 600 to 4,000 m. A
+  depth measured from the current sea also fed back on itself. Now sea level is
+  0.7 x (reference - mean basin depth) minus the ice anomaly, the method paleo
+  reconstructions use, with a reference that settles early; depth is measured
+  from the starting sea. The sea stays within about -330 to +90 m.
+- **Continents.** Rifts open sea floor inside continents at once (~150 tiles an
+  age), so continental crust fell from 66% of the map to 39% over 100 ages. Area
+  and freeboard now relax slowly (~100 Myr) to where the world started, and
+  submerged continent settles to shelf depth.
+
+### A metric that measured the wrong thing
+
+`hypsometricBimodality` split the 0-400 scale in half and looked for the upper
+mode above 200 — among the mountains. It rewarded the sea floor piled into one
+narrow band and scored a sea floor spread out by age at 0.07. It now works in
+metres between the deep-ocean mode (below -2.5 km) and the continental mode
+(-1 to +2 km). Default path on the new metric: 0.98-0.99.
+
+Ocean model against the default on the fixed metric, 96 worlds and 200 ages:
+score 3.30 / 2.96 / 0.73 against 1.45 / 1.39 / 0.49. The 28 degenerate runs were
+all highland and great-plains worlds generated near 70% land, which the default
+path caps at 60% and the ocean model did not; that cap is now applied to its
+freeboard target. With it: 2.20 / 2.22 (worst 9.4 / 10.7), better but still
+behind the default, and 13 and 14 degenerate runs — land on highland worlds
+still swings by about ten points. Also open: coastlines too rough (dimension
+1.37), flat land patches (1.3% of land against 0.08%). The option stays off.
