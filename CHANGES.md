@@ -2434,3 +2434,35 @@ taken from this repository's own releases.
 - With GitHub answering 403: nothing is shown.
 - Not yet checked: the system-browser hand-off inside a packaged .exe, which needs
   the next `npm run dist`.
+
+---
+
+## 49. Every exported freezing tile was wrong
+
+Found by exporting all 16 painted presets through the Export Vault, installing
+the file as Dwarf Fortress's `prefs/world_gen.txt`, and generating each one with
+DF's command-line generator (`"Dwarf Fortress.exe" -gen <id> <seed> <title>`).
+
+### Negative temperatures wrapped around
+
+`JsonToWorldGen.stringifyPresetAsync` rebuilt each layer in a `Uint16Array`
+before writing its rows. Temperature is the one layer that goes below zero, and
+an unsigned 16-bit array stores `-1` as `65535`, `-5` as `65531`. Every export
+the app has made — 0.2.1 included — wrote every freezing tile as an impossible
+heat: from 44 tiles on South America to 11,486 on the Caribbean, whose painted
+sea sits at `-5`.
+
+It survived because the round trip hid it. Importing reads rows into an
+`Int16Array`, which turns `65535` back into `-1`, so export → import → export was
+byte-identical and the check in §47 passed. Comparing the export against the
+preset files, not against itself, is what caught it.
+
+The grid is an `Int16Array` now, like the layers. Checked: in a 16-map export,
+elevation, rainfall, temperature, drainage, volcanism and savagery all match the
+preset files exactly, cell for cell; temperatures run -30 to 95 as painted.
+
+### PS_AL
+
+The exporter wrote every layer `worldManager` holds, including alignment. DF has
+no painting token for alignment and logged `Unrecognized World Gen Token: PS_AL`
+once per row. It is skipped now; the checked export has no `PS_AL` rows.

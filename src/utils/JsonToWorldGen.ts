@@ -80,14 +80,21 @@ export class JsonToWorldGen {
 
       for (let l = 0; l < layers.length; l++) {
         const [layerName, points] = layers[l];
+        // Dwarf Fortress has no painting token for alignment. Writing PS_AL
+        // rows made DF log "Unrecognized World Gen Token: PS_AL" once per row.
+        if (layerName.toLowerCase() === LayerType.Alignment) continue;
         const suffix =
           LayerToSuffix[layerName.toLowerCase() as LayerType] ||
           layerName.toUpperCase().slice(0, 2);
         const tokenKey = `PS_${suffix}`;
 
-        // 1. Reconstruct the grid for this layer to ensure row-order
-        // We use a Uint16Array for performance (fastest way to store pixel data)
-        const grid = new Uint16Array(size * size);
+        // 1. Reconstruct the grid for this layer to ensure row-order.
+        // Signed, like the layers themselves: temperature goes below zero, and
+        // a Uint16Array wrapped every negative value (-1 became 65535), so every
+        // freezing tile was exported as an impossible heat. Re-importing read
+        // 65535 back into an Int16Array as -1, which is why a round trip looked
+        // byte-identical and hid it.
+        const grid = new Int16Array(size * size);
         points.forEach((p) => {
           grid[p.y * size + p.x] = p.v;
         });

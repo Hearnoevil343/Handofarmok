@@ -72,6 +72,11 @@ electron-builder's symlink step. (Not re-verified.)
   `HTMLAnchorElement.prototype.click` in the page to capture the export's blob URL
   and `fetch` it (CHANGES §45).
 
+## Before a release
+
+Review `C:\dev\FEATURE-BACKLOG.md` (Hand of Armok section) first: build, defer or
+drop every item on purpose, then move shipped items to Done with the version.
+
 ## How to work here
 
 - Explain plainly, with numbers. Say what was measured and what was not.
