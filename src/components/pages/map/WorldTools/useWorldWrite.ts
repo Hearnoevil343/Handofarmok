@@ -83,7 +83,20 @@ export function useWorldWrite(seedKey = "default") {
     }, 0);
   }, []);
 
-  return { busy, write, run, seed, setSeed };
+  /**
+   * For tools that run many steps and show each one as it lands. The caller
+   * snapshots every step itself, so each can be undone on its own.
+   */
+  const runAsync = useCallback(async (fn: () => Promise<void>) => {
+    setBusy(true);
+    try {
+      await fn();
+    } finally {
+      setBusy(false);
+    }
+  }, []);
+
+  return { busy, write, run, runAsync, seed, setSeed };
 }
 
 /** Snapshot of the active preset, for tools that transform what is there. */
