@@ -117,7 +117,8 @@ export function climatePhase(age: number, dispersal: number, historySeed = 0): C
   // ice locks water up, so cold withdraws the sea and exposes land; young ocean
   // floor between dispersed continents is shallow and raises it
   const anomaly = warmth - MEAN_WARMTH;
-  const temperature = anomaly * 10 + superc * 4;
+  // assembled continents (superc < 0) run hot, dispersed ones mild
+  const temperature = anomaly * 10 - superc * 4;
   const seaLevel = -anomaly * 15 - superc * 7;
 
   // assembled continents are dry; dispersed ones are wet
@@ -192,7 +193,9 @@ export function drownSpecks(
       }
     }
     if (group.length < floor) {
-      for (const j of group) out[j] = SEA - 6 - Math.round(Math.random() * 8);
+      // A fixed hash of the tile, not Math.random: the one unseeded random call in
+      // the engine meant no history could be replayed from its seed.
+      for (const j of group) out[j] = SEA - 6 - (Math.imul(j + 1, 0x9e3779b1) >>> 0) % 9;
       removed++;
     }
   }
@@ -413,17 +416,24 @@ export function wilsonDrive(
   const SEA = 100;
   const phase = Math.sin((age / periodAges) * Math.PI * 2 + 1.1);
 
-  // centre of continental mass, wrapped east-west so it means something
-  let sumAngle = 0, sumY = 0, n = 0;
+  // Centre of continental mass, wrapped east-west. This has to be a circular
+  // mean: averaging the angles themselves is just averaging x, so a
+  // supercontinent straddling the seam was placed in the middle of the map, on
+  // the opposite side of the world. Dispersal then pushed every plate away from
+  // that phantom centre — into the seam from both sides — and the phase meant to
+  // break the supercontinent up kept crushing it together at the map edge.
+  let sumSin = 0, sumCos = 0, sumY = 0, n = 0;
   for (let i = 0; i < el.length; i++) {
     if (el[i] < SEA) continue;
     const x = i % size, y = (i / size) | 0;
-    sumAngle += (x / size) * Math.PI * 2;
+    const a = (x / size) * Math.PI * 2;
+    sumSin += Math.sin(a);
+    sumCos += Math.cos(a);
     sumY += y;
     n++;
   }
   if (!n) return;
-  const cx = ((sumAngle / n) / (Math.PI * 2)) * size;
+  const cx = ((Math.atan2(sumSin, sumCos) / (Math.PI * 2)) * size + size) % size;
   const cy = sumY / n;
 
   // dispersing while the phase is positive, converging while it is negative
@@ -488,7 +498,8 @@ export function weldCollidedPlates(
       const i = y * size + x;
       if (el[i] < SEA) continue;
       const a = plateId[i];
-      for (const j of [x < size - 1 ? i + 1 : -1, y < size - 1 ? i + size : -1]) {
+      // east wraps across the seam, so a collision there welds like any other
+      for (const j of [y * size + ((x + 1) % size), y < size - 1 ? i + size : -1]) {
         if (j < 0 || el[j] < SEA) continue;
         const b = plateId[j];
         if (a !== b && a >= 0 && b >= 0) {
@@ -501,6 +512,15 @@ export function weldCollidedPlates(
   for (const [key, n] of contact) {
     if (n < minContact) continue;
     const [a, b] = key.split("-").map(Number);
+    // A collision closes the gap; a rift opens it. Two halves of a fresh rift
+    // share a continent, so contact alone welded them straight back together
+    // and no rift ever survived.
+    let dx = plates.sx[b] - plates.sx[a];
+    if (dx > size / 2) dx -= size;
+    if (dx < -size / 2) dx += size;
+    const dy = plates.sy[b] - plates.sy[a];
+    const closing = (plates.vx[a] - plates.vx[b]) * dx + (plates.vy[a] - plates.vy[b]) * dy;
+    if (closing <= 0) continue;
     union(a, b);
   }
 
@@ -533,9 +553,15 @@ export function weldCollidedPlates(
     }
     const m = Math.hypot(wx / total, wy / total) || 1;
     // the survivor sits at the land-weighted centre and carries the joint heading
-    let cx = 0, cy = 0;
-    for (const p of members) { cx += plates.sx[p] * (landOf[p] + 1); cy += plates.sy[p] * (landOf[p] + 1); }
-    plates.sx[best] = cx / total; plates.sy[best] = cy / total;
+    // x as a weighted circular mean: members either side of the seam must not
+    // merge into a plate seeded in the middle of the map
+    let sinX = 0, cosX = 0, cy = 0;
+    for (const p of members) {
+      const w = landOf[p] + 1, a = (plates.sx[p] / size) * Math.PI * 2;
+      sinX += Math.sin(a) * w; cosX += Math.cos(a) * w; cy += plates.sy[p] * w;
+    }
+    plates.sx[best] = ((Math.atan2(sinX, cosX) / (Math.PI * 2)) * size + size) % size;
+    plates.sy[best] = cy / total;
     plates.vx[best] = (wx / total) / m; plates.vy[best] = (wy / total) / m;
     keep.add(best);
     welded += members.length - 1;

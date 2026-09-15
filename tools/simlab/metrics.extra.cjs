@@ -26,7 +26,7 @@ function masses(el, N, minSize = 1) {
       const j = stack.pop();
       tiles.push(j);
       const x = j % N, y = (j / N) | 0;
-      const nb = [x > 0 ? j - 1 : -1, x < N - 1 ? j + 1 : -1,
+      const nb = [y * N + ((x + N - 1) % N), y * N + ((x + 1) % N),   // wraps east-west
                   y > 0 ? j - N : -1, y < N - 1 ? j + N : -1];
       for (const k of nb) if (k >= 0 && !seen[k] && el[k] >= SEA) { seen[k] = 1; stack.push(k); }
     }
@@ -46,13 +46,18 @@ function boxFill(el, N) {
   if (!big.length) return 0;
   let sum = 0;
   for (const t of big) {
-    let mnX = 1e9, mxX = -1, mnY = 1e9, mxY = -1;
+    let mnY = 1e9, mxY = -1;
+    const cols = new Uint8Array(N);
     for (const j of t) {
       const x = j % N, y = (j / N) | 0;
-      if (x < mnX) mnX = x; if (x > mxX) mxX = x;
+      cols[x] = 1;
       if (y < mnY) mnY = y; if (y > mxY) mxY = y;
     }
-    sum += t.length / ((mxX - mnX + 1) * (mxY - mnY + 1));
+    // width round the cylinder: map width minus the largest run of empty columns
+    let gap = 0, run = 0;
+    for (let k = 0; k < N * 2; k++) { if (cols[k % N]) run = 0; else { run++; gap = Math.max(gap, run); } }
+    const width = Math.max(1, N - Math.min(N, gap));
+    sum += t.length / (width * (mxY - mnY + 1));
   }
   return (100 * sum) / big.length;
 }
@@ -148,9 +153,34 @@ function columnStriping(el, N) {
   return jumps / N;
 }
 
+/**
+ * Blockiness: share of land tiles with exactly the same elevation as the tile
+ * to the east, and share at the corner of a 2x2 block of identical elevation.
+ * Generated worlds have almost none; terrain shifted as rigid whole-tile blocks
+ * and re-quantised has many. It is what the eye sees as stair-stepped,
+ * pixel-block land that none of the other metrics caught.
+ */
+function blockiness(el, N) {
+  let land = 0, sameEast = 0, flat2x2 = 0;
+  for (let y = 0; y < N - 1; y++) {
+    for (let x = 0; x < N; x++) {
+      const i = y * N + x;
+      if (el[i] < SEA) continue;
+      land++;
+      const e = y * N + ((x + 1) % N);
+      if (el[e] === el[i]) {
+        sameEast++;
+        if (el[i + N] === el[i] && el[e + N] === el[i]) flat2x2++;
+      }
+    }
+  }
+  return land ? { sameEast: (100 * sameEast) / land, flat2x2: (100 * flat2x2) / land } : { sameEast: 0, flat2x2: 0 };
+}
+
 /** Everything, for one age. */
 function measureAge(w, N, engineMetrics) {
   const el = w.EL;
+  const block = blockiness(el, N);
   let land = 0, mtn = 0, frozen = 0;
   for (let i = 0; i < el.length; i++) {
     if (el[i] >= SEA) { land++; if (el[i] >= 300) mtn++; }
@@ -174,6 +204,8 @@ function measureAge(w, N, engineMetrics) {
     oceanZonality: zonality(w.TP, el, N, true),
     oceanPlateau: plateauShare(w.TP, el, N, true),
     flatRunTP: longestFlatRun(w.TP, N),
+    sameEast: block.sameEast,
+    flat2x2: block.flat2x2,
   };
 }
 

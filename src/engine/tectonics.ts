@@ -90,7 +90,9 @@ export function newPlateSet(size: number, count: number, rng: () => number): Pla
       const cxp = c % size, cyp = (c / size) | 0;
       let d = Infinity;
       for (let k = 0; k < sx.length; k++) {
-        const dx = cxp - sx[k], dy = cyp - sy[k];
+        // east-west wraps: across the seam is next door, not across the map
+        const ax = Math.abs(cxp - sx[k]);
+        const dx = Math.min(ax, size - ax), dy = cyp - sy[k];
         d = Math.min(d, dx * dx + dy * dy);
       }
       if (sx.length === 0) { best = c; break; }
@@ -157,7 +159,8 @@ export function assignPlates(
     if (d > dist[i]) continue;
     const x = i % size, y = (i / size) | 0;
     for (const j of [
-      x > 0 ? i - 1 : -1, x < size - 1 ? i + 1 : -1,
+      // east-west wraps: a plate's territory continues across the seam
+      y * size + ((x + size - 1) % size), y * size + ((x + 1) % size),
       y > 0 ? i - size : -1, y < size - 1 ? i + size : -1,
     ]) {
       if (j < 0) continue;
@@ -236,7 +239,7 @@ export function applyBoundaries(
       const a = plateId[i];
       let b = -1, nb = -1;
       for (const j of [
-        x > 0 ? i - 1 : -1, x < size - 1 ? i + 1 : -1,
+        y * size + ((x + size - 1) % size), y * size + ((x + 1) % size),
         y > 0 ? i - size : -1, y < size - 1 ? i + size : -1,
       ]) {
         if (j >= 0 && plateId[j] !== a) { b = plateId[j]; nb = j; break; }
@@ -244,10 +247,11 @@ export function applyBoundaries(
       if (b < 0 || a < 0 || nb < 0) continue;
 
       const rvx = vx[a] - vx[b], rvy = vy[a] - vy[b];
-      // normal taken from the local gradient of plate ownership
+      // normal taken from the local gradient of plate ownership; east-west wraps
+      // so a boundary on the seam is seen from both sides like any other
       let nx = 0, ny = 0;
-      if (x > 0 && plateId[i - 1] !== a) nx -= 1;
-      if (x < size - 1 && plateId[i + 1] !== a) nx += 1;
+      if (plateId[y * size + ((x + size - 1) % size)] !== a) nx -= 1;
+      if (plateId[y * size + ((x + 1) % size)] !== a) nx += 1;
       if (y > 0 && plateId[i - size] !== a) ny -= 1;
       if (y < size - 1 && plateId[i + size] !== a) ny += 1;
       const len = Math.hypot(nx, ny) || 1;
@@ -275,7 +279,7 @@ export function applyBoundaries(
     if (d >= reach) continue;
     const x = i % size, y = (i / size) | 0;
     for (const j of [
-      x > 0 ? i - 1 : -1, x < size - 1 ? i + 1 : -1,
+      y * size + ((x + size - 1) % size), y * size + ((x + 1) % size),
       y > 0 ? i - size : -1, y < size - 1 ? i + size : -1,
     ]) {
       if (j < 0 || dist[j] !== -1) continue;
@@ -291,7 +295,9 @@ export function applyBoundaries(
   // cover. At 170 it pinned at 100 and still could not reach 12%, because
   // merged plates present fewer boundaries and denudation removes belts faster
   // than a single boundary can raise them.
-  const k = (strength / 100) * 340;
+  // 420 with denudeInactive at 0.2: at 340 / 0.3 the controller pinned near
+  // its ceiling over long histories and mountain cover still decayed.
+  const k = (strength / 100) * 420;
   const elevation = Int16Array.from(el);
   const volcanism = new Int16Array(n);
   const uplifting = new Uint8Array(n);
@@ -387,17 +393,39 @@ function advect(
         // other, so crust is conserved. Without this, plates simply shove land
         // off the side of the map and every run is a net loss. North-south
         // clamps instead, since a sphere has poles rather than a seam.
-        const sxp = ((Math.round(x - vx[p] * distance) % size) + size) % size;
-        const syp = Math.min(size - 1, Math.max(0, Math.round(y - vy[p] * distance)));
-        const si = syp * size + sxp;
-        if (plateId[si] !== p) continue;
-        claims++; sum += el[si];
-        if (el[si] > highest) { highest = el[si]; owner = p; srcIdx = si; }
+        const fx = x - vx[p] * distance, fy = y - vy[p] * distance;
+        // Sub-tile motion: the source point falls between four tiles, so blend
+        // the ones this plate owns by distance (bilinear). Rounding to the
+        // nearest tile moved every plate in whole-tile jumps. Against that, on
+        // 96 worlds: score 2.19/6.15 and 2.32/6.07 -> 1.76/3.37 and 1.71/5.84,
+        // coastline dimension 1.39-1.42 -> 1.33-1.34 (into target for the first
+        // time), bimodality 0.79-0.82 -> 0.89-0.90, runs with a degenerate age
+        // 20 and 22 -> 2 and 2. Bilinear blends a little blur every step; a
+        // per-plate frame resampled sharply would avoid that (see
+        // docs/simulation-plan.md).
+        const x0 = Math.floor(fx), y0 = Math.floor(fy), tx = fx - x0, ty = fy - y0;
+        let wsum = 0, vsum = 0, bestW = -1, si = -1;
+        for (let k = 0; k < 4; k++) {
+          const dx = k & 1, dy = k >> 1;
+          const w = (dx ? tx : 1 - tx) * (dy ? ty : 1 - ty);
+          if (w <= 0) continue;
+          const sx = (((x0 + dx) % size) + size) % size;
+          const sy = Math.min(size - 1, Math.max(0, y0 + dy));
+          const j = sy * size + sx;
+          if (plateId[j] !== p) continue;
+          wsum += w; vsum += w * el[j];
+          if (w > bestW) { bestW = w; si = j; }
+        }
+        // the plate must own most of the source point, as rounding required
+        if (wsum < 0.5) continue;
+        const value = vsum / wsum;
+        claims++; sum += value;
+        if (value > highest) { highest = value; owner = p; srcIdx = si; }
       }
       if (claims === 0) {
         elevation[i] = -1;                            // resolved below
       } else if (claims === 1) {
-        elevation[i] = highest; newId[i] = owner;
+        elevation[i] = Math.round(highest); newId[i] = owner;
         if (newProv && srcIdx >= 0) newProv[i] = province![srcIdx];
       } else {
         // Overlap is the main source of mountain, not boundary relief, so this
@@ -433,7 +461,7 @@ function advect(
   for (let h = 0; h < q.length; h++) {
     const i = q[h], x = i % size, y = (i / size) | 0;
     for (const j of [
-      x > 0 ? i - 1 : -1, x < size - 1 ? i + 1 : -1,
+      y * size + ((x + size - 1) % size), y * size + ((x + 1) % size),
       y > 0 ? i - size : -1, y < size - 1 ? i + size : -1,
     ]) {
       if (j < 0 || newId[j] >= 0) continue;

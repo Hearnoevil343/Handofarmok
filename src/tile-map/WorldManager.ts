@@ -1,3 +1,4 @@
+import { type SessionSnapshot, captureSession, restoreSession } from "@engine/session";
 import { LayerType } from "#types";
 import { getMoralDescriptor, identifyBiome } from "@helpers/biomeResolver";
 
@@ -5,14 +6,21 @@ import { type CoordsState } from "@store/slices/coordsSlice";
 
 export type WorldDataLayers = Record<LayerType, Int16Array>;
 
+/** A step of history: the layers, and the simulation state that goes with them. */
+type HistoryEntry = { layers: WorldDataLayers; session: SessionSnapshot };
+
 export class WorldManager {
   public gridSize: number = 129;
   private presets: Map<string, WorldDataLayers> = new Map();
   private activePresetTitle: string = "DEFAULT";
 
-  private undoStack: WorldDataLayers[] = [];
-  private redoStack: WorldDataLayers[] = [];
-  private readonly MAX_HISTORY = 30;
+  private undoStack: HistoryEntry[] = [];
+  private redoStack: HistoryEntry[] = [];
+  // History is capped by memory, not by count. Thirty steps was fine for brush
+  // strokes, but running fifty ages must still undo back to where it started.
+  // At 129x129 a step is about 0.23 MB, so this keeps ~1000; at 257, ~270.
+  private readonly MIN_HISTORY = 30;
+  private readonly MAX_HISTORY_BYTES = 256 * 1024 * 1024;
 
   constructor() {
     this.createPreset("DEFAULT", 129);
@@ -60,17 +68,15 @@ export class WorldManager {
   }
 
   public saveSnapshot() {
-    const current = this.worldData;
-    const snapshot: WorldDataLayers = {} as WorldDataLayers;
+    this.undoStack.push(this.currentEntry());
 
-    (Object.keys(current) as LayerType[]).forEach((layer) => {
-      snapshot[layer] = new Int16Array(current[layer]);
-    });
-
-    this.undoStack.push(snapshot);
-
-    if (this.undoStack.length > this.MAX_HISTORY) {
-      this.undoStack.shift();
+    // drop the oldest steps once history outgrows its memory budget
+    const bytes = (e: HistoryEntry) =>
+      Object.values(e.layers).reduce((sum, a) => sum + a.byteLength, 0) +
+      (e.session.session?.plateMap?.byteLength ?? 0);
+    let total = this.undoStack.reduce((sum, e) => sum + bytes(e), 0);
+    while (this.undoStack.length > this.MIN_HISTORY && total > this.MAX_HISTORY_BYTES) {
+      total -= bytes(this.undoStack.shift()!);
     }
 
     this.redoStack = [];
@@ -79,9 +85,8 @@ export class WorldManager {
   public undo(): boolean {
     if (this.undoStack.length === 0) return false;
 
-    this.redoStack.push(this.cloneCurrentData());
-    const previousState = this.undoStack.pop()!;
-    this.applyState(previousState);
+    this.redoStack.push(this.currentEntry());
+    this.applyEntry(this.undoStack.pop()!);
 
     return true;
   }
@@ -89,11 +94,19 @@ export class WorldManager {
   public redo(): boolean {
     if (this.redoStack.length === 0) return false;
 
-    this.undoStack.push(this.cloneCurrentData());
-    const nextState = this.redoStack.pop()!;
-    this.applyState(nextState);
+    this.undoStack.push(this.currentEntry());
+    this.applyEntry(this.redoStack.pop()!);
 
     return true;
+  }
+
+  private currentEntry(): HistoryEntry {
+    return { layers: this.cloneCurrentData(), session: captureSession(this.activePresetTitle) };
+  }
+
+  private applyEntry(entry: HistoryEntry) {
+    this.applyState(entry.layers);
+    restoreSession(entry.session);
   }
 
   private clearHistory() {

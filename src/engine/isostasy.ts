@@ -148,7 +148,11 @@ export function denudeInactive(
   // 0.55 flattened a belt in three or four ages. The Appalachians took about
   // two hundred million years — twenty ages here — so the rate is brought down
   // to let a range outlive the collision that made it.
-  rate = 0.3,
+  //
+  // 0.3 lost to uplift over long histories: across 200 ages the mountain
+  // controller climbed to ~90 of 100 and mountains still slid from 11% to 8%.
+  // At 0.2, with boundary uplift 420, it settles at 60-65 and holds ~11%.
+  rate = 0.2,
 ): Int16Array {
   const SEA = 100;
   const out = Int16Array.from(el);
