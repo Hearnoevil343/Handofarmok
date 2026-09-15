@@ -39,6 +39,15 @@ export function hypsometricBimodality(el: Int16Array, bins = 40): number {
   return lower > 0 ? 1 - valley / lower : 0;
 }
 
+/** Width of a set of occupied columns on a map that wraps east-west. */
+function wrappedWidth(cols: Uint8Array, size: number): number {
+  let gap = 0, run = 0, occupied = 0;
+  for (let k = 0; k < size * 2; k++) {
+    if (cols[k % size]) { run = 0; if (k < size) occupied++; } else { run++; gap = Math.max(gap, run); }
+  }
+  return occupied === 0 ? 0 : Math.max(1, size - Math.min(size, gap));
+}
+
 /** Mean ratio of long axis to short axis across mountain components. */
 export function rangeElongation(el: Int16Array, size: number): number {
   const seen = new Uint8Array(el.length);
@@ -47,20 +56,21 @@ export function rangeElongation(el: Int16Array, size: number): number {
     if (seen[i] || el[i] < 300) continue;
     const stack = [i];
     seen[i] = 1;
-    let minX = size, maxX = 0, minY = size, maxY = 0, n = 0;
+    let minY = size, maxY = 0, n = 0;
+    const cols = new Uint8Array(size);
     while (stack.length) {
       const j = stack.pop()!;
       const x = j % size, y = (j / size) | 0;
       n++;
-      if (x < minX) minX = x; if (x > maxX) maxX = x;
+      cols[x] = 1;
       if (y < minY) minY = y; if (y > maxY) maxY = y;
-      for (const k of [x > 0 ? j - 1 : -1, x < size - 1 ? j + 1 : -1,
+      for (const k of [y * size + ((x + size - 1) % size), y * size + ((x + 1) % size),
                        y > 0 ? j - size : -1, y < size - 1 ? j + size : -1]) {
         if (k >= 0 && !seen[k] && el[k] >= 300) { seen[k] = 1; stack.push(k); }
       }
     }
     if (n < 8) continue;
-    const w = maxX - minX + 1, h = maxY - minY + 1;
+    const w = wrappedWidth(cols, size), h = maxY - minY + 1;
     ratios.push(Math.max(w, h) / Math.max(1, Math.min(w, h)));
   }
   return ratios.length ? ratios.reduce((a, b) => a + b, 0) / ratios.length : 1;

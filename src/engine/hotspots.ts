@@ -52,13 +52,17 @@ export function seedHotspots(
   // a large, slow, continental plate traps heat under itself
   const area = new Array(plates.sx.length).fill(0);
   const land = new Array(plates.sx.length).fill(0);
-  const cx = new Array(plates.sx.length).fill(0);
+  // x accumulates as a circular mean: a plate straddling the seam would
+  // otherwise put its plume in the middle of the map, a world away
+  const sinX = new Array(plates.sx.length).fill(0);
+  const cosX = new Array(plates.sx.length).fill(0);
   const cy = new Array(plates.sx.length).fill(0);
   for (let i = 0; i < n; i++) {
     const p = plateId[i];
     if (p < 0) continue;
     area[p]++;
-    cx[p] += i % size;
+    const ang = ((i % size) / size) * Math.PI * 2;
+    sinX[p] += Math.sin(ang); cosX[p] += Math.cos(ang);
     cy[p] += (i / size) | 0;
     if (el[i] >= SEA) land[p]++;
   }
@@ -78,7 +82,8 @@ export function seedHotspots(
     const large = area[p] / n > 0.18;
     if (carriesMostLand && large && speed < 1.05) {
       spots.push({
-        x: cx[p] / area[p], y: cy[p] / area[p],
+        x: ((Math.atan2(sinX[p], cosX[p]) / (Math.PI * 2)) * size + size) % size,
+        y: cy[p] / area[p],
         life: 6 + Math.floor(rng() * 6), plume: true,
       });
     }
