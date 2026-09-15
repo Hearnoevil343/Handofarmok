@@ -65,7 +65,27 @@ before breakup; continental collision uplift ~50 Myr; supercontinent cycle
 recommended: per-plate frames resampled with clamped Catmull-Rom — blur does
 not accumulate, ~1-2 ms.
 
+**Found 2026-09-15 — plate boundaries do not persist.** Only each plate's seed
+point and heading carry between ages. Which tiles belong to which plate is
+recomputed from scratch every age by `assignPlates` (least-cost growth from
+the seeds, tectonics.ts:133), with a noise term seeded from `seed*1000 + age`
+(tectonics.ts:138), so the boundary lines re-route every age even when the
+seeds barely move. `runAge` rebuilds the plate map again (age.ts:139) and a
+third time after welding (age.ts:141). `session.plateMap` is saved only to draw
+the overlay; nothing reads it back. Real boundaries last tens of Myr and
+migrate slowly; here collision belts get uplift along a different line each
+age.
+
 **Plan:**
+- [ ] **Persistent plate map (first in this section).** Carry each tile's plate
+      ID in the simulation state and advect it with the crust. Stop regrowing
+      plates from seeds every age: fill only gaps (new sea floor opening behind
+      a moving plate) from their neighbours. Boundaries change only through
+      events — welding merges two IDs, a rift splits a plate along the rift
+      axis, subduction consumes crust. Boundary noise fixed per history
+      (`seed - age`), not re-rolled. New simlab metric: boundary persistence
+      (share of boundary tiles still on a boundary the next age). Done together
+      with per-plate frames below.
 - [ ] Per-plate crust frames with float offsets; clamped cubic resampling;
       erosion/deposition deltas written back to plate space once per step.
 - [ ] Plate speeds as cm/yr per plate (continental plates slower), not unit
@@ -263,8 +283,9 @@ the only planet with calibration data.
 
 1. Quick bug fixes: `separateCrust` ordering, duplicate flow analysis,
    supercontinent temperature sign, hotspots in the mantle frame. (Each A/B.)
-2. Scale and sub-steps (section 1) — everything after depends on per-Myr rates.
-3. Per-plate frames (section 2) — removes accumulated blur.
+2. Persistent plate map with per-plate frames (section 2) — boundaries that
+   last, and no accumulated blur.
+3. Scale and sub-steps (section 1) — everything after depends on per-Myr rates.
 4. Ocean age and sea level from water volume (section 4) — removes the forced
    land share.
 5. Sediment routing and deposition (section 3).
