@@ -1,4 +1,5 @@
 import { type WorldPreset, LayerType } from "#types";
+import { DF_COMPENSATION_MARKER, compensateForDf } from "@helpers/dfAltitudeCooling";
 import { worldManager } from "@tile-map/WorldManager";
 
 export const LayerToSuffix: Record<LayerType, string> = {
@@ -63,7 +64,7 @@ export class JsonToWorldGen {
     preset: WorldPreset,
     onProgress: (p: number) => void,
   ): Promise<string> {
-    let output = `[WORLD_GEN]\n\t[TITLE:${preset.title}]\n\t[DIM:${preset.size}:${preset.size}]\n`;
+    let output = `[WORLD_GEN]\n\t${DF_COMPENSATION_MARKER}\n\t[TITLE:${preset.title}]\n\t[DIM:${preset.size}:${preset.size}]\n`;
 
     // 1. Settings
     for (const [key, occurrences] of Object.entries(preset.settings)) {
@@ -77,6 +78,15 @@ export class JsonToWorldGen {
     if (preset.mapData) {
       const layers = Object.entries(preset.mapData);
       const size = preset.size;
+
+      // DF cools painted temperature on high ground by its own rule, on top of
+      // the altitude cooling already in the painted values; write each tile so
+      // that after DF's change it is the temperature that was painted.
+      const elevation = new Int16Array(size * size);
+      for (const [name, points] of layers) {
+        if (name.toLowerCase() !== LayerType.Elevation) continue;
+        points.forEach((p) => { elevation[p.y * size + p.x] = p.v; });
+      }
 
       for (let l = 0; l < layers.length; l++) {
         const [layerName, points] = layers[l];
@@ -95,8 +105,10 @@ export class JsonToWorldGen {
         // 65535 back into an Int16Array as -1, which is why a round trip looked
         // byte-identical and hid it.
         const grid = new Int16Array(size * size);
+        const isTemperature = layerName.toLowerCase() === LayerType.Temperature;
         points.forEach((p) => {
-          grid[p.y * size + p.x] = p.v;
+          const i = p.y * size + p.x;
+          grid[i] = isTemperature ? compensateForDf(p.v, elevation[i]) : p.v;
         });
 
         // 2. Output row by row

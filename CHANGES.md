@@ -2875,3 +2875,68 @@ not:
 Both 96-world sets are worse by more than the ~0.15 noise, continents clump more
 (largest landmass 84-88% of land -> 90-92%) and edge bias falls below target.
 Only the 200-age set improves. The default stays at 4.
+
+---
+
+## 55. What Dwarf Fortress keeps of a painted world, and brushes tested tile by tile
+
+### What DF keeps
+
+The sixteen current presets (generated in DF 53.16 and read back with DFHack)
+answer whether painting can be forced over Dwarf Fortress:
+
+- **Rainfall and drainage** come back identical on every tile of every map.
+- **Biomes follow the painted values.** Land painted desert (rainfall under 10)
+  became Desert on 98% of 12,372 tiles; forest 99% Forest; wetland 98% Swamp;
+  elevation 300+ 96% Mountains; freezing tiles Tundra or Glacier. Central
+  Arabia on the Middle East map was grassland because the preset had painted
+  it wet (§50), not because DF overrode it.
+- **Temperature is cooled on high ground.** Below elevation 228 DF leaves it
+  alone; above, it lowers it by an amount that depends on elevation only —
+  -1 to 279, -2 to 304, then about one degree every five, -22 at 400 — the same
+  whatever temperature was painted. The app's own climate already cools with
+  altitude, so every mountain was cooled twice.
+- **POLE other than NONE replaces painted temperature.** The same Continents
+  preset generated three times: with POLE:NONE the painted temperatures stay;
+  with POLE:NORTH DF imposes its own gradient (top fifth -39 degrees, bottom
+  fifth +66, no tile unchanged in either), with NORTH_AND_SOUTH both edges
+  cooled and the middle warmed. So the export stays POLE:NONE, and the pole
+  layout, spin and tilt live in the simulation (§53).
+
+### Export undoes DF's altitude cooling
+
+`src/helpers/dfAltitudeCooling.ts` holds DF's cooling as measured, one entry per
+elevation. The exporter raises each high-ground temperature by that amount, so
+the value DF ends up with is the painted one. Checked in DF on the two most
+mountainous presets:
+
+| | before (painted vs DF) | after |
+|---|---|---|
+| Highlands, elevation 330-379 | about -5 to -15 | mean +0.05, 92% exact |
+| Himalayas, elevation 380-400 | about -16 to -22 | mean +1.7, 75% exact, 80% within 1 |
+
+Each exported block carries a line outside any token saying so, which DF
+ignores; importing that file takes the compensation back out, so export then
+import is exact on all six layers (checked). Preset files and other
+`world_gen.txt` files have no such line and import unchanged.
+
+### Brushes, tested tile by tile
+
+Each brush was driven with mouse events on the map and checked against the
+world data before and after, with an undo check after every stroke:
+
+| test | result |
+|---|---|
+| Glacier stroke across 91 rows sent as two points | 89 rows (the two misses are the one-tile calibration offset at the ends) |
+| Climate stamp, rainfall 77, size 5 | all 355 tiles in the band exactly 77, no other layer touched |
+| Sculpt Raise | click +3, held one second +63 |
+| Sculpt Lower / Smooth / Flatten | held -39; variance 425 -> 407; tiles move toward the anchor |
+| Stroke started off the map | paints from column 0, its own undo step |
+| Locked rainfall | a rainfall stamp changes nothing |
+| Volcano / Savagery | one tile to 100 / 3x3 to 85, no other layer |
+| Eyedropper | drainage, rainfall and temperature picked up exactly |
+| Fill, Line, round vs square | 19 tiles; 31-tile line from column 30 to 60; 37 vs 49 tiles at width 7 |
+
+Every undo restored the map exactly. The gappy strokes seen earlier came from the
+test tool sending drags without the mouse button held; release now finishes the
+stroke's path anyway, as the airbrush already did.

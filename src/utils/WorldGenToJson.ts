@@ -1,4 +1,5 @@
 import type { WorldPreset } from "#types";
+import { DF_COMPENSATION_MARKER, uncompensateFromDf } from "@helpers/dfAltitudeCooling";
 
 const tokenRegex = /\[([^\]]+)\]/g;
 
@@ -117,6 +118,15 @@ export class WorldGenToJson {
           `Layer ${layer} is incomplete. Expected ${expectedCount} total points, but found ${actualCount}.`,
         );
       }
+    }
+
+    // A file this app exported has its high-ground temperatures raised to undo
+    // DF's altitude cooling; take that back out so a round trip is exact.
+    const tp = preset.mapData?.TP, el = preset.mapData?.EL;
+    if (blockContent.includes(DF_COMPENSATION_MARKER) && tp && el) {
+      const elevation = new Int16Array(preset.size * preset.size);
+      el.forEach((p) => { elevation[p.y * preset.size + p.x] = p.v; });
+      tp.forEach((p) => { p.v = uncompensateFromDf(p.v, elevation[p.y * preset.size + p.x]); });
     }
 
     return preset;
