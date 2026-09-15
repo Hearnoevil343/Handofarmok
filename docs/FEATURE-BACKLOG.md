@@ -44,6 +44,12 @@ one at a time.
       and sediment, ocean floor and sea level, temperature, wind and rainfall,
       water and ice, biomes, calibration data) with current problems, research,
       steps and order of work. Items below are folded into it.
+      Section 9 (added 2026-09-15): planet settings — pole layout tied to DF's
+      POLE token (whole planet / north only / south only; random DF options
+      rolled from the seed), spin direction (prograde/retrograde mirrors wind
+      bands, rain shadows, currents), axial tilt; check in DF whether POLE adds
+      latitude cooling to painted temperature. Planet size noted for later:
+      radius, gravity and rotation period as parameters from the start.
 - [ ] **Shorter time steps** (dev prefers slower progression, more clicks).
       Research 2026-09-15 (both reports in the session): processes run once per
       10-Myr age at fixed strength, so drift, erosion and rare events tick
