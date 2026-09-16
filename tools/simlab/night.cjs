@@ -4,7 +4,7 @@
  * Overnight simulation runner: works through a queue of sweeps and searches
  * unattended, inside a time budget, and leaves a SUMMARY.md for the morning.
  *
- *   node tools/simlab/night.cjs [--hours 7] [--queue night.queue.json] [--out C:\dev\hoa-simdata]
+ *   node tools/simlab/night.cjs [--hours 5.5] [--queue night.queue.json] [--out C:\dev\hoa-simdata]
  *   node tools/simlab/night.cjs --plan            # list jobs and estimated minutes, run nothing
  *   node tools/simlab/night.cjs --smoke           # every job shrunk to seconds, to prove the pipeline
  *   node tools/simlab/night.cjs --resume <runDir> # carry on after a crash or reboot, skipping finished jobs
@@ -31,7 +31,7 @@ const REPO = path.resolve(__dirname, "..", "..");
 const SMOKE = flag("--smoke");
 const PLAN = flag("--plan");
 const RESUME = arg("--resume", null);
-const HOURS = parseFloat(arg("--hours", SMOKE ? "0.5" : "7"));
+const HOURS = parseFloat(arg("--hours", SMOKE ? "0.5" : "5.5"));
 const ROOT = path.resolve(arg("--out", "C:\\dev\\hoa-simdata"));
 const WORKERS = parseInt(arg("--workers", String(require("os").cpus().length)), 10);
 /**

@@ -29,7 +29,7 @@
       "why": "54 ocean-model rate combinations" },
     { "name": "ocean-grid-B", "mode": "sweep", "from": "ocean-grid", "config": { "seedRange": [101, 125] },
       "why": "best ocean rates on fresh seeds" },
-    { "name": "search-engine", "mode": "search", "rounds": 6, "keep": 3, "config": { "seeds": [11, 22, 33] },
+    { "name": "search-engine", "mode": "search", "rounds": 5, "keep": 3, "config": { "seeds": [11, 22, 33, 44] },
       "why": "hill-climb drift/uplift/weathering/carving/rebound/plates/hotspots" },
     { "name": "search-engine-B", "mode": "sweep", "from": "search-engine", "config": { "seedRange": [101, 125] },
       "why": "search winner on fresh seeds" },
@@ -39,8 +39,8 @@
       "why": "same with the ocean model" },
     { "name": "size-257", "mode": "sweep", "config": { "size": 257, "seeds": [1, 2, 3, 4, 5, 6] },
       "why": "does the tuning hold at 257" },
-    { "name": "search-ocean", "mode": "search", "rounds": 10, "keep": 3, "from": "ocean-grid-B", "config": { "seeds": [11, 22, 33] },
-      "why": "hill-climb engine settings with the ocean model; stopped at the deadline" }
+    { "name": "search-ocean", "mode": "search", "rounds": 3, "keep": 2, "from": "ocean-grid-B", "config": { "seeds": [11, 22, 33] },
+      "why": "hill-climb engine settings with the ocean model" }
   ],
   "compare": [
     ["baseline-A", "baseline-B"],

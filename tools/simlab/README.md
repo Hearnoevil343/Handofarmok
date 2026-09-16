@@ -59,7 +59,7 @@ npm run simlab -- search --config tools/simlab/search.json --rounds 8
 ```
 npm run simlab:night -- --plan        # jobs and estimated minutes
 npm run simlab:night -- --smoke       # every job shrunk to seconds
-npm run simlab:night                  # the real thing, 7 h budget (--hours N)
+npm run simlab:night                  # the real thing, ~4.8 h of work, 5.5 h budget (--hours N)
 npm run simlab:night -- --queue tools/simlab/test.queue.json --hours 0.25   # ~2 min
 npm run simlab:night -- --resume <dir>
 node tools/simlab/compare.cjs <dirA> <dirB>
