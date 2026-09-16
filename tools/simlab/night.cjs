@@ -33,9 +33,11 @@ const PLAN = flag("--plan");
 const RESUME = arg("--resume", null);
 const HOURS = parseFloat(arg("--hours", SMOKE ? "0.5" : "7"));
 const ROOT = path.resolve(arg("--out", "C:\\dev\\hoa-simdata"));
+/** leave a few cores for the machine's owner (and for a GPU job's host thread) */
+const WORKERS = parseInt(arg("--workers", String(Math.max(1, require("os").cpus().length - 3))), 10);
 const ARCHETYPES = ["CONTINENTS", "PANGAEA", "ARCHIPELAGO", "INLAND_SEA", "HIGHLANDS", "FJORDLAND", "GREAT_PLAINS", "ISLAND_ARC"];
 /** seconds per world-age at size 129, all cores; replaced by the measured rate once a sweep finishes */
-let rate = 0.015;
+let rate = 0.015 * (require("os").cpus().length / WORKERS);
 let rateUnits = 0, rateSeconds = 0;
 
 const stamp = () => {
@@ -145,7 +147,7 @@ function runJob(job, cfg, engine, deadline) {
   const cfgFile = path.join(dir, "config.json");
   fs.writeFileSync(cfgFile, JSON.stringify(cfg, null, 2));
   const out = fs.openSync(path.join(dir, "log.txt"), "a");
-  const args = ["--max-old-space-size=8192", path.join(engine, "cli.cjs"), job.mode, "--config", cfgFile, "--out", dir];
+  const args = ["--max-old-space-size=8192", path.join(engine, "cli.cjs"), job.mode, "--config", cfgFile, "--out", dir, "--workers", String(WORKERS)];
   if (job.mode === "search") args.push("--rounds", String(SMOKE ? 1 : job.rounds), "--keep", String(SMOKE ? 1 : job.keep));
   return new Promise((resolve) => {
     const child = spawn(process.execPath, args, { cwd: dir, stdio: ["ignore", out, out] });
@@ -240,13 +242,13 @@ async function main() {
       total += min;
       console.log(`${job.name.padEnd(22)} ${job.mode.padEnd(6)} ~${min.toFixed(0).padStart(4)} min  ${job.why || ""}`);
     }
-    console.log(`total ~${(total / 60).toFixed(1)} h at ${rate} s per world-age (search estimates are rough)`);
+    console.log(`total ~${(total / 60).toFixed(1)} h on ${WORKERS} cores at ${rate.toFixed(5)} s per world-age (search estimates are rough)`);
     return;
   }
 
   fs.mkdirSync(runDir, { recursive: true });
   if (!RESUME) fs.writeFileSync(path.join(runDir, "queue.json"), JSON.stringify(queue, null, 2));
-  log(`${RESUME ? "resuming" : "starting"} ${runDir} — ${queue.jobs.length} jobs, ${HOURS} h budget, stop by ${clock(deadline)}`);
+  log(`${RESUME ? "resuming" : "starting"} ${runDir} — ${queue.jobs.length} jobs, ${WORKERS} of ${require("os").cpus().length} cores, ${HOURS} h budget, stop by ${clock(deadline)}`);
   keepAwake();
   const engine = freezeEngine();
 

@@ -1,0 +1,24 @@
+{
+  "_comment": "A two-minute version of night.queue.json: one sweep, one ocean sweep, one search round. Proves the runner, the engine copy and the summary still work — and is small enough to run beside something else on the same machine.",
+  "defaults": {
+    "size": 129,
+    "ages": 60,
+    "archetypes": "ALL",
+    "climate": "TEMPERATE",
+    "plates": 6,
+    "drift": 4,
+    "mountainTarget": 0.12,
+    "upliftStart": 45,
+    "hotspots": 2,
+    "weathering": 35,
+    "riverCarving": 50,
+    "riverDensity": 5,
+    "rebound": 55
+  },
+  "jobs": [
+    { "name": "test-baseline", "mode": "sweep", "config": { "seeds": [1, 2, 3] }, "why": "24 worlds, 60 ages" },
+    { "name": "test-ocean", "mode": "sweep", "config": { "seeds": [1, 2], "oceanModel": true }, "why": "16 worlds with the ocean model" },
+    { "name": "test-search", "mode": "search", "rounds": 1, "keep": 2, "config": { "seeds": [11], "ages": 20 }, "why": "one hill-climb round" }
+  ],
+  "compare": [["test-baseline", "test-ocean"]]
+}

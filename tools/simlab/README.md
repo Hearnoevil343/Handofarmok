@@ -60,11 +60,14 @@ npm run simlab -- search --config tools/simlab/search.json --rounds 8
 npm run simlab:night -- --plan        # jobs and estimated minutes
 npm run simlab:night -- --smoke       # every job shrunk to seconds
 npm run simlab:night                  # the real thing, 7 h budget (--hours N)
+npm run simlab:night -- --queue tools/simlab/test.queue.json --hours 0.25   # ~2 min
 npm run simlab:night -- --resume <dir>
 node tools/simlab/compare.cjs <dirA> <dirB>
 ```
 
-Jobs come from `night.queue.json` in priority order. Output goes to
+It runs on all cores but three, so the machine stays usable and a GPU job still
+has host threads; `--workers N` overrides that. Jobs come from
+`night.queue.json` in priority order. Output goes to
 `C:\dev\hoa-simdata\night-<date>\`: one folder per job, `night.log`, and
 `SUMMARY.md` (rewritten after every job). Seed set A is 1–25 and B is 101–125;
 winners found on the small search seeds are re-checked on B.
