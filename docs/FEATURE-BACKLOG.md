@@ -159,6 +159,24 @@ identical, mountains 89–100% overlap. The problems are in the painted data.
       land 0 everywhere, procedural desert-in-5-rows 49-68% -> 19-37%).
 
 ## Simulation
+- [ ] **Straight diagonal scars, and no metric that sees them.** Gallery renders
+      (2026-09-15, seed 7, 40 ages, today's defaults) show rays radiating from a
+      point across GREAT_PLAINS and a ruled diagonal line over open ocean in
+      CONTINENTS. Every existing guard misses them: `colStriping` only looks down
+      columns, `flatRunTP` only along temperature rows, and both read 0.000 on
+      the artifacted worlds. Two detectors were built and both failed their own
+      test, so neither is in the repo:
+      - *Longest straight local-extremum run, any of four directions.* Background
+        is 10-14% of map width; the artifacted GREAT_PLAINS scored 9.3% against a
+        clean ARCHIPELAGO at 19.4%. The scars are smooth creases, not +-2 crests.
+      - *Hough transform over the top 6% of |Laplacian|, as a z-score.* Ranked
+        clean PANGAEA (35.5) and ARCHIPELAGO (29.2) above artifacted
+        GREAT_PLAINS (18.3); drawing a literal line on some maps moved it less
+        than 1. Coastline curvature dominates the accumulator.
+      Next idea, untried: the rays converge on a point, which smells like a plate
+      centroid — correlate the scar against `plateMap` boundaries and the hotspot
+      trails rather than hunting it in the elevation alone. Until something
+      detects it, the gallery images are the only guard, and they are per-eye.
 - [ ] Wall of raised ground along the left/right map edges (`edgeBias` 1.86,
       target 0.75-1.3). Overnight 2026-09-14, on branch `sim/overnight`
       (worktree `C:\dev\hoa-sim`, not pushed):
