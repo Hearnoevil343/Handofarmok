@@ -65,8 +65,10 @@ npm run simlab:night -- --resume <dir>
 node tools/simlab/compare.cjs <dirA> <dirB>
 ```
 
-It runs on all cores but three, so the machine stays usable and a GPU job still
-has host threads; `--workers N` overrides that. Jobs come from
+It runs on every core but at below-normal priority, so anything else you start —
+a GPU job, a browser, the app itself — wins the core and the sim takes the rest.
+`--priority normal` if the machine has nothing else to do, `--workers N` to use
+fewer cores. Jobs come from
 `night.queue.json` in priority order. Output goes to
 `C:\dev\hoa-simdata\night-<date>\`: one folder per job, `night.log`, and
 `SUMMARY.md` (rewritten after every job). Seed set A is 1–25 and B is 101–125;

@@ -2956,7 +2956,8 @@ stroke's path anyway, as the airbrush already did.
   7 hours: baselines on two seed sets, an ocean-model rate grid, parameter
   searches, 1000-age histories and 257 maps. Results and a morning `SUMMARY.md`
   go to `C:\dev\hoa-simdata`. The engine is frozen per run, the PC is kept awake,
-  and `--resume` continues after a crash. It leaves three cores free (`--workers`).
+  and `--resume` continues after a crash. It uses every core at
+  below-normal priority, so other programs keep the machine responsive.
 - `tools/simlab/compare.cjs` scores finished sweeps side by side.
 - The ocean model's four rates can be set per run (`oceanRates`) for sweeps.
 

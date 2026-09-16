@@ -33,11 +33,20 @@ const PLAN = flag("--plan");
 const RESUME = arg("--resume", null);
 const HOURS = parseFloat(arg("--hours", SMOKE ? "0.5" : "7"));
 const ROOT = path.resolve(arg("--out", "C:\\dev\\hoa-simdata"));
-/** leave a few cores for the machine's owner (and for a GPU job's host thread) */
-const WORKERS = parseInt(arg("--workers", String(Math.max(1, require("os").cpus().length - 3))), 10);
+const WORKERS = parseInt(arg("--workers", String(require("os").cpus().length)), 10);
+/**
+ * Every core, but politely: the sim process runs below normal priority, so
+ * anything the user (or a GPU job's host threads) asks for wins the core and the
+ * sim takes what is left. Windows has no honest "80% of each core" setting;
+ * priority is how you get that behaviour without burning cycles on idle loops.
+ * `--priority normal` for a machine with nothing else to do.
+ */
+const PRIORITY = arg("--priority", "below") === "normal"
+  ? require("os").constants.priority.PRIORITY_NORMAL
+  : require("os").constants.priority.PRIORITY_BELOW_NORMAL;
 const ARCHETYPES = ["CONTINENTS", "PANGAEA", "ARCHIPELAGO", "INLAND_SEA", "HIGHLANDS", "FJORDLAND", "GREAT_PLAINS", "ISLAND_ARC"];
 /** seconds per world-age at size 129, all cores; replaced by the measured rate once a sweep finishes */
-let rate = 0.015 * (require("os").cpus().length / WORKERS);
+let rate = 0.017 * (require("os").cpus().length / WORKERS);
 let rateUnits = 0, rateSeconds = 0;
 
 const stamp = () => {
@@ -151,6 +160,8 @@ function runJob(job, cfg, engine, deadline) {
   if (job.mode === "search") args.push("--rounds", String(SMOKE ? 1 : job.rounds), "--keep", String(SMOKE ? 1 : job.keep));
   return new Promise((resolve) => {
     const child = spawn(process.execPath, args, { cwd: dir, stdio: ["ignore", out, out] });
+    // worker threads inherit the process priority, so this covers all of them
+    try { require("os").setPriority(child.pid, PRIORITY); } catch (e) { log(`  could not lower priority: ${e.message}`); }
     let stoppedAtDeadline = false;
     const beat = setInterval(() => log(`  ${job.name}: ${lastProgress(path.join(dir, "log.txt"))}`), 15 * 60 * 1000);
     const stop = setTimeout(() => { stoppedAtDeadline = true; child.kill(); }, Math.max(0, deadline - Date.now()));
@@ -248,7 +259,7 @@ async function main() {
 
   fs.mkdirSync(runDir, { recursive: true });
   if (!RESUME) fs.writeFileSync(path.join(runDir, "queue.json"), JSON.stringify(queue, null, 2));
-  log(`${RESUME ? "resuming" : "starting"} ${runDir} — ${queue.jobs.length} jobs, ${WORKERS} of ${require("os").cpus().length} cores, ${HOURS} h budget, stop by ${clock(deadline)}`);
+  log(`${RESUME ? "resuming" : "starting"} ${runDir} — ${queue.jobs.length} jobs, ${WORKERS} of ${require("os").cpus().length} cores at ${arg("--priority", "below")} priority, ${HOURS} h budget, stop by ${clock(deadline)}`);
   keepAwake();
   const engine = freezeEngine();
 
