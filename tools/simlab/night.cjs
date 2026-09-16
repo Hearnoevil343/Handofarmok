@@ -199,9 +199,13 @@ function writeSummary(startedAt, deadline) {
     if (fs.existsSync(path.join(dir, "results.json"))) {
       try {
         const s = summarise(dir);
-        sweeps[job.name] = s;
-        score = `${s.configs[0].mean} / ${s.configs[0].worst}`;
-        if (s.failed) note += ` (${s.failed} runs failed)`;
+        if (s.configs.length) {
+          sweeps[job.name] = s;
+          score = `${s.configs[0].mean} / ${s.configs[0].worst}`;
+          if (s.failed) note += ` (${s.failed} of ${s.failed + s.configs.reduce((a, c) => a + c.n, 0)} runs failed)`;
+        } else {
+          note += ` (**no run succeeded** — ${s.failed} failures)`;
+        }
       } catch (e) { note += ` (unreadable results: ${e.message})`; }
     } else if (fs.existsSync(path.join(dir, "search.json"))) {
       const s = JSON.parse(fs.readFileSync(path.join(dir, "search.json"), "utf8"));
@@ -271,7 +275,13 @@ async function main() {
   for (let i = 0; i < queue.jobs.length && !stopping; i++) {
     const job = queue.jobs[i];
     const dir = path.join(runDir, job.name);
-    if (fs.existsSync(path.join(dir, "done.json"))) { log(`skip ${job.name}: already done`); continue; }
+    // only a job that actually finished is skipped on resume; a failure or a
+    // deadline kill left no usable answer, so a resume should have another go
+    if (fs.existsSync(path.join(dir, "done.json"))) {
+      const prev = JSON.parse(fs.readFileSync(path.join(dir, "done.json"), "utf8"));
+      if (prev.status === "done") { log(`skip ${job.name}: already done`); continue; }
+      log(`retrying ${job.name}: last time ${prev.status}`);
+    }
 
     let best = null;
     if (job.from) {
