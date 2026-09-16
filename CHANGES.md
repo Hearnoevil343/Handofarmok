@@ -2954,7 +2954,8 @@ stroke's path anyway, as the airbrush already did.
 
 - `npm run simlab:night` works through `tools/simlab/night.queue.json` for about
   five hours: baselines on two seed sets, an ocean-model rate grid, parameter
-  searches, 1000-age histories and 257 maps. Results and a morning `SUMMARY.md`
+  searches, 1000-age histories, 257 maps, and galleries of one rendered map per
+  archetype for each winner. Results and a morning `SUMMARY.md`
   go to `C:\dev\hoa-simdata`. The engine is frozen per run, the PC is kept awake,
   and `--resume` continues after a crash. It uses every core at
   below-normal priority, so other programs keep the machine responsive.

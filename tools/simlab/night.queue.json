@@ -40,7 +40,13 @@
     { "name": "size-257", "mode": "sweep", "config": { "size": 257, "seeds": [1, 2, 3, 4, 5, 6] },
       "why": "does the tuning hold at 257" },
     { "name": "search-ocean", "mode": "search", "rounds": 3, "keep": 2, "from": "ocean-grid-B", "config": { "seeds": [11, 22, 33] },
-      "why": "hill-climb engine settings with the ocean model" }
+      "why": "hill-climb engine settings with the ocean model" },
+    { "name": "gallery-winner", "mode": "gallery", "from": "search-engine", "config": { "seeds": [7], "ages": 100 },
+      "why": "one map per archetype with the search winner, to judge by eye" },
+    { "name": "gallery-now", "mode": "gallery", "config": { "seeds": [7], "ages": 100 },
+      "why": "the same eight maps with today's defaults, to compare against" },
+    { "name": "gallery-ocean", "mode": "gallery", "from": "ocean-grid-B", "config": { "seeds": [7], "ages": 100 },
+      "why": "and with the best ocean-model rates" }
   ],
   "compare": [
     ["baseline-A", "baseline-B"],

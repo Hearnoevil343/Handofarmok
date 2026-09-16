@@ -86,6 +86,7 @@ function jobConfig(job, best) {
 function units(job, cfg) {
   const worlds = cfg.seeds.length * cfg.archetypes.length;
   const weight = cfg.ages * (cfg.size / 129) ** 2 * (cfg.oceanModel ? 1.3 : 1);
+  if (job.mode === "gallery") return worlds * weight;
   if (job.mode === "search") {
     const rounds = SMOKE ? 1 : job.rounds;
     const keep = SMOKE ? 1 : job.keep;
@@ -156,7 +157,8 @@ function runJob(job, cfg, engine, deadline) {
   const cfgFile = path.join(dir, "config.json");
   fs.writeFileSync(cfgFile, JSON.stringify(cfg, null, 2));
   const out = fs.openSync(path.join(dir, "log.txt"), "a");
-  const args = ["--max-old-space-size=8192", path.join(engine, "cli.cjs"), job.mode, "--config", cfgFile, "--out", dir, "--workers", String(WORKERS)];
+  const tool = job.mode === "gallery" ? "gallery.cjs" : "cli.cjs";
+  const args = ["--max-old-space-size=8192", path.join(engine, tool), ...(job.mode === "gallery" ? [] : [job.mode]), "--config", cfgFile, "--out", dir, "--workers", String(WORKERS)];
   if (job.mode === "search") args.push("--rounds", String(SMOKE ? 1 : job.rounds), "--keep", String(SMOKE ? 1 : job.keep));
   return new Promise((resolve) => {
     const child = spawn(process.execPath, args, { cwd: dir, stdio: ["ignore", out, out] });

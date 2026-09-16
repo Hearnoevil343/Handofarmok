@@ -71,7 +71,9 @@ a GPU job, a browser, the app itself — wins the core and the sim takes the res
 fewer cores. Jobs come from
 `night.queue.json` in priority order. Output goes to
 `C:\dev\hoa-simdata\night-<date>\`: one folder per job, `night.log`, and
-`SUMMARY.md` (rewritten after every job). Seed set A is 1–25 and B is 101–125;
+`SUMMARY.md` (rewritten after every job). The last three jobs are galleries:
+one map per archetype for today's defaults, the search winner and the best ocean
+rates, so the night's answer can be judged by eye and not only by score. Seed set A is 1–25 and B is 101–125;
 winners found on the small search seeds are re-checked on B.
 
 ## Hardware
