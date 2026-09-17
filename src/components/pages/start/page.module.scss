@@ -1,0 +1,158 @@
+@use "@styles/ui" as ui;
+
+.page {
+  @include ui.full-page;
+  @include ui.thin-scrollbar;
+  display: flex;
+  justify-content: center;
+  overflow-y: auto;
+}
+
+.column {
+  width: min(800px, 100%);
+  padding: 4rem 1rem;
+  text-align: center;
+}
+
+.logo {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  margin: 0 0 4rem;
+  font: 3rem var(--title);
+  letter-spacing: 4px;
+
+  span {
+    color: var(--accent);
+    animation: glow 3s ease-in-out infinite alternate;
+  }
+}
+
+.intro {
+  margin: 0 0 3rem;
+  color: var(--dim);
+  font-size: 1.1rem;
+  line-height: 1.6;
+
+  strong {
+    color: var(--accent);
+  }
+
+  code {
+    padding: 2px 6px;
+    border-radius: var(--radius);
+    background: var(--raise);
+    color: var(--text);
+    font: 0.95rem var(--mono);
+  }
+}
+
+.choices {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 2rem;
+}
+
+.card {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 2rem;
+  padding: 1.4rem;
+  border: 1px solid var(--line-hi);
+  border-radius: var(--radius);
+  background: linear-gradient(135deg, var(--panel), var(--bg));
+  transition: border-color 0.2s, background-color 0.2s;
+
+  &:hover {
+    border-color: var(--accent);
+  }
+}
+
+.cardText {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+
+  h3 {
+    margin: 0;
+    color: var(--bright);
+    text-transform: uppercase;
+  }
+
+  p {
+    margin: 0;
+    color: var(--dim);
+    font-size: 0.9rem;
+  }
+}
+
+.action {
+  @include ui.action-button;
+  display: block;
+}
+
+.dropping {
+  border: 2px dashed var(--active);
+  background: color-mix(in srgb, var(--active) 6%, var(--panel));
+
+  // keep drag events on the card, not its children
+  * {
+    pointer-events: none;
+  }
+}
+
+.broken {
+  border: 2px solid var(--warn);
+  animation: nudge 0.35s ease-in-out both;
+  cursor: pointer;
+}
+
+.errorTitle {
+  color: var(--warn) !important;
+}
+
+.errorText {
+  padding: 8px;
+  border-radius: var(--radius);
+  background: color-mix(in srgb, var(--warn) 10%, transparent);
+  font-style: italic;
+}
+
+.hint {
+  font-size: 0.7rem !important;
+  text-transform: uppercase;
+}
+
+.progress {
+  height: 4px;
+  background: var(--active);
+  transition: width 0.2s;
+}
+
+.visuallyHidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.footer {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 5rem;
+  color: var(--dim);
+  font-size: 0.85rem;
+
+  em {
+    color: var(--warn);
+  }
+}
+
+.dot {
+  color: var(--line-hi);
+}

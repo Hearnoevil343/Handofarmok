@@ -1,0 +1,17 @@
+{
+  "_comment": "Starting point for `search`. Numeric parameters are nudged up and down each round; the best few survive and seed the next. Fewer seeds and ages than a sweep, because search trades depth per run for breadth across parameter space.",
+  "size": 129,
+  "ages": 60,
+  "seeds": [11, 22, 33],
+  "archetypes": ["PANGAEA", "CONTINENTS"],
+  "climate": "TEMPERATE",
+  "plates": 6,
+  "drift": 4,
+  "mountainTarget": 0.12,
+  "upliftStart": 45,
+  "hotspots": 2,
+  "weathering": 35,
+  "riverCarving": 50,
+  "riverDensity": 5,
+  "rebound": 55
+}

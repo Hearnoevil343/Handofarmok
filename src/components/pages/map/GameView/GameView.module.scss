@@ -1,0 +1,24 @@
+
+.base { display: flex; flex-direction: column; gap: 8px; height: 100%; min-height: 0; }
+.picker { display: flex; flex-direction: column; gap: 6px; padding: 8px; }
+.lead { color: var(--accent); font-size: 13px; margin: 0; }
+.hint { color: var(--dim); font-size: 11px; line-height: 1.45; margin: 0; code { color: var(--text); } }
+.error { color: var(--warn); font-size: 11px; line-height: 1.4; margin: 4px 0 0; }
+
+.button {
+  align-self: flex-start; cursor: pointer;
+  background: var(--raise); border: 1px solid var(--accent); border-radius: 4px;
+  color: var(--accent); font-size: 12px; padding: 9px 14px; margin-top: 4px;
+  &:hover { background: var(--raise); }
+}
+.file { display: none; }
+
+.toolbar { display: flex; gap: 4px; padding: 4px 8px 0; }
+.small {
+  background: var(--raise); border: 1px solid var(--line-hi); border-radius: 3px;
+  color: var(--text); cursor: pointer; font-size: 11px; padding: 5px 9px;
+  &:hover { background: var(--raise); }
+}
+
+.canvasWrap { flex: 1; min-height: 0; overflow: auto; padding: 8px; }
+.canvas { image-rendering: pixelated; display: block; }

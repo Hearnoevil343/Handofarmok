@@ -1,0 +1,12 @@
+
+.nav { display: flex; flex-direction: column; gap: 2px; padding: 8px; }
+.item {
+  display: flex; align-items: center; gap: 10px; padding: 9px 12px; border-radius: 9px;
+  border: none; background: transparent; color: var(--text); cursor: pointer;
+  font-size: 12px; text-align: left; transition: background .12s, color .12s;
+  &:hover { background: color-mix(in srgb, var(--bright) 6%, transparent); color: var(--bright); }
+}
+.active { background: color-mix(in srgb, var(--accent) 16%, transparent); color: var(--accent); &:hover { background: color-mix(in srgb, var(--accent) 20%, transparent); color: var(--accent); } }
+.warn.active { background: color-mix(in srgb, var(--warn) 16%, transparent); color: var(--warn); }
+.label { flex: 1; }
+.count { font-size: 10px; color: var(--dim); background: color-mix(in srgb, var(--bright) 6%, transparent); padding: 1px 7px; border-radius: 10px; }

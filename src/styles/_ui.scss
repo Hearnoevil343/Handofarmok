@@ -1,0 +1,55 @@
+// Shared building blocks for component styles. Colours and fonts come from
+// the look tokens (styles/looks); nothing here fixes a colour.
+
+/// Outlined action button in the accent colour.
+@mixin action-button {
+  position: relative;
+  overflow: hidden;
+  padding: 1rem;
+  border: 1px solid var(--accent);
+  border-radius: var(--radius);
+  background: var(--bg);
+  color: var(--accent);
+  font: 500 1em var(--body);
+  cursor: pointer;
+  transition: background-color 0.2s, border-color 0.2s, color 0.2s;
+
+  &:hover:not(:disabled) {
+    background: color-mix(in srgb, var(--accent) 12%, var(--bg));
+  }
+
+  &:active:not(:disabled) {
+    border-color: var(--active);
+    color: var(--active);
+  }
+
+  &:disabled {
+    border-color: var(--raise);
+    color: var(--raise);
+    cursor: not-allowed;
+  }
+}
+
+/// Thin scrollbar that picks up the accent on hover.
+@mixin thin-scrollbar {
+  &::-webkit-scrollbar {
+    width: 8px;
+  }
+  &::-webkit-scrollbar-track {
+    background: var(--bg);
+  }
+  &::-webkit-scrollbar-thumb {
+    background: var(--raise);
+    border-radius: var(--radius);
+  }
+  &::-webkit-scrollbar-thumb:hover {
+    background: var(--accent);
+  }
+}
+
+/// A page that fills the area under the navigation bar.
+@mixin full-page {
+  width: 100%;
+  height: 100%;
+  background: var(--bg);
+}

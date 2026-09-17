@@ -1,0 +1,290 @@
+<title>Fortress Look</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=VT323&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<style>
+  /* Page chrome is neutral; the mockup carries the Fortress theme. */
+  :root { color-scheme: dark; }
+  html, body { background: #0f1012; color: #d8d8dc; }
+  body { margin: 0; padding-inline: 16px; padding-block: 18px 40px; font: 15px/1.5 system-ui, "Segoe UI", sans-serif; }
+  .wrap { max-width: 1000px; margin: 0 auto; display: grid; gap: 14px; }
+  h1 { margin: 0; font-size: 20px; font-weight: 600; }
+  .sub { margin: 0; color: #9a9aa2; font-size: 14px; max-width: 70ch; }
+  .tabs { display: grid; grid-template-columns: repeat(2, 1fr); border: 1px solid #2c2d32; }
+  .tabs button { font: 500 13px/1.2 system-ui, sans-serif; color: #9a9aa2; background: #18191c; border: 0; padding: 12px 4px; cursor: pointer; }
+  .tabs button + button { border-left: 1px solid #2c2d32; }
+  .tabs button[aria-pressed="true"] { background: #d8d8dc; color: #111214; }
+  .tabs button:focus-visible { outline: 2px solid #d8d8dc; outline-offset: 2px; }
+  .stage { position: relative; width: 100%; max-width: 100%; aspect-ratio: 1120 / 700; overflow: hidden; border: 1px solid #2c2d32; background: #000; }
+  .notes { display: grid; gap: 6px; color: #9a9aa2; font-size: 14px; }
+  .notes b { color: #d8d8dc; }
+
+  /* ================= Fortress theme tokens =================
+     DF's 16 text-mode colours, softened a notch so it reads as
+     inspired-by rather than a costume. */
+  .fx {
+    --bg: #0b0b0c; --panel: #121213; --raise: #1b1b1d; --line: #2e2e31; --line-hi: #4a4a4f;
+    --text: #c6c6c6; --dim: #7c7c80; --bright: #f2f2f2;
+    --yellow: #f4e45c; --lgreen: #6ee66e; --lcyan: #62e3e3; --lred: #f06a5a; --lmag: #e070e0; --brown: #b89444; --lblue: #6f8ff5;
+    --accent: var(--yellow);
+    --title: "VT323", "Courier New", monospace;
+    --mono: "IBM Plex Mono", Consolas, monospace;
+    position: absolute; left: 0; top: 0; width: 1120px; height: 700px; transform-origin: 0 0; overflow: hidden;
+    background: var(--bg); color: var(--text); font: 12px/1.4 var(--mono);
+  }
+  .fx[hidden] { display: none !important; }
+  .fx svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; flex: none; }
+  .fx .key { color: var(--lcyan); }
+
+  /* top bar: brand, pages with hotkeys, look selector */
+  .fx .top { position: absolute; left: 0; right: 0; top: 0; height: 40px; display: flex; align-items: center; gap: 2px; padding: 0 10px; border-bottom: 1px solid var(--line); background: var(--bg); }
+  .fx .brand { font: 26px/1 var(--title); color: var(--accent); margin-right: 18px; letter-spacing: .02em; }
+  /* brand mark: mountain, tree, water, the way DF draws terrain in text mode */
+  .fx .mark { display: inline-flex; gap: 1px; margin-right: 4px; }
+  .fx .mark i { font-style: normal; width: 16px; text-align: center; }
+  .fx .mark .m1 { color: var(--bright); background: #3a3a3e; }
+  .fx .mark .m2 { color: var(--lgreen); background: #1f3a1f; }
+  .fx .mark .m3 { color: var(--lcyan); background: #1c2c4a; }
+  .fx .top a { display: inline-flex; align-items: center; gap: 6px; padding: 6px 10px; color: var(--dim); text-decoration: none; }
+  .fx .fk { font-size: 9px; padding: 0 3px; border: 1px solid var(--line-hi); color: var(--lcyan); line-height: 14px; }
+  .fx .top a.on { background: var(--text); color: var(--bg); }
+  .fx .top a.on .fk { color: var(--bg); border-color: var(--bg); }
+  .fx .look { margin-left: auto; display: flex; align-items: center; gap: 8px; padding: 5px 9px; border: 1px solid var(--line-hi); color: var(--text); }
+  .fx .look b { color: var(--accent); font-weight: 500; }
+  .fx .ver { color: var(--dim); margin-left: 12px; }
+
+  /* status line: DF-style inverted bar */
+  .fx .status { position: absolute; left: 0; right: 0; bottom: 0; height: 22px; background: var(--text); color: var(--bg); display: flex; align-items: center; gap: 16px; padding: 0 10px; font-size: 11px; }
+  .fx .status b { font-weight: 600; }
+  .fx .status .vals { margin-left: auto; display: flex; gap: 12px; }
+
+  /* ===== map screen ===== */
+  .fx .side { position: absolute; left: 0; top: 40px; bottom: 22px; width: 222px; border-right: 1px solid var(--line); padding: 12px; display: flex; flex-direction: column; gap: 14px; background: var(--panel); }
+  .fx .h { font: 20px/1 var(--title); color: var(--lgreen); letter-spacing: .02em; }
+  .fx .h::before { content: "► "; color: var(--brown); font-size: 14px; vertical-align: 2px; }
+  .fx .select { display: flex; justify-content: space-between; align-items: center; padding: 6px 8px; border: 1px solid var(--line-hi); color: var(--bright); background: var(--bg); }
+  .fx .select small { color: var(--dim); }
+  .fx .hint { color: var(--dim); font-size: 11px; }
+  .fx .layers { display: grid; gap: 2px; }
+  .fx .lyr { display: flex; align-items: center; gap: 8px; padding: 5px 8px; border-left: 2px solid transparent; }
+  .fx .lyr .sw { width: 9px; height: 9px; }
+  .fx .lyr.on { background: var(--raise); color: var(--accent); border-left-color: var(--accent); }
+  .fx .lyr .lock { margin-left: auto; color: var(--dim); }
+  .fx .lyr .lock svg { width: 13px; height: 13px; }
+  .fx .lyr.locked .lock { color: var(--lred); }
+  .fx .toggle { display: flex; align-items: center; gap: 8px; }
+  .fx .box { font-family: var(--mono); color: var(--accent); }
+
+  .fx .map { position: absolute; left: 222px; right: 0; top: 40px; bottom: 22px; background: #000; overflow: hidden; }
+  .fx .map img { position: absolute; left: 50%; top: 50%; width: 500px; height: 500px; transform: translate(-50%, -44%); image-rendering: pixelated; }
+
+  /* brushes: same controls and icons as today, dressed in the theme */
+  .fx .rail { position: absolute; left: 234px; top: 104px; display: flex; flex-direction: column; gap: 4px; padding: 5px; background: rgba(11,11,12,.92); border: 1px solid var(--line-hi); }
+  .fx .rail i { width: 34px; height: 34px; display: grid; place-items: center; color: var(--text); font-style: normal; }
+  .fx .rail i.on { background: var(--accent); color: var(--bg); }
+  .fx .rail hr { border: 0; border-top: 1px solid var(--line-hi); margin: 2px 4px; }
+  .fx .bar { position: absolute; left: 234px; right: 140px; top: 52px; display: flex; align-items: center; gap: 12px; flex-wrap: wrap; padding: 7px 10px; background: rgba(11,11,12,.92); border: 1px solid var(--line-hi); font-size: 11px; }
+  .fx .bar .t { color: var(--accent); font-weight: 600; letter-spacing: .06em; }
+  .fx .bar .lbl { color: var(--dim); letter-spacing: .04em; }
+  .fx .chip { display: inline-flex; align-items: center; gap: 6px; padding: 4px 8px; border: 1px solid var(--line-hi); color: var(--text); }
+  .fx .chip.on { background: var(--accent); border-color: var(--accent); color: var(--bg); }
+  .fx .chip svg { width: 12px; height: 12px; }
+  .fx .biome { width: 11px; height: 11px; background: #6aa84f; }
+  .fx .rng { width: 70px; height: 3px; background: var(--line-hi); position: relative; }
+  .fx .rng::after { content: ""; position: absolute; left: var(--p, 30%); top: 50%; width: 9px; height: 13px; background: var(--accent); transform: translate(-50%, -50%); }
+  .fx .val { color: var(--bright); min-width: 22px; }
+  .fx .wtools { position: absolute; right: 12px; top: 52px; display: inline-flex; align-items: center; gap: 6px; padding: 7px 10px; border: 1px solid var(--line-hi); background: rgba(11,11,12,.92); color: var(--lcyan); }
+
+  /* ===== world settings screen ===== */
+  .fx .snav { position: absolute; left: 0; top: 40px; bottom: 22px; width: 200px; border-right: 1px solid var(--line); background: var(--panel); padding: 12px; display: flex; flex-direction: column; gap: 2px; }
+  .fx .snav .item { display: flex; justify-content: space-between; padding: 6px 8px; border-left: 2px solid transparent; }
+  .fx .snav .item.on { background: var(--raise); color: var(--accent); border-left-color: var(--accent); }
+  .fx .snav .item small { color: var(--dim); }
+  .fx .snav .h { margin-bottom: 8px; }
+  .fx .snav .world { margin-bottom: 14px; }
+  .fx .content { position: absolute; left: 200px; right: 0; top: 40px; bottom: 22px; overflow: hidden; padding: 16px 22px; display: flex; flex-direction: column; gap: 14px; }
+  .fx .chead { display: flex; align-items: center; gap: 14px; }
+  .fx .ctitle { font: 34px/1 var(--title); color: var(--bright); }
+  .fx .ctitle small { font: 12px var(--mono); color: var(--dim); margin-left: 10px; }
+  .fx .btn { padding: 6px 10px; border: 1px solid var(--line-hi); color: var(--text); }
+  .fx .btn.warn { border-color: var(--lred); color: var(--lred); }
+  .fx .filter { margin-left: auto; width: 220px; padding: 6px 8px; border: 1px solid var(--line-hi); color: var(--dim); background: var(--bg); }
+  .fx .panelbox { border: 1px solid var(--line); background: var(--panel); padding: 12px 14px; display: grid; gap: 8px; }
+  .fx .panelbox .h { margin-bottom: 2px; }
+  .fx .lead { color: var(--dim); }
+  .fx .lead b { color: var(--bright); font-weight: 500; }
+  .fx .ladder { display: grid; grid-template-columns: 150px 1fr; align-items: center; gap: 10px; }
+  .fx .ladder .name { color: var(--text); letter-spacing: .03em; }
+  .fx .steps { display: flex; gap: 4px; }
+  .fx .step { padding: 4px 10px; border: 1px solid var(--line-hi); text-align: center; color: var(--text); }
+  .fx .step small { display: block; color: var(--lcyan); font-size: 10px; }
+  .fx .step.on { border-color: var(--accent); color: var(--accent); background: var(--raise); }
+  .fx .row { display: grid; grid-template-columns: 300px 1fr; gap: 18px; padding: 10px 0; border-top: 1px solid var(--line); }
+  .fx .row .rname { color: var(--bright); }
+  .fx .row .rhelp { color: var(--dim); font-size: 11px; }
+  .fx .row code { color: var(--brown); font-size: 10px; }
+  .fx .ctl { display: flex; flex-direction: column; gap: 6px; }
+  .fx .warnbox { display: flex; gap: 8px; padding: 6px 8px; border: 1px solid var(--lred); color: var(--lred); font-size: 11px; }
+  .fx .warnbox svg { width: 13px; height: 13px; margin-top: 1px; }
+  .fx .num { padding: 5px 8px; border: 1px solid var(--line-hi); color: var(--bright); background: var(--bg); width: 90px; }
+</style>
+
+<div class="wrap">
+  <h1>Fortress look</h1>
+  <p class="sub">First of three looks. The map and brushes work exactly as today; only the frame changes. Rough mockup for approval, not the final pixels.</p>
+  <div class="tabs" role="group" aria-label="Screen">
+    <button type="button" id="tab-map" data-screen="map">World Map</button>
+    <button type="button" id="tab-settings" data-screen="settings">World Settings</button>
+  </div>
+  <div class="stage" id="stage"></div>
+  <div class="notes">
+    <p style="margin:0"><b>Colours:</b> Dwarf Fortress's 16 text colours, toned down a little. Yellow marks what's selected, green headings, cyan hotkeys, red warnings.</p>
+    <p style="margin:0"><b>Type:</b> a DOS-style font for titles only; everything you read is a clean monospace.</p>
+    <p style="margin:0"><b>Symbols:</b> the mark is mountain, tree and water as DF draws terrain in text mode. Headings use ►.</p>
+    <p style="margin:0"><b>Keys:</b> 1–6 pick layers, F1–F6 switch pages, WASD and arrows only move the map.</p>
+    <p style="margin:0"><b>Look switcher:</b> top right. Fortress now; Glass Inspector next; Cartographer last.</p>
+  </div>
+</div>
+
+<template id="icons">
+  <svg data-i="lock" viewBox="0 0 24 24"><rect x="4" y="11" width="16" height="10"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>
+  <svg data-i="unlock" viewBox="0 0 24 24"><rect x="4" y="11" width="16" height="10"/><path d="M8 11V7a4 4 0 0 1 7.5-2"/></svg>
+</template>
+
+<template id="top">
+  <header class="top">
+    <span class="brand"><span class="mark"><i class="m1">▲</i><i class="m2">♣</i><i class="m3">≈</i></span> Hand of Armok</span>
+    <a href="#"><span class="fk">F1</span>New World</a>
+    <a href="#" data-page="settings"><span class="fk">F2</span>World Settings</a>
+    <a href="#" data-page="map"><span class="fk">F3</span>World Map</a>
+    <a href="#"><span class="fk">F4</span>Game View</a>
+    <a href="#"><span class="fk">F5</span>Export</a>
+    <a href="#"><span class="fk">F6</span>About</a>
+    <span class="look">Look: <b>Fortress</b> <svg viewBox="0 0 24 24" style="width:12px;height:12px"><path d="m6 9 6 6 6-6"/></svg></span>
+    <span class="ver">v0.2.5</span>
+  </header>
+</template>
+
+<template id="map">
+  <aside class="side">
+    <div>
+      <div class="h">Realm</div>
+      <div class="select" style="margin-top:8px">CONTINENTS <small>129×129 ▾</small></div>
+    </div>
+    <div>
+      <div class="h">Layers</div>
+      <p class="hint" style="margin:6px 0 8px">Lock a layer to protect it. No brush writes a locked layer.</p>
+      <div class="layers">
+        <div class="lyr on"><span class="key">1</span><span class="sw" style="background:var(--brown)"></span>Elevation<span class="lock" data-l="unlock"></span></div>
+        <div class="lyr"><span class="key">2</span><span class="sw" style="background:var(--lblue)"></span>Rainfall<span class="lock" data-l="unlock"></span></div>
+        <div class="lyr"><span class="key">3</span><span class="sw" style="background:var(--dim)"></span>Drainage<span class="lock" data-l="unlock"></span></div>
+        <div class="lyr locked"><span class="key">4</span><span class="sw" style="background:var(--lred)"></span>Temperature<span class="lock" data-l="lock"></span></div>
+        <div class="lyr"><span class="key">5</span><span class="sw" style="background:var(--lmag)"></span>Volcanism<span class="lock" data-l="unlock"></span></div>
+        <div class="lyr"><span class="key">6</span><span class="sw" style="background:var(--lgreen)"></span>Savagery<span class="lock" data-l="unlock"></span></div>
+      </div>
+    </div>
+    <div style="display:grid;gap:8px">
+      <div class="h">View</div>
+      <div class="toggle"><span class="box">[x]</span>Tint by layer</div>
+      <div class="toggle"><span class="box">[ ]</span>Plate boundaries</div>
+    </div>
+  </aside>
+  <div class="map"><img src="map.png" alt="Continents, drawn exactly as the app draws it today"></div>
+  <div class="bar">
+    <span class="t">BIOME</span>
+    <span class="chip"><span class="biome"></span>Grassland <svg viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></svg></span>
+    <span class="lbl">SIZE</span><span class="rng" style="--p:20%"></span><span class="val">5</span>
+    <span class="lbl">EDGE FRAY</span><span class="rng" style="--p:0%"></span><span class="val">0%</span>
+    <span class="chip"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/></svg>Round</span>
+    <span class="chip on"><svg viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16"/></svg>Square</span>
+    <span class="chip"><svg viewBox="0 0 24 24"><path d="M5 19 19 5"/></svg>Line</span>
+    <span class="chip"><svg viewBox="0 0 24 24"><circle cx="13.5" cy="6.5" r="1"/><circle cx="17.5" cy="10.5" r="1"/><circle cx="8.5" cy="7.5" r="1"/><path d="M12 2a10 10 0 0 0 0 20c1 0 2-1 2-2 0-.5-.2-1-.5-1.3-.3-.4-.5-.8-.5-1.3 0-1 1-2 2-2h2.3A5.6 5.6 0 0 0 22 10c0-4.4-4.5-8-10-8z"/></svg>DF Colors</span>
+  </div>
+  <span class="wtools"><svg viewBox="0 0 24 24"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.8-3.8a6 6 0 0 1-7.9 7.9l-6.9 6.9a2.1 2.1 0 0 1-3-3l6.9-6.9a6 6 0 0 1 7.9-7.9z"/></svg>World Tools</span>
+  <div class="rail">
+    <i class="on" title="Biome"><svg viewBox="0 0 24 24"><path d="M18.4 2.6a2 2 0 0 1 3 3L12 15l-3-3z"/><path d="M9 12c-3 0-5 2-5 5 0 1.5-1 2.5-2 3 4 1 9 0 9-5z"/></svg></i>
+    <i title="Sculpt"><svg viewBox="0 0 24 24"><path d="m8 3 4 8 5-5 5 15H2z"/></svg></i>
+    <i title="Climate"><svg viewBox="0 0 24 24"><path d="M20 16.6A5 5 0 0 0 18 7h-1.3A8 8 0 1 0 4 15.2"/><path d="M16 14v6M8 14v6M12 16v6"/></svg></i>
+    <i title="Volcano"><svg viewBox="0 0 24 24"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.4-.5-2-1-3-1-2.1-.2-4 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.2.4-2.3 1-3.3.3 1.6 1.1 2.8 2.5 2.8z"/></svg></i>
+    <i title="Savagery"><svg viewBox="0 0 24 24"><path d="M14.5 17.5 3 6V3h3l11.5 11.5M13 19l6-6M16 16l4 4M19 21l2-2"/></svg></i>
+    <i title="Fill"><svg viewBox="0 0 24 24"><path d="m19 11-8-8-8.6 8.6a2 2 0 0 0 0 2.8l5.2 5.2a2 2 0 0 0 2.8 0z"/><path d="M5 2l5 5M2 13h15"/></svg></i>
+    <i title="Eyedropper"><svg viewBox="0 0 24 24"><path d="m2 22 1-1h3l9-9M3 21v-3l9-9"/><path d="m15 6 3.4-3.4a2.1 2.1 0 1 1 3 3L18 9l.4.4a2.1 2.1 0 1 1-3 3l-3.8-3.8a2.1 2.1 0 1 1 3-3z"/></svg></i>
+  </div>
+  <footer class="status">
+    <span>POS <b>064:058</b></span><span>REGION <b>CALM GRASSLAND</b></span>
+    <span class="vals"><span>EL 142</span><span>RA 48</span><span>DR 40</span><span>TE 55</span><span>VO 0</span><span>SA 50</span></span>
+  </footer>
+</template>
+
+<template id="settings">
+  <aside class="snav">
+    <div class="h">Realm</div>
+    <div class="select world">CONTINENTS <small>129×129 ▾</small></div>
+    <div class="item on"><span>Overview</span></div>
+    <div class="item"><span>Terrain</span><small>26</small></div>
+    <div class="item"><span>Climate</span><small>8</small></div>
+    <div class="item"><span>Life</span><small>16</small></div>
+    <div class="item"><span>Underground</span><small>19</small></div>
+    <div class="item"><span>History</span><small>4</small></div>
+    <div class="item"><span>Rejection</span><small>16</small></div>
+  </aside>
+  <main class="content">
+    <div class="chead">
+      <div class="ctitle">World Settings <small>CONTINENTS</small></div>
+      <span class="btn warn">Reset destructive</span>
+      <span class="filter">Filter tokens…</span>
+    </div>
+    <section class="panelbox">
+      <div class="h">Quick Setup</div>
+      <p class="lead" style="margin:0">This world is <b>Medium</b>: 129×129, 16,641 tiles, 6,325 of them land. Buttons show the numbers they will write.</p>
+      <div class="ladder"><span class="name">WORLD SIZE</span><div class="steps"><span class="step">Pocket<small>17</small></span><span class="step">Smaller<small>33</small></span><span class="step">Small<small>65</small></span><span class="step on">Medium<small>129</small></span><span class="step">Large<small>257</small></span></div></div>
+      <div class="ladder"><span class="name">HISTORY</span><div class="steps"><span class="step">Very short<small>5 yr</small></span><span class="step">Short<small>25 yr</small></span><span class="step on">Medium<small>100 yr</small></span><span class="step">Long<small>250 yr</small></span><span class="step">Very long<small>500 yr</small></span></div></div>
+      <div class="ladder"><span class="name">BEASTS</span><div class="steps"><span class="step">Very low<small>10/20/4</small></span><span class="step on">Low<small>14/29/7</small></span><span class="step">Medium<small>20/40/10</small></span><span class="step">High<small>29/60/14</small></span><span class="step">Very high<small>39/80/20</small></span></div></div>
+    </section>
+    <section>
+      <div class="row">
+        <div><div class="rname">Poles</div><div class="rhelp">Which edges of the map are polar. None for a painted world.</div><code>POLE</code></div>
+        <div class="ctl"><span class="select" style="width:260px">NORTH ONLY <small>▾</small></span>
+          <div class="warnbox"><svg viewBox="0 0 24 24"><path d="m21.7 18-8-14a2 2 0 0 0-3.5 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.7-3z"/><path d="M12 9v4M12 17h.01"/></svg>Dwarf Fortress's own climate will overwrite your painted temperature wherever a pole is set.</div>
+        </div>
+      </div>
+      <div class="row">
+        <div><div class="rname">Erosion cycles</div><div class="rhelp">The game's own erosion. Kept at 0 for painted worlds.</div><code>EROSION_CYCLE_COUNT</code></div>
+        <div class="ctl"><span class="num">0</span></div>
+      </div>
+    </section>
+  </main>
+</template>
+
+<script>
+const stage = document.getElementById("stage");
+const icons = {};
+for (const s of document.getElementById("icons").content.querySelectorAll("svg")) icons[s.dataset.i] = s.outerHTML;
+const screens = {};
+for (const key of ["map", "settings"]) {
+  const el = document.createElement("div");
+  el.className = "fx";
+  el.append(document.getElementById("top").content.cloneNode(true));
+  el.append(document.getElementById(key).content.cloneNode(true));
+  el.querySelector(`.top a[data-page="${key}"]`)?.classList.add("on");
+  for (const l of el.querySelectorAll("[data-l]")) l.innerHTML = icons[l.dataset.l];
+  for (const a of el.querySelectorAll("a")) a.addEventListener("click", (e) => { e.preventDefault(); if (a.dataset.page) show(a.dataset.page); });
+  stage.append(el);
+  screens[key] = el;
+}
+function fit() {
+  const k = stage.clientWidth / 1120;
+  for (const s of Object.values(screens)) s.style.transform = `scale(${k})`;
+}
+new ResizeObserver(fit).observe(stage);
+function show(key) {
+  for (const [k, s] of Object.entries(screens)) s.hidden = k !== key;
+  for (const b of document.querySelectorAll(".tabs button")) b.setAttribute("aria-pressed", String(b.dataset.screen === key));
+  try { localStorage.setItem("hoa-fortress-screen", key); } catch {}
+}
+for (const b of document.querySelectorAll(".tabs button")) b.addEventListener("click", () => show(b.dataset.screen));
+let start = "map";
+try { start = localStorage.getItem("hoa-fortress-screen") || "map"; } catch {}
+show(screens[start] ? start : "map");
+fit();
+</script>

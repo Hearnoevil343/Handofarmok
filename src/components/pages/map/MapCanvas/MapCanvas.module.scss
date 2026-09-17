@@ -1,0 +1,21 @@
+// Positioned so the tool bars, which are absolute, sit over the map and not
+// over the sidebar.
+.frame {
+  position: relative;
+  grid-area: map;
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-width: 0;
+  height: 100%;
+  overflow: hidden;
+}
+
+.stage {
+  position: relative;
+  flex: 1;
+  width: 100%;
+  // lets flex decide the height, so the canvas never pushes the page taller
+  height: 0;
+  background: #000;
+}

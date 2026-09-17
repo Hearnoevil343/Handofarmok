@@ -1,0 +1,32 @@
+// Fixed cell colours regardless of look -- a logo identity, not theme chrome.
+.base {
+  display: inline-flex;
+  gap: 1px;
+  font-family: var(--mono);
+  line-height: 1;
+  vertical-align: middle;
+}
+
+.base span {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.15em;
+  height: 1.15em;
+  font-size: 0.85em;
+}
+
+.mountain {
+  background: #3a3a3e;
+  color: #ffffff;
+}
+
+.tree {
+  background: #1f3a1f;
+  color: #6ee66e;
+}
+
+.water {
+  background: #1c2c4a;
+  color: #62e3e3;
+}

@@ -1,0 +1,35 @@
+// Glass Inspector: the map fills the window, see-through panels float over it.
+// docs/ui-rework.md section 5 is the source of truth for these values; keep
+// this file and that table in sync.
+@mixin glass-tokens {
+  --bg: #07080a;
+  --panel: rgba(22, 24, 28, 0.70); // glass fill
+  --raise: rgba(255, 255, 255, 0.09);
+  --line: rgba(255, 255, 255, 0.10);
+  --line-hi: rgba(255, 255, 255, 0.18);
+
+  --text: #d9dce2;
+  --dim: #8b909a;
+  --bright: #ffffff;
+
+  --accent: #3cc4b4; // teal: selection, active tool, primary
+  --accent-ink: #062421; // text drawn on top of --accent
+  --active: #3cc4b4;
+  --ok: #3cc4b4;
+  --warn: #ff7a66;
+  --brown: #8b909a; // Glass has no separate "token name" hue; reuse --dim's role
+
+  --radius: 14px; // 8-10px on small controls, set locally where used
+  --blur: 14px;
+  --shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+
+  --title: "Manrope", system-ui, sans-serif;
+  --mono: "JetBrains Mono", Consolas, monospace; // numbers, values, keys only
+  // Glass's general UI text is Manrope too (nav, labels, buttons, prose) --
+  // --mono is reserved for numeric/data readouts (docs/ui-rework.md section 5).
+  --body: var(--title);
+}
+
+:root[data-look="glass"] {
+  @include glass-tokens;
+}

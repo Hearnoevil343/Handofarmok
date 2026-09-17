@@ -1,0 +1,79 @@
+// Fortress: Dwarf Fortress's text-mode colours toned down, a DOS title font,
+// sharp 1px boxes. docs/ui-rework.md section 4 is the source of truth for
+// these values; keep this file and that table in sync.
+//
+// Also the bare :root default in index.scss (see the comment there) — this
+// look is DEFAULT_LOOK (src/theme/looks.ts), so the app must look like this
+// before data-look is set on <html> (first paint, before React's effect runs).
+@mixin fortress-tokens {
+  --bg: #0b0b0c;
+  --panel: #121213;
+  --raise: #1b1b1d;
+  --line: #2e2e31;
+  --line-hi: #4a4a4f;
+
+  --text: #c6c6c6;
+  --dim: #7c7c80;
+  --bright: #f2f2f2;
+
+  --accent: #f4e45c; // DF yellow: selection, active tool, primary
+  --accent-ink: #0b0b0c; // text drawn on top of --accent
+  --active: #62e3e3; // light cyan: key hints, links
+  --ok: #6ee66e; // light green: section headings
+  --warn: #f06a5a; // light red: warnings, locked layers
+  --brown: #b89444; // token names, heading marker
+
+  --radius: 0px;
+  --blur: 0px;
+  --shadow: none;
+
+  --title: "VT323", "Courier New", monospace;
+  --mono: "IBM Plex Mono", Consolas, monospace;
+  // Fortress reads entirely in its mono face -- "everything read is IBM Plex
+  // Mono" (docs/ui-rework.md section 4) -- so general UI text uses it too.
+  --body: var(--mono);
+}
+
+:root[data-look="fortress"] {
+  @include fortress-tokens;
+}
+
+// Global chrome rules for Fortress (docs/ui-rework.md section 4: "Square
+// corners... no shadows, no blur"). Applied once here rather than hand-editing
+// every component's border-radius/box-shadow -- those properties don't carry
+// per-look meaning the way colours do (nothing needs a *different* radius
+// under Fortress, it needs *no* radius), so a look-wide reset is the correct
+// fix, not 50 individual edits. text-shadow is deliberately left alone: it
+// also carries the "glow" animation on the start page title,
+// which is a game reference rather than panel chrome.
+:root[data-look="fortress"] * {
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  backdrop-filter: none !important;
+}
+
+// Checkboxes render as [ ] / [x] (section 4). The input stays real and
+// clickable for accessibility; only its own default/custom appearance
+// (several components draw a pill switch) is replaced with the brackets.
+:root[data-look="fortress"] input[type="checkbox"] {
+  all: unset;
+  display: inline-flex;
+  align-items: center;
+  font-family: var(--mono);
+  font-size: 1em;
+  color: var(--accent);
+  cursor: pointer;
+
+  &::before {
+    content: "[ ]";
+  }
+
+  &:checked::before {
+    content: "[x]";
+  }
+
+  &:focus-visible {
+    outline: 1px solid var(--active);
+    outline-offset: 2px;
+  }
+}

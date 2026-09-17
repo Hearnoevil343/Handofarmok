@@ -1,0 +1,119 @@
+@use "@styles/ui" as ui;
+
+.page {
+  @include ui.full-page;
+  @include ui.thin-scrollbar;
+  overflow-y: auto;
+  // room below the grid for the load button, which floats over the page
+  padding: 40px 0 120px;
+}
+
+.intro {
+  margin-bottom: 40px;
+  text-align: center;
+
+  h2 {
+    margin: 0;
+    font-size: 2.5rem;
+    color: var(--accent);
+    letter-spacing: 2px;
+    text-transform: uppercase;
+  }
+
+  p {
+    color: var(--dim);
+  }
+}
+
+// A wrapping grid, so every realm can be compared without scrolling sideways.
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+  align-items: start;
+  gap: 20px;
+  margin: 0 25px;
+}
+
+.card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 12px;
+  overflow: hidden;
+  border: 1px solid var(--raise);
+  border-radius: var(--radius);
+  background: var(--panel);
+  color: var(--text);
+  text-align: left;
+
+  &:hover {
+    border-color: var(--accent);
+  }
+}
+
+// selected: highlighted border and a check in the corner
+.picked {
+  border-color: var(--active);
+  background: color-mix(in srgb, var(--active) 8%, var(--panel));
+
+  &::after {
+    content: "\2713";
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    display: grid;
+    place-items: center;
+    width: 1.6rem;
+    height: 1.6rem;
+    border-radius: 50%;
+    background: var(--active);
+    color: var(--bg);
+    font-weight: 700;
+  }
+}
+
+.preview {
+  width: 100%;
+  aspect-ratio: 1;
+  margin-bottom: 8px;
+  border: 1px solid color-mix(in srgb, var(--bright) 6%, transparent);
+  border-radius: var(--radius);
+  background: var(--bg);
+  image-rendering: pixelated;
+}
+
+.name {
+  overflow: hidden;
+  font-size: 1rem;
+  font-weight: 700;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.size {
+  font: 0.75rem var(--mono);
+  color: var(--dim);
+}
+
+.load {
+  position: fixed;
+  bottom: 20px;
+  left: 50%;
+  width: 20rem;
+  translate: -50% 0;
+  border: none;
+  background: var(--accent);
+  color: var(--bg);
+  font-weight: 700;
+
+  &:hover:not(:disabled) {
+    background: color-mix(in srgb, var(--accent) 88%, white);
+  }
+}
+
+.loaded {
+  border: 1px solid var(--ok);
+  background: var(--bg);
+  color: var(--ok);
+}

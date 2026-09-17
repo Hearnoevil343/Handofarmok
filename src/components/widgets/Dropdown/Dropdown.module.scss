@@ -1,0 +1,25 @@
+.select {
+  width: 100%;
+  min-width: 0;
+  flex: 1;
+  padding: 0.4rem;
+  border: 1px solid var(--raise);
+  background: var(--bg);
+  color: var(--accent);
+  font: 0.8rem var(--body);
+  cursor: pointer;
+  outline: none;
+
+  &:hover {
+    border-color: var(--accent);
+  }
+
+  &:focus-visible {
+    border-color: var(--active);
+  }
+
+  option {
+    background: var(--bg);
+    color: var(--text);
+  }
+}

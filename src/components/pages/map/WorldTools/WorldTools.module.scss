@@ -1,0 +1,89 @@
+
+.base { display: flex; flex-direction: column; gap: 6px; }
+
+.label {
+  color: var(--text); font-size: 12px;
+  letter-spacing: 0.08em; text-transform: uppercase;
+}
+
+.field { color: var(--dim); font-size: 10px; text-transform: uppercase; margin-top: 4px; }
+
+.seedRow { display: flex; gap: 4px; }
+
+.seed {
+  flex: 1; min-width: 0;
+  background: var(--bg); border: 1px solid var(--line-hi);
+  border-radius: 4px; color: var(--text); padding: 6px 8px; font-size: 12px;
+}
+
+.dice {
+  background: var(--raise); border: 1px solid var(--line-hi); border-radius: 4px;
+  color: var(--text); cursor: pointer; padding: 6px 10px;
+  &:hover { background: var(--raise); }
+}
+
+.primary, .secondary {
+  border-radius: 4px; cursor: pointer; font-size: 12px;
+  padding: 9px 10px; margin-top: 6px; border: 1px solid var(--line-hi);
+  &:disabled { opacity: 0.5; cursor: default; }
+}
+
+.primary {
+  background: var(--raise); color: var(--accent); border-color: var(--accent);
+  &:hover:not(:disabled) { background: var(--raise); }
+}
+
+.secondary {
+  background: var(--raise); color: var(--active);
+  &:hover:not(:disabled) { background: var(--raise); }
+}
+
+.hint { color: var(--dim); font-size: 11px; line-height: 1.4; margin: 6px 0 0; }
+
+.panel {
+  border: 1px solid var(--line-hi);
+  border-radius: 4px;
+  background: color-mix(in srgb, var(--bg) 20%, transparent);
+  padding: 6px 8px;
+  margin-bottom: 6px;
+}
+
+.summary {
+  cursor: pointer;
+  color: var(--accent);
+  font-size: 12px;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  list-style: none;
+  &::-webkit-details-marker { display: none; }
+  &::before { content: "\25B8 "; }
+}
+
+.panel[open] > .summary::before { content: "\25BE "; }
+
+.blurb { color: var(--dim); font-size: 10px; line-height: 1.4; margin: 6px 0 0; }
+
+.body { display: flex; flex-direction: column; gap: 4px; margin-top: 8px; }
+
+.steps { list-style: none; margin: 0 0 6px; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+
+.step {
+  border: 1px solid var(--line-hi);
+  border-radius: 3px;
+  padding: 6px;
+  background: color-mix(in srgb, var(--bg) 25%, transparent);
+  display: flex; flex-direction: column; gap: 4px;
+}
+
+.stepHead { display: flex; align-items: center; gap: 2px; }
+
+.stepName {
+  flex: 1; color: var(--text); font-size: 11px;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+
+.mini {
+  background: none; border: none; color: var(--dim); cursor: pointer;
+  font-size: 10px; line-height: 1; padding: 2px 4px; border-radius: 2px;
+  &:hover { background: var(--raise); color: var(--bright); }
+}

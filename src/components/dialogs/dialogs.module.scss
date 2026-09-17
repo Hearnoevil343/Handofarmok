@@ -1,0 +1,131 @@
+@use "@styles/ui" as ui;
+
+.backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 10;
+  display: grid;
+  place-items: center;
+  padding: 2rem;
+  background: color-mix(in srgb, var(--bg) 85%, transparent);
+  backdrop-filter: blur(4px);
+}
+
+.panel {
+  position: relative;
+  width: 100%;
+  max-width: 500px;
+  border: 1px solid var(--line-hi);
+  border-radius: var(--radius);
+  background: var(--panel);
+  box-shadow: 0 20px 50px color-mix(in srgb, var(--bg) 80%, transparent);
+  animation: rise 0.2s ease-out;
+}
+
+@keyframes rise {
+  from {
+    opacity: 0;
+    translate: 0 8px;
+  }
+}
+
+// ---- disclaimer
+
+.notice {
+  padding: 2rem;
+  line-height: 1.6;
+}
+
+.title {
+  margin: 0 0 1.5rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 2px solid var(--raise);
+  color: var(--accent);
+  font-weight: 800;
+  letter-spacing: 2px;
+  text-align: center;
+  text-transform: uppercase;
+}
+
+.notes {
+  margin: 0 0 1.5rem;
+  padding: 0;
+  list-style: none;
+
+  li {
+    margin-bottom: 1.2rem;
+    padding-left: 1.4rem;
+    border-left: 2px solid var(--line-hi);
+  }
+
+  strong {
+    display: block;
+    margin-bottom: 0.2rem;
+    color: var(--active);
+    font-size: 0.85rem;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+  }
+}
+
+.primary {
+  @include ui.action-button;
+  display: block;
+  margin: 0 auto;
+}
+
+// ---- paint-safe
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1.5rem;
+  border-bottom: 1px solid var(--raise);
+
+  h2 {
+    margin: 0;
+    color: var(--accent);
+    font-size: 1.2rem;
+  }
+}
+
+.close {
+  padding: 0 0.25rem;
+  border: none;
+  background: none;
+  color: var(--dim);
+  font-size: 1.5rem;
+
+  &:hover {
+    border: none;
+    color: var(--bright);
+  }
+}
+
+.body {
+  padding: 1.5rem;
+  font-size: 0.95rem;
+  line-height: 1.6;
+
+  p {
+    margin-top: 0;
+  }
+}
+
+.footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 1rem;
+  padding: 1.5rem;
+}
+
+.confirm {
+  border-color: var(--accent);
+  color: var(--accent);
+
+  &:hover {
+    border-color: var(--ok);
+    color: var(--ok);
+  }
+}

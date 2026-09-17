@@ -1,0 +1,62 @@
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.value {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--accent);
+}
+
+.track {
+  width: 100%;
+  accent-color: var(--accent);
+  cursor: pointer;
+
+  &:hover {
+    accent-color: var(--active);
+  }
+}
+
+.ticks {
+  position: relative;
+  height: 14px;
+  margin-top: 2px;
+}
+
+.tick,
+.tickWarn {
+  position: absolute;
+  top: 0;
+  translate: -50% 0;
+  font-size: 9px;
+  white-space: nowrap;
+
+  // the tick mark itself, a short line above the label
+  &::after {
+    content: "";
+    position: absolute;
+    left: 50%;
+    bottom: 100%;
+    width: 1px;
+    height: 4px;
+    background: currentColor;
+  }
+}
+
+.tick {
+  color: var(--dim);
+}
+
+.tickWarn {
+  color: var(--warn);
+}
+
+.hint {
+  margin: 6px 0 0;
+  font-size: 10px;
+  line-height: 1.35;
+  color: var(--dim);
+}

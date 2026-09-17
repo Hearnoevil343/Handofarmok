@@ -1,0 +1,267 @@
+@use "@styles/ui" as ui;
+
+.page {
+  @include ui.full-page;
+  display: flex;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.empty {
+  padding: 2rem;
+  color: var(--dim);
+}
+
+.side {
+  display: flex;
+  flex: none;
+  flex-direction: column;
+  width: 250px;
+  min-height: 0;
+  overflow-y: auto;
+  border-right: 1px solid var(--line);
+  background: var(--panel);
+}
+
+.main {
+  @include ui.thin-scrollbar;
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-width: 0;
+  height: 100%;
+  // Quick Setup and the advisor sit above the setting list, which must stay reachable
+  overflow-y: auto;
+}
+
+.section {
+  max-width: 980px;
+  padding: 8px 24px 32px;
+}
+
+.sectionTitle {
+  margin: 12px 0 4px;
+  color: var(--accent);
+  font-size: 16px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.blurb {
+  margin: 0 0 14px;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.crumb {
+  margin-top: 14px;
+  color: var(--dim);
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+// ---- realm list
+
+.realms {
+  display: flex;
+  flex-direction: column;
+  max-height: 42vh;
+  border-bottom: 1px solid var(--line-hi);
+  backdrop-filter: blur(var(--blur));
+
+  ul {
+    @include ui.thin-scrollbar;
+    margin: 0;
+    padding: 0;
+    overflow-y: auto;
+    list-style: none;
+  }
+}
+
+.realmsHeading {
+  margin: 0;
+  padding: 14px 20px 10px;
+  border-bottom: 1px solid var(--raise);
+  color: var(--dim);
+  font-size: 10px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+}
+
+.realm {
+  position: relative;
+  display: flex;
+  align-items: center;
+  border-bottom: 1px solid var(--raise);
+
+  &:hover .realmActions {
+    opacity: 1;
+  }
+}
+
+.realmOn {
+  background: color-mix(in srgb, var(--active) 10%, transparent);
+  box-shadow: inset 2px 0 var(--active);
+
+  .realmName,
+  .realmSize {
+    color: var(--active);
+  }
+
+  .realmActions {
+    opacity: 1;
+  }
+}
+
+.realmPick {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  padding: 1rem 1.2rem;
+  border: none;
+  border-radius: 0;
+  background: none;
+  text-align: left;
+
+  &:hover {
+    border: none;
+  }
+}
+
+.realmName {
+  overflow: hidden;
+  color: var(--text);
+  font-size: 0.8rem;
+  font-weight: 700;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.realmSize {
+  color: var(--dim);
+  font-size: 0.7rem;
+}
+
+.realmActions {
+  display: flex;
+  gap: 0.5rem;
+  padding-right: 1rem;
+  opacity: 0;
+  transition: opacity 0.2s;
+
+  button {
+    display: grid;
+    place-items: center;
+    width: 24px;
+    height: 24px;
+    padding: 0;
+    border: 1px solid var(--raise);
+    background: none;
+    color: var(--dim);
+    font-size: 0.7rem;
+
+    &:hover:not(:disabled) {
+      border-color: var(--accent);
+      color: var(--accent);
+    }
+  }
+
+  .danger:hover:not(:disabled) {
+    border-color: var(--warn);
+    color: var(--warn);
+  }
+}
+
+// ---- header
+
+.header {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  padding: 1rem 2rem;
+  border-bottom: 1px solid var(--raise);
+  background: var(--panel);
+  backdrop-filter: blur(var(--blur));
+
+  p {
+    margin: 0;
+    color: var(--dim);
+    font-size: 0.9rem;
+  }
+}
+
+.pageTitle {
+  margin: 0 0 0.5rem;
+  color: var(--ok);
+  letter-spacing: 4px;
+  text-align: center;
+  text-transform: uppercase;
+
+  :root[data-look="fortress"] &::before {
+    content: "\25B6  ";
+    color: var(--brown);
+  }
+}
+
+.headerRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.realmTitle {
+  margin: 0 0 0.5rem;
+  padding: 0;
+  border: none;
+  border-bottom: 1px solid transparent;
+  background: none;
+  color: var(--text);
+  font: 700 1.5rem/1.2 var(--title);
+  cursor: text;
+
+  &:is(input) {
+    border-bottom-color: var(--accent);
+    outline: none;
+  }
+}
+
+.headerTools {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+}
+
+.prepare {
+  flex: none;
+  height: 42px;
+  border: 1px solid color-mix(in srgb, var(--accent) 35%, transparent);
+  background: color-mix(in srgb, var(--accent) 6%, transparent);
+  color: var(--accent);
+  font-size: 0.75rem;
+  white-space: nowrap;
+
+  &:hover {
+    border-color: var(--accent);
+    background: color-mix(in srgb, var(--accent) 15%, transparent);
+  }
+}
+
+.search {
+  flex: 0 1 300px;
+  min-width: 180px;
+  height: 42px;
+  padding: 0 1.2rem;
+  border: 1px solid var(--raise);
+  background: var(--bg);
+  color: var(--accent);
+  font-family: inherit;
+
+  &:focus-visible {
+    border-color: var(--active);
+    outline: none;
+  }
+}

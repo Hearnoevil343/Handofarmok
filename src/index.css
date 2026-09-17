@@ -1,0 +1,74 @@
+/* Page defaults. Colours and fonts come from the active look (styles/looks). */
+:root {
+  color-scheme: dark;
+  font-family: var(--body);
+  line-height: 1.5;
+  color: var(--text);
+  background: var(--bg);
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-width: 320px;
+  min-height: 100vh;
+}
+
+#root {
+  width: 100%;
+  height: 100vh;
+}
+
+a {
+  color: var(--active);
+  text-decoration: none;
+}
+
+a:hover {
+  text-decoration: underline;
+}
+
+h1 {
+  font-size: 3.2em;
+  line-height: 1.1;
+}
+
+/* plain buttons; components style their own on top */
+button {
+  padding: 0.6em 1.2em;
+  border: 1px solid transparent;
+  border-radius: var(--radius);
+  background: var(--panel);
+  color: inherit;
+  font-size: 1em;
+  font-weight: 500;
+  font-family: inherit;
+  cursor: pointer;
+  transition: border-color 0.25s;
+}
+
+button:hover {
+  border-color: var(--active);
+}
+
+:focus-visible {
+  outline: 2px solid var(--active);
+  outline-offset: 2px;
+}
+
+@keyframes nudge {
+  20%, 60% { translate: -3px 0; }
+  40%, 80% { translate: 3px 0; }
+}
+
+@keyframes glow {
+  from { text-shadow: 0 0 4px color-mix(in srgb, var(--accent) 30%, transparent); }
+  to { text-shadow: 0 0 18px color-mix(in srgb, var(--accent) 60%, transparent); }
+}

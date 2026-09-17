@@ -1,0 +1,27 @@
+@use "@styles/ui" as ui;
+
+.page {
+  @include ui.full-page;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.intro {
+  margin-bottom: 12px;
+  text-align: center;
+
+  h1 {
+    margin: 0;
+    color: var(--accent);
+    font-size: 1.8rem;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+  }
+
+  p {
+    margin: 6px 0 0;
+    color: var(--dim);
+    font-size: 12px;
+  }
+}

@@ -1,0 +1,26 @@
+// Global entry for the look system. Imported once from src/index.tsx.
+@use "sass:meta";
+@use "fortress" as fortress-look;
+@use "glass" as glass-look;
+
+// Fonts are bundled (not a Google Fonts <link>) so the packaged .exe works
+// offline. Only the weights each look actually uses are imported.
+@include meta.load-css("@fontsource/vt323/400.css"); // Fortress title
+@include meta.load-css("@fontsource/ibm-plex-mono/400.css"); // Fortress body
+@include meta.load-css("@fontsource/ibm-plex-mono/500.css");
+@include meta.load-css("@fontsource/ibm-plex-mono/600.css");
+@include meta.load-css("@fontsource/manrope/400.css"); // Glass title
+@include meta.load-css("@fontsource/manrope/500.css");
+@include meta.load-css("@fontsource/manrope/600.css");
+@include meta.load-css("@fontsource/manrope/700.css");
+@include meta.load-css("@fontsource/manrope/800.css");
+@include meta.load-css("@fontsource/jetbrains-mono/400.css"); // Glass body/mono
+@include meta.load-css("@fontsource/jetbrains-mono/500.css");
+
+// Bare :root fallback: the same values as Fortress, DEFAULT_LOOK
+// (src/theme/looks.ts). data-look is set on <html> by an effect in App.tsx,
+// so the very first paint (before React runs that effect) has no attribute
+// yet and must still look like the default look, not unstyled.
+:root {
+  @include fortress-look.fortress-tokens;
+}

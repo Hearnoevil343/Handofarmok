@@ -1,0 +1,5 @@
+{
+  // Two projects: the app (browser) and the build config (Node).
+  "files": [],
+  "references": [{ "path": "./tsconfig.app.json" }, { "path": "./tsconfig.node.json" }]
+}

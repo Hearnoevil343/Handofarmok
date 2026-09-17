@@ -1,0 +1,68 @@
+@use "@styles/ui" as ui;
+
+.page {
+  @include ui.full-page;
+  @include ui.thin-scrollbar;
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  align-items: center;
+  gap: 3rem;
+  padding: 4rem;
+  overflow-y: auto;
+}
+
+.heading {
+  margin: 0;
+  color: var(--ok);
+  letter-spacing: 4px;
+  text-transform: uppercase;
+
+  :root[data-look="fortress"] &::before {
+    content: "\25B6  ";
+    color: var(--brown);
+  }
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 450px));
+  justify-content: center;
+  gap: 2rem;
+  width: 100%;
+}
+
+.card {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 2rem;
+  padding: 2.5rem;
+  border: 1px solid var(--raise);
+  border-radius: var(--radius);
+  background: var(--panel);
+  backdrop-filter: blur(var(--blur));
+
+  &:hover {
+    border-color: var(--accent);
+  }
+
+  h3 {
+    margin: 0 0 1rem;
+    color: var(--text);
+    letter-spacing: 1px;
+  }
+
+  p {
+    margin: 0;
+    font-size: 0.9rem;
+    line-height: 1.6;
+    color: var(--dim);
+  }
+}
+
+.link {
+  @include ui.action-button;
+  display: block;
+  text-align: center;
+}

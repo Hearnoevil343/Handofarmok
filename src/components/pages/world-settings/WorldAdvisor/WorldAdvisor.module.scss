@@ -1,0 +1,27 @@
+
+.base {
+  border: 1px solid var(--line-hi); border-radius: 6px;
+  background: color-mix(in srgb, var(--bg) 25%, transparent); padding: 14px 16px; margin-bottom: 20px;
+  display: flex; flex-direction: column; gap: 10px;
+}
+.head { display: flex; flex-direction: column; gap: 8px; }
+.title { color: var(--accent); font-size: 16px; letter-spacing: .1em; margin: 0; text-transform: uppercase; }
+.lead { color: var(--text); font-size: 12px; line-height: 1.5; margin: 0; }
+.summary { color: var(--active); font-size: 11px; margin: 0; }
+.clean { color: var(--ok); font-size: 12px; margin: 0; }
+.alarm { color: var(--warn); font-size: 12px; margin: 0; }
+
+.primary {
+  align-self: flex-start; background: var(--raise); border: 1px solid var(--accent);
+  border-radius: 4px; color: var(--accent); cursor: pointer;
+  font-size: 12px; padding: 8px 14px;
+  &:hover { background: var(--raise); }
+}
+
+.list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+.item { border-left: 2px solid var(--line-hi); padding-left: 10px; }
+.row { display: flex; align-items: center; gap: 8px; cursor: pointer; }
+.name { color: var(--text); font-size: 12px; }
+.blocker { color: var(--warn); }
+.change { color: var(--text); font-size: 11px; margin-left: auto; strong { color: var(--active); } }
+.reason { color: var(--dim); font-size: 10px; line-height: 1.45; margin: 3px 0 0 24px; }

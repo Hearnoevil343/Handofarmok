@@ -1,0 +1,148 @@
+.editor {
+  padding: 1rem;
+  border: 1px solid var(--raise);
+  border-radius: var(--radius);
+  background: var(--panel);
+}
+
+.row {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+
+  &:last-of-type {
+    margin-bottom: 0;
+  }
+}
+
+.stack {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.number {
+  flex: 1;
+  width: 100%;
+  min-width: 0;
+  padding: 0.4rem;
+  border: 1px solid var(--raise);
+  background: var(--bg);
+  color: var(--text);
+  font: 0.8rem var(--body);
+  text-align: center;
+
+  &:hover {
+    border-color: var(--accent);
+  }
+
+  &:focus-visible {
+    border-color: var(--active);
+    outline: none;
+  }
+}
+
+.flag {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 0.5rem;
+  border: 1px solid var(--raise);
+  border-radius: var(--radius);
+  background: var(--bg);
+  color: var(--dim);
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+
+  // status light
+  &::before {
+    content: "";
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--raise);
+  }
+}
+
+.flagOn {
+  border-color: color-mix(in srgb, var(--accent) 50%, transparent);
+  color: var(--accent);
+
+  &::before {
+    background: var(--accent);
+    box-shadow: 0 0 8px var(--accent);
+  }
+}
+
+.poleWarning {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  margin: 0;
+  padding: 8px 10px;
+  border: 1px solid color-mix(in srgb, var(--warn) 35%, transparent);
+  border-radius: var(--radius);
+  background: color-mix(in srgb, var(--warn) 10%, transparent);
+  color: var(--warn);
+  font-size: 11px;
+  line-height: 1.45;
+
+  svg {
+    flex-shrink: 0;
+    margin-top: 1px;
+  }
+}
+
+.guide {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px solid var(--line-hi);
+
+  p {
+    margin: 0;
+    color: var(--dim);
+    font-size: 10px;
+    line-height: 1.45;
+  }
+
+  strong {
+    color: var(--text);
+  }
+}
+
+.warn {
+  color: var(--warn);
+}
+
+.bands {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 10px;
+
+  th {
+    padding: 3px 2px;
+    border-bottom: 1px solid var(--line-hi);
+    color: var(--dim);
+    font-weight: 400;
+    white-space: nowrap;
+  }
+
+  td {
+    padding: 3px 2px;
+    color: var(--text);
+    text-align: center;
+  }
+}
+
+.share {
+  margin-left: 4px;
+  color: var(--dim);
+}

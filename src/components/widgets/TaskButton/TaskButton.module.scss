@@ -1,0 +1,35 @@
+@use "@styles/ui" as ui;
+
+.button {
+  @include ui.action-button;
+  width: 100%;
+}
+
+.working {
+  color: var(--text);
+  border-color: var(--raise);
+  cursor: progress;
+}
+
+.done {
+  color: var(--ok);
+  border-color: var(--ok);
+}
+
+.failed {
+  color: var(--warn);
+  border-color: var(--warn);
+  animation: nudge 0.35s ease-in-out both;
+}
+
+.text {
+  position: relative;
+}
+
+.fill {
+  position: absolute;
+  inset: 0 auto 0 0;
+  background: color-mix(in srgb, var(--active) 22%, transparent);
+  border-right: 2px solid var(--active);
+  transition: width 0.1s linear;
+}
