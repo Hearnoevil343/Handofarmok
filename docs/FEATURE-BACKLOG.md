@@ -51,6 +51,26 @@ Everything that is not the simulation: interface, looks, painting, saving.
         savagery and good/evil in thirds (33 / 66).
       - Show the band name while dragging; consider snapping to a band's middle.
       - Take the numbers from CALIBRATION in biomeResolver.ts, not new constants.
+- [ ] **River and lake brushes.** Draw a river line or a lake by hand and have the
+      map carry it into Dwarf Fortress. Half of this is done: Sculpt River Valleys
+      (WorldTools/RiverTools, engine/valleys.ts) reshapes the low ground around the
+      rivers the map already predicts, and 80% of those tiles land within one tile
+      of DF's own rivers (67% of the largest), measured over 40+ generated worlds.
+      What is left is the brush itself: draw the line, feed it in as the guide
+      shapeValleys already accepts, and lower a basin under 100 for a lake.
+      - Measured rules to keep: DF reads land elevation under 300 in steps of four,
+        so a channel cut two or three points deep disappears; region types ignore
+        elevation from 100 to 299, so reshaping low ground changes no biome; DF puts
+        no rivers on ground at 300 or above, so a drawn river cannot cross a range.
+      - Drawn rivers on ground that is already high need the range broken or routed
+        around; that is the hard case and is not solved.
+- [ ] **Zoom and keyboard panning in the game view.** Mouse-wheel zoom (towards
+      the cursor, like the map) and WASD / arrow keys to move, with the same
+      speed and zoom limits as the map page (MapScene.ts: PAN_KEYS, ZOOM_MIN /
+      ZOOM_MAX, pan step scaled by zoom). The game view is a plain canvas in a
+      scrolling box today (GameView.tsx), so either redraw only the tiles in
+      view at the current zoom or move it onto a Phaser scene. Keys must not
+      fire while typing in a field.
 
 ### Fixes
 - None open.

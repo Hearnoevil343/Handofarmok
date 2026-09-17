@@ -9,6 +9,7 @@ import {
 import { useCallback, useEffect, useRef, useState } from "react";
 
 import { LayerType } from "#types";
+import { planWater, riverToken } from "@helpers/rivers";
 import styles from "./GameView.module.scss";
 import { realmStore } from "@world/realmStore";
 
@@ -60,12 +61,15 @@ export function GameView() {
     const variant = (x: number, y: number) =>
       (((x * 73856093) ^ (y * 19349663)) >>> 0) % 5;
 
+    const water = planWater(el, data[LayerType.Rainfall], size);
+
     // base pass
     for (let y = 0; y < size; y++) {
       for (let x = 0; x < size; x++) {
         const i = y * size + x;
         let token = BASE_TOKEN[realmStore.biomeAt(i)] ?? "ROCKY_PLAINS";
-        if (token === "OCEAN" && el[i] < 40) token = "OCEAN_DEEP";
+        if (water.lake[i]) token = "LAKE";
+        else if (token === "OCEAN" && el[i] < 40) token = "OCEAN_DEEP";
         drawToken(ctx, tileset, token, variant(x, y), x * CELL, y * CELL, CELL);
       }
     }
@@ -81,6 +85,13 @@ export function GameView() {
         if (token) {
           drawToken(ctx, tileset, token, variant(x, y), x * CELL, y * CELL, CELL);
         }
+      }
+    }
+    // rivers last, the way the game draws them over land and mountains alike
+    for (let y = 0; y < size; y++) {
+      for (let x = 0; x < size; x++) {
+        const token = riverToken(water, el, size, y * size + x);
+        if (token) drawToken(ctx, tileset, token, variant(x, y), x * CELL, y * CELL, CELL);
       }
     }
   }, [tileset]);

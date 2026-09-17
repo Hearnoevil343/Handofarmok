@@ -1,5 +1,15 @@
 # Changes to Hand of Armok
 
+## Unreleased
+
+- Middle-earth preset, built from measured elevation and the real outlines of its
+  forests, marshes and lakes.
+- Game view draws rivers and lakes with DF's own sprites.
+- New tool: Sculpt River Valleys, which reshapes low ground so DF puts its rivers
+  where the map shows them.
+- Fixed the biome thresholds against DF 53.16: desert, swamp, forest, hills,
+  freezing and glacier were all off by a few points.
+
 ## 0.2.5
 
 The first release of the rewritten Hand of Armok.
