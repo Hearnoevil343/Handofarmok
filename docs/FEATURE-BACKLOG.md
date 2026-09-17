@@ -13,58 +13,33 @@ the simulation's own step list is `docs/simulation-plan.md`.
 
 ---
 
-## To build
-- [ ] **Rebuild the Earth presets** (Africa, Europe, Himalayas, Middle East, North
-      America, South America, World, Caribbean). Removed on 2026-09-17. Rebuild
-      after the codebase rework from several public data sources per layer
-      (elevation, rainfall, temperature, drainage, volcanism, savagery), checked
-      in DF like the other presets.
+## App and usability
+
+Everything that is not the simulation: interface, looks, painting, saving.
+
+### Features
 - [ ] **Replace the brand mark.** Dev doesn't like the current mountain/tree/water
-      glyph (BrandMark.tsx). Design a new one; used in Navbar and LogoHeader.
+      glyph (BrandMark.tsx). Design a new one; used in the top bar and on the start and About pages.
 - [ ] **Cartographer look** (build last so it shines): parchment, ink, red accents,
       on the look system from the UI rework. Maybe also a matching map style for
       that look only; the map stays identical across looks until then.
-- [ ] **Right-drag should move the map.** Reported not working. The code already
-      pans on middle-drag, right-drag and space+drag (`src/tile-map/scenes/MainScene.ts`
-      ~line 136), so find why right-drag does not (e.g. a stroke starting too, or
-      Electron eating the event) rather than adding it again.
-- [ ] **New preset packs.** Original designs only (no copies of named fictional
-      worlds). Pick a few per pack; each needs checking in DF like the current 16.
-      - *Fantasy:* Dragon Spine (one continent-long range), Shattered Continent
-        (land broken by inland seas), Twin Continents split by a great rift,
-        Crescent Sea (land ringing a central sea), Endless Forest, Sunken
-        Kingdom (drowned coastal plains and islands), The Blight (spreading evil
-        region, needs the Good/Evil layer), Frozen North / Burning South.
-      - *Sci-fi / alien planets:* Tidally locked world (scorched day side, frozen
-        night side, living twilight band; uses planet tilt/spin), Ocean world of
-        atolls, Desert planet with rare oases, Ice planet with an equatorial melt
-        belt, Volcanic hellworld, Impact-scarred world (crater basins), Red
-        canyon world (Mars-like highlands and dry basins), Jungle moon.
-      - *Earth regions in detail:* Iceland, Norway's fjords, Japan, New Zealand,
-        Hawaii, British Isles, Alps, Madagascar, Indonesia, Great Rift Valley,
-        Nile valley, Amazon basin, Grand Canyon / Colorado Plateau, Patagonia,
-        Antarctica.
-      - *Earth in deep time:* Ice Age Europe (Doggerland land bridge), Cretaceous
-        North America (inland seaway), Gondwana.
-      - *Gameplay-themed for DF:* Starter world (gentle, good regions, easy
-        embarks), Hardcore world (savage and evil), Island trade world, Lone
-        Mountain (one great peak to build in).
 - [ ] **Good/Evil paint layer.** DF's world_gen.txt paints alignment per tile
       like savagery; with savagery it names regions (Serene / Mirthful / Joyous
       Wilds, Calm / Wilderness / Untamed Wilds, Sinister / Haunted / Terrifying).
       The app already has an alignment value (`getMoralDescriptor`) but the
       painter shows only six layers. Add the layer, confirm the export writes
       it, and confirm in DF that painted evil/good regions come out where painted.
-- [ ] **Rivers and lakes that DF will actually generate.** `world_gen.txt` can't
-      place rivers; DF makes its own from the terrain. So steer it:
-      1. Carve rivers and lakes into elevation (continuous downhill valleys, real
-         basins) deep enough to survive DF's own detail and erosion.
-      2. Show those rivers and lakes on the painting map.
-      3. Prove it in DF: generate AFRICA / EUROPE with several seeds, dump DF's
-         river and lake tiles with DFHack (not the map pictures; their dark lines
-         may be region borders), and compare. Same spots every seed = the terrain
-         is steering DF; on Earth presets they should also match the real Nile,
-         Congo, Danube, Rhine. The DFHack test harness needs rebuilding first.
+- [ ] **Autosave between sessions** — nothing is saved now; a reload loses the
+      world (there is only a warning). Decide storage (IndexedDB) and when to save.
+
+### Fixes
+- None open.
+
+---
+
+## Simulation
+
+### Features
 - [ ] **Full simulation plan: `docs/simulation-plan.md`** —
       every part of the model (time and scale in real units, plates, erosion
       and sediment, ocean floor and sea level, temperature, wind and rainfall,
@@ -75,19 +50,16 @@ the simulation's own step list is `docs/simulation-plan.md`.
       rolled from the seed), spin direction (prograde/retrograde mirrors wind
       bands, rain shadows, currents), axial tilt; check in DF whether POLE adds
       latitude cooling to painted temperature.
-- [ ] **Persistent plate boundaries** (built, needs work: boundaries hold for a while, then collapse into clustered straight lines; review together; same cause as the straight diagonal scars) (next after step-1 fixes, with per-plate
-      frames). Only plate seeds carry between ages; plate ownership is regrown
-      from the seeds every age (tectonics.ts:133, again at age.ts:139/141) with
-      noise re-seeded per age, so boundaries re-route every age. Carry the
-      plate map as state, advect it, fill only gaps, change boundaries only by
-      weld/rift/subduction events, fix the noise per history, and measure
-      boundary persistence in simlab. Plan section 2.
-- [ ] **Later: planet size as scale only.** Presets like "Mars-sized",
-      "Earth-sized", "twice Earth" change only the planet's size (km per tile,
-      tiles a plate crosses per Myr). Same sun, day, rotation, water and
-      gravity behaviour as Earth — no "small planet loses its oceans". The
-      scale layer takes planet radius as a parameter from the start so this is
-      only a UI addition later. Not scheduled; Earth first.
+- [ ] **Rivers and lakes that DF will actually generate.** `world_gen.txt` can't
+      place rivers; DF makes its own from the terrain. So steer it:
+      1. Carve rivers and lakes into elevation (continuous downhill valleys, real
+         basins) deep enough to survive DF's own detail and erosion.
+      2. Show those rivers and lakes on the painting map.
+      3. Prove it in DF: generate AFRICA / EUROPE with several seeds, dump DF's
+         river and lake tiles with DFHack (not the map pictures; their dark lines
+         may be region borders), and compare. Same spots every seed = the terrain
+         is steering DF; on Earth presets they should also match the real Nile,
+         Congo, Danube, Rhine. The DFHack test harness needs rebuilding first.
 - [ ] **Shorter time steps** (dev prefers slower progression, more clicks).
       Research 2026-09-15 (both reports in the session): processes run once per
       10-Myr age at fixed strength, so drift, erosion and rare events tick
@@ -119,23 +91,23 @@ the simulation's own step list is `docs/simulation-plan.md`.
       far-ocean dust and inland dunes. Plan: track removed material, route it
       down the river network, deposit where rivers meet the sea and spread it
       as marine diffusion (goSPL-style); optional aeolian term later for dunes.
-- [ ] **Import a world DF generated** — so players can take a world they like and
-      reshape it. Route: DFHack script dumps the six layers per tile
-      (`Dwarf Fortress\dfhack-config\scripts\dump-regions.lua` already does this),
-      then an "Import DF world" option reads the CSV.
-      - DF stores elevation on a different scale than painting (painted 350 came
-        back at most 200), and temperature has altitude applied. Convert both
-        back before importing, and check against a real world.
-      - Needs DFHack; ship the script with the app plus a "run this" note.
-      - Test loop: generate in DF → dump → import → export → regenerate → compare.
-- [ ] **Autosave between sessions** — nothing is saved now; a reload loses the
-      world (there is only a warning). Decide storage (IndexedDB) and when to save.
+- [ ] **Later: planet size as scale only.** Presets like "Mars-sized",
+      "Earth-sized", "twice Earth" change only the planet's size (km per tile,
+      tiles a plate crosses per Myr). Same sun, day, rotation, water and
+      gravity behaviour as Earth — no "small planet loses its oceans". The
+      scale layer takes planet radius as a parameter from the start so this is
+      only a UI addition later. Not scheduled; Earth first.
+
+### Fixes
+- [ ] **Persistent plate boundaries** (built, needs work: boundaries hold for a while, then collapse into clustered straight lines; review together; same cause as the straight diagonal scars) (next after step-1 fixes, with per-plate
+      frames). Only plate seeds carry between ages; plate ownership is regrown
+      from the seeds every age (tectonics.ts:133, again at age.ts:139/141) with
+      noise re-seeded per age, so boundaries re-route every age. Carry the
+      plate map as state, advect it, fill only gaps, change boundaries only by
+      weld/rift/subduction events, fix the noise per history, and measure
+      boundary persistence in simlab. Plan section 2.
 - [ ] **Gentler Run Age for painted maps** — one press reshapes a detailed map like
       Europe beyond recognition. Design decision first.
-- [ ] **Map-making for D&D and other tabletop use** — requested on Reddit and by
-      the dev's sister. Scope not decided.
-
-## Simulation
 - [ ] **Straight diagonal scars.** Gallery renders (2026-09-15) show rays from a
       point across GREAT_PLAINS and a ruled line over ocean in CONTINENTS; no
       metric catches them. Two detectors failed (details on `feature/night-sim`).
@@ -344,3 +316,47 @@ the simulation's own step list is `docs/simulation-plan.md`.
 - [ ] Blocky terrain after many ages — needs a metric for near-flat patches first.
 - [ ] Supercontinent cycle too fast (17 ages vs 40), mountain cover below target,
       sea-level swing overshoots Earth.
+
+---
+
+## Projects
+
+Bigger pieces of work, each on its own branch.
+
+- [ ] **Map-making for D&D and other tabletop use** — requested on Reddit and by
+      the dev's sister. Scope not decided.
+- [ ] **Rebuild the Earth presets** (Africa, Europe, Himalayas, Middle East, North
+      America, South America, World, Caribbean). Removed on 2026-09-17. Rebuild
+      from several public data sources per layer
+      (elevation, rainfall, temperature, drainage, volcanism, savagery), checked
+      in DF like the other presets.
+- [ ] **New preset packs.** Original designs only (no copies of named fictional
+      worlds). Pick a few per pack; each needs checking in DF like the current 16.
+      - *Fantasy:* Dragon Spine (one continent-long range), Shattered Continent
+        (land broken by inland seas), Twin Continents split by a great rift,
+        Crescent Sea (land ringing a central sea), Endless Forest, Sunken
+        Kingdom (drowned coastal plains and islands), The Blight (spreading evil
+        region, needs the Good/Evil layer), Frozen North / Burning South.
+      - *Sci-fi / alien planets:* Tidally locked world (scorched day side, frozen
+        night side, living twilight band; uses planet tilt/spin), Ocean world of
+        atolls, Desert planet with rare oases, Ice planet with an equatorial melt
+        belt, Volcanic hellworld, Impact-scarred world (crater basins), Red
+        canyon world (Mars-like highlands and dry basins), Jungle moon.
+      - *Earth regions in detail:* Iceland, Norway's fjords, Japan, New Zealand,
+        Hawaii, British Isles, Alps, Madagascar, Indonesia, Great Rift Valley,
+        Nile valley, Amazon basin, Grand Canyon / Colorado Plateau, Patagonia,
+        Antarctica.
+      - *Earth in deep time:* Ice Age Europe (Doggerland land bridge), Cretaceous
+        North America (inland seaway), Gondwana.
+      - *Gameplay-themed for DF:* Starter world (gentle, good regions, easy
+        embarks), Hardcore world (savage and evil), Island trade world, Lone
+        Mountain (one great peak to build in).
+- [ ] **Import a world DF generated** — so players can take a world they like and
+      reshape it. Route: DFHack script dumps the six layers per tile
+      (`Dwarf Fortress\dfhack-config\scripts\dump-regions.lua` already does this),
+      then an "Import DF world" option reads the CSV.
+      - DF stores elevation on a different scale than painting (painted 350 came
+        back at most 200), and temperature has altitude applied. Convert both
+        back before importing, and check against a real world.
+      - Needs DFHack; ship the script with the app plus a "run this" note.
+      - Test loop: generate in DF → dump → import → export → regenerate → compare.
