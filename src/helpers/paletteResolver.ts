@@ -48,12 +48,6 @@ const SAVAGERY_STOPS: Stop[] = [
   { at: 100, color: 0xe74c3c }, // savage red
 ];
 
-const ALIGNMENT_STOPS: Stop[] = [
-  { at: 0, color: 0x6c3483 }, // evil purple
-  { at: 50, color: 0x95a5a6 }, // neutral grey
-  { at: 100, color: 0xf1c40f }, // good gold
-];
-
 const LAYER_STOPS: Record<string, Stop[]> = {
   elevation: ELEVATION_STOPS,
   rainfall: RAINFALL_STOPS,
@@ -61,7 +55,6 @@ const LAYER_STOPS: Record<string, Stop[]> = {
   temperature: TEMPERATURE_STOPS,
   volcanism: VOLCANISM_STOPS,
   savagery: SAVAGERY_STOPS,
-  alignment: ALIGNMENT_STOPS,
 };
 
 /** Mixes two 0xRRGGBB colours channel by channel; factor 0 gives `from`, 1 gives `to`. */

@@ -1,15 +1,9 @@
 import { BiomeColorMap, formatBiomeText } from "@helpers/biomeResolver";
-import { BiomeDescriptor } from "#types";
 import type { RootState } from "@store/store";
-import cn from "classnames";
 import styles from "./map.module.scss";
 import { useSelector } from "react-redux";
 
 const hex = (color: number) => `#${color.toString(16).padStart(6, "0")}`;
-
-/** Descriptors grouped by the alignment they come from, for colouring. */
-const GOOD = new Set([BiomeDescriptor.Serene, BiomeDescriptor.Mirthful, BiomeDescriptor.JoyousWilds]);
-const EVIL = new Set([BiomeDescriptor.Sinister, BiomeDescriptor.Haunted, BiomeDescriptor.Terrifying]);
 
 /** The bar under the map: tile position, biome and every layer value under the pointer. */
 export function TileReadout() {
@@ -22,7 +16,7 @@ export function TileReadout() {
       </span>
       <span className={styles.readoutItem}>
         <b>REGION</b>
-        <span className={cn(styles.descriptor, GOOD.has(descriptor) && styles.good, EVIL.has(descriptor) && styles.evil)}>{descriptor}</span>
+        <span className={styles.descriptor}>{descriptor}</span>
         <span className={styles.biomeName} style={{ color: hex(BiomeColorMap[biome]) }}>
           {formatBiomeText(biome)}
         </span>

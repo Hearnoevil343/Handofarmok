@@ -111,18 +111,9 @@ export const LAYER_META: Record<LayerType, LayerMeta> = {
     markers: [],
     ops: [BrushOp.Paint, BrushOp.Smooth],
   },
-  [LayerType.Alignment]: {
-    min: 0,
-    max: 100,
-    control: "steps",
-    steps: [{ value: 50, label: "Neutral" }],
-    hint: "Not read by Dwarf Fortress. Good and evil come from counts in world settings, not from painting.",
-    markers: [],
-    ops: [BrushOp.Paint],
-  },
 };
 
-/** Layers offered in the paint UI. Alignment is excluded: DF ignores it. */
+/** Layers offered in the paint UI. */
 export const PAINTABLE_LAYERS: LayerType[] = [
   LayerType.Elevation,
   LayerType.Rainfall,
