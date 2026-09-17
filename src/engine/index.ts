@@ -7,6 +7,7 @@ export * from "./erosion";
 export * from "./events";
 export * from "./tectonics";
 export * from "./hydrology";
+export * from "./valleys";
 export * from "./sequence";
 export * from "./isostasy";
 export * from "./session";

@@ -38,32 +38,29 @@ export const BiomeColorMap: Record<Biome, number> = {
 /**
  * Thresholds measured against Dwarf Fortress v53.16, not guessed.
  *
- * A 257x257 calibration world was generated covering all 65,536 combinations of
- * (elevation, rainfall, temperature, drainage) exactly once, then DF's own
- * per-tile classification was read back out of world_data via DFHack and the
- * boundaries derived from it. Where a boundary falls between two sampled values
- * the midpoint is used; the uncertainty is noted.
+ * Measured tile by tile: test worlds with every rainfall x drainage pair (0-100 each)
+ * were generated at elevation 150 / temperature 50 and again at 250 / 90, and DF's
+ * region type read back through DFHack. Every boundary below is a single sharp step,
+ * identical in both worlds. Freezing and mountains come from gradient worlds.
  */
 export const CALIBRATION = {
   OCEAN_BELOW: 100,
-  /** DF puts the boundary exactly here: painted 260 gave 0% mountains, 300 gave
-   *  56.7% (right on the line), 350 gave 100%. */
+  /** 299 never mountain, 300 always (257 of 257 tiles at each value 300-310). */
   MOUNTAIN_AT: 300,
-  /** Frozen at <= -5, not frozen at >= -2; true boundary lies in between. */
-  FREEZING_AT: -4,
-  /** Tundra below, glacier above. Boundary between 65 and 75. */
-  GLACIER_DRAINAGE: 70,
-  /** Desert at rainfall <= 6, not at >= 10. */
-  DESERT_BELOW_RAIN: 8,
-  /** Wetland needs poor drainage: swamp at <= 25, not at >= 35. */
-  WETLAND_BELOW_DRAINAGE: 30,
-  /** Wetland needs rainfall too: grassland at 32, swamp at 35. */
-  WETLAND_FROM_RAIN: 34,
-  /** Hills at rainfall 65, forest at 68. */
-  FOREST_FROM_RAIN: 67,
-  /** Grassland at drainage 35, hills at 55. Coarsest of the thresholds - the
-   *  calibration grid only sampled 8 drainage levels. */
-  HILLS_FROM_DRAINAGE: 45,
+  /** Tundra at -5 and below, grassland from -4 (about 250 tiles per value). */
+  FREEZING_AT: -5,
+  /** When frozen: tundra at drainage 0-74, glacier from 75, at every rainfall 0-100. */
+  GLACIER_DRAINAGE: 75,
+  /** Desert at rainfall 0-9 at every drainage, never at 10. */
+  DESERT_BELOW_RAIN: 10,
+  /** Swamp needs drainage 0-32; 33 is grassland or forest. */
+  WETLAND_BELOW_DRAINAGE: 33,
+  /** Swamp needs rainfall 33 or more; 32 is grassland. */
+  WETLAND_FROM_RAIN: 33,
+  /** Forest from rainfall 66 with drainage 33 or more; 65 is grassland or hills. */
+  FOREST_FROM_RAIN: 66,
+  /** Hills from drainage 50 (rainfall 10-65); 49 is grassland. */
+  HILLS_FROM_DRAINAGE: 50,
 } as const;
 
 /**
