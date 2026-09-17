@@ -45,7 +45,7 @@ export function measureWorld(
   for (let i = 0; i < n; i++) {
     const point = {
       elevation: el[i], rainfall: rf[i], temperature: tp[i], drainage: dr[i],
-      volcanism: 0, savagery: 0, alignment: 0,
+      volcanism: 0, savagery: 0,
     } as TileValues;
     const type = identifyRegionType(point);
 

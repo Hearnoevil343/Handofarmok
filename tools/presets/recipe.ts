@@ -96,7 +96,7 @@ export interface Recipe {
   /** cooling per 100 elevation above 150 */
   lapse: number;
   /** defaults for land before regions */
-  defaults: { rainfall: number; drainage: number; savagery: number; alignment: number; volcanism: number };
+  defaults: { rainfall: number; drainage: number; savagery: number; volcanism: number };
   regions: Region[];
   /** labelled spots to check after building, with the biome family expected */
   checks: { name: string; at: Point; expect: string }[];
@@ -299,7 +299,6 @@ export function build(recipe: Recipe, size: number, terrain?: Terrain, report?: 
       layers.rainfall[i] = Math.round(d.rainfall + (patchy[i] - 0.5) * 12);
       layers.drainage[i] = Math.round(d.drainage + (texture[i] - 0.5) * 10 + (el > 250 ? 15 : 0));
       layers.savagery[i] = Math.round(d.savagery + (patchy[i] - 0.5) * 20);
-      layers.alignment[i] = d.alignment;
       layers.volcanism[i] = d.volcanism;
     }
   }
@@ -378,7 +377,6 @@ export function build(recipe: Recipe, size: number, terrain?: Terrain, report?: 
     layers.drainage[i] = clamp(layers.drainage[i], 0, 100);
     layers.temperature[i] = clamp(layers.temperature[i], -50, 120);
     layers.savagery[i] = clamp(layers.savagery[i], 0, 100);
-    layers.alignment[i] = clamp(layers.alignment[i], 0, 100);
     layers.volcanism[i] = clamp(layers.volcanism[i], 0, 100);
   }
   return layers;

@@ -11,7 +11,6 @@ export const BLANK_VALUE: Readonly<Record<LayerType, number>> = {
   [LayerType.Temperature]: 50,
   [LayerType.Volcanism]: 0,
   [LayerType.Savagery]: 0,
-  [LayerType.Alignment]: 50,
 };
 
 const ALL_LAYERS = Object.values(LayerType);

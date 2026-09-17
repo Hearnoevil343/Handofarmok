@@ -167,19 +167,18 @@ export function getBiomeColor(biome: Biome, volcanic: boolean = false): number {
 }
 
 /**
- * The Dwarf Fortress name for a savagery and alignment combination. Each value
- * is split into thirds (up to 33, up to 66, above); rows run calm to untamed,
- * columns evil to good.
+ * The Dwarf Fortress name for how wild a region is, from savagery in thirds
+ * (up to 33, up to 66, above). Good and evil are not part of it: DF 53 rejects
+ * the PS_AL token, so a painted map cannot place them.
  */
-const DESCRIPTORS: readonly (readonly BiomeDescriptor[])[] = [
-  [BiomeDescriptor.Sinister, BiomeDescriptor.Calm, BiomeDescriptor.Serene],
-  [BiomeDescriptor.Haunted, BiomeDescriptor.Wilderness, BiomeDescriptor.Mirthful],
-  [BiomeDescriptor.Terrifying, BiomeDescriptor.UntamedWilds, BiomeDescriptor.JoyousWilds],
+const DESCRIPTORS: readonly BiomeDescriptor[] = [
+  BiomeDescriptor.Calm,
+  BiomeDescriptor.Wilderness,
+  BiomeDescriptor.UntamedWilds,
 ];
-const third = (value: number) => (value > 66 ? 2 : value > 33 ? 1 : 0);
 
-export function getMoralDescriptor(savagery: number, alignment: number): BiomeDescriptor {
-  return DESCRIPTORS[third(savagery)][third(alignment)];
+export function getMoralDescriptor(savagery: number): BiomeDescriptor {
+  return DESCRIPTORS[savagery > 66 ? 2 : savagery > 33 ? 1 : 0];
 }
 
 /** "TemperateBroadleafForest" becomes "Temperate Broadleaf Forest". */

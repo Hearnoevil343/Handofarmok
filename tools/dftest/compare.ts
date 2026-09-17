@@ -35,7 +35,7 @@ const predictedRegion = new Int8Array(N);
 for (let i = 0; i < N; i++) {
   predictedRegion[i] = identifyRegionType({
     elevation: L.elevation[i], rainfall: L.rainfall[i], drainage: L.drainage[i], temperature: L.temperature[i],
-    savagery: L.savagery[i], volcanism: L.volcanism[i], alignment: 50,
+    savagery: L.savagery[i], volcanism: L.volcanism[i],
   } as never);
 }
 // --squash: predict on the elevation DF routes water over (land under 300 at a quarter scale)
