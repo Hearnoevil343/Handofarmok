@@ -8,7 +8,6 @@ export enum LayerType {
   Temperature = "temperature",
   Volcanism = "volcanism",
   Savagery = "savagery",
-  Alignment = "alignment",
 }
 
 export type TileValues = Record<LayerType, number>;
@@ -77,17 +76,11 @@ export enum RegionType {
 
 
 
-/** DF's names for each savagery and alignment combination. */
+/** DF's names for how wild a region is, by savagery. */
 export enum BiomeDescriptor {
-  Serene = "Serene",
-  Mirthful = "Mirthful",
-  JoyousWilds = "Joyous Wilds",
   Calm = "Calm",
   Wilderness = "Wilderness",
   UntamedWilds = "Untamed Wilds",
-  Sinister = "Sinister",
-  Haunted = "Haunted",
-  Terrifying = "Terrifying",
 }
 
 /** A realm as loaded from a file or preset, before it goes into the store. */

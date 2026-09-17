@@ -9,6 +9,8 @@
   where the map shows them.
 - Fixed the biome thresholds against DF 53.16: desert, swamp, forest, hills,
   freezing and glacier were all off by a few points.
+- Dropped the Good/Evil layer: Dwarf Fortress rejects the token, so it never
+  reached the game. Regions are now named from savagery alone.
 
 ## 0.2.5
 

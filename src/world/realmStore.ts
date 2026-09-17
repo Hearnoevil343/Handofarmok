@@ -165,8 +165,7 @@ export class RealmStore {
   }
 
   descriptorAt(index: number) {
-    const { savagery, alignment } = this.layers;
-    return getMoralDescriptor(savagery[index], alignment[index]);
+    return getMoralDescriptor(this.layers.savagery[index]);
   }
 }
 

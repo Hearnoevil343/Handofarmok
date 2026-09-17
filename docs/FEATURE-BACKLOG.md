@@ -23,15 +23,14 @@ Everything that is not the simulation: interface, looks, painting, saving.
 - [ ] **Cartographer look** (build last so it shines): parchment, ink, red accents,
       on the look system from the UI rework. Maybe also a matching map style for
       that look only; the map stays identical across looks until then.
-- [ ] **Good/Evil paint layer (needed).** Painting alignment has to work end to
-      end: a brush and layer in the painter, the map showing it, and Dwarf
-      Fortress putting good and evil regions where they were painted. With
-      savagery it names regions (Serene / Mirthful / Joyous Wilds, Calm /
-      Wilderness / Untamed Wilds, Sinister / Haunted / Terrifying).
-      - Known problem: DF 53 logs "Unrecognized World Gen Token: PS_AL" for every
-        PS_AL row, so the export stopped writing them. Find out how DF actually
-        places good and evil (GOOD_SQ_COUNTS / EVIL_SQ_COUNTS, region rules, or
-        another token) before building the brush, and check the result in DF.
+- **Good/Evil paint layer: dropped.** DF 53 logs "Unrecognized World Gen Token:
+      PS_AL" for every PS_AL row, so a painted map cannot place good and evil at
+      all. The layer, its palette and its half of the region naming are gone; a
+      region is now named from savagery alone (Calm / Wilderness / Untamed Wilds).
+      Files that still carry PS_AL rows load fine, those rows are ignored. Good
+      and evil remain available the way DF does them, through GOOD_SQ_COUNTS and
+      EVIL_SQ_COUNTS in world settings. Only worth revisiting if a later DF
+      accepts a per-tile token.
 - [ ] **Open your own export and get the same map back.** Loading a world_gen.txt
       this app exported already restores the six painted layers and every
       setting exactly. Still lost: the Good/Evil layer (not written, see above)
