@@ -23,14 +23,34 @@ Everything that is not the simulation: interface, looks, painting, saving.
 - [ ] **Cartographer look** (build last so it shines): parchment, ink, red accents,
       on the look system from the UI rework. Maybe also a matching map style for
       that look only; the map stays identical across looks until then.
-- [ ] **Good/Evil paint layer.** DF's world_gen.txt paints alignment per tile
-      like savagery; with savagery it names regions (Serene / Mirthful / Joyous
-      Wilds, Calm / Wilderness / Untamed Wilds, Sinister / Haunted / Terrifying).
-      The app already has an alignment value (`getMoralDescriptor`) but the
-      painter shows only six layers. Add the layer, confirm the export writes
-      it, and confirm in DF that painted evil/good regions come out where painted.
-- [ ] **Autosave between sessions** — nothing is saved now; a reload loses the
-      world (there is only a warning). Decide storage (IndexedDB) and when to save.
+- [ ] **Good/Evil paint layer (needed).** Painting alignment has to work end to
+      end: a brush and layer in the painter, the map showing it, and Dwarf
+      Fortress putting good and evil regions where they were painted. With
+      savagery it names regions (Serene / Mirthful / Joyous Wilds, Calm /
+      Wilderness / Untamed Wilds, Sinister / Haunted / Terrifying).
+      - Known problem: DF 53 logs "Unrecognized World Gen Token: PS_AL" for every
+        PS_AL row, so the export stopped writing them. Find out how DF actually
+        places good and evil (GOOD_SQ_COUNTS / EVIL_SQ_COUNTS, region rules, or
+        another token) before building the brush, and check the result in DF.
+- [ ] **Open your own export and get the same map back.** Loading a world_gen.txt
+      this app exported already restores the six painted layers and every
+      setting exactly. Still lost: the Good/Evil layer (not written, see above)
+      and Run Age history (plates, ages). Carry those in the file in a form DF
+      ignores (text outside [TOKEN] brackets), read them back on import, and
+      check both that the map comes back identical and that DF still loads the
+      file cleanly.
+- [ ] **Brush value scales.** Each layer's value slider shows what the numbers
+      mean in Dwarf Fortress, so painting rainfall 100 or 90 is simply "heavy
+      rain" when DF treats them the same.
+      - Heat-map track using the layer's tint colours.
+      - Labelled bands from the calibrated thresholds: e.g. elevation ocean
+        (under 100) / land / unreliable (270-340) / mountain (300+); rainfall
+        desert (under 8) / dry / wet (34+, wetland with poor drainage) / forest
+        (67+); drainage waterlogged (under 30) / normal / hills (45+);
+        temperature freezing (-4 and below) / temperate / tropical (81+);
+        savagery and good/evil in thirds (33 / 66).
+      - Show the band name while dragging; consider snapping to a band's middle.
+      - Take the numbers from CALIBRATION in biomeResolver.ts, not new constants.
 
 ### Fixes
 - None open.
