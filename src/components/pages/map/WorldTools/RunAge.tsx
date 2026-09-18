@@ -18,7 +18,7 @@ import { realmStore } from "@world/realmStore";
  * a row play out on the map one at a time, and each is its own undo step.
  */
 export function RunAge() {
-  const [plates, setPlates] = useState(6);
+  const [plates, setPlates] = useState(10);
   const [drift, setDrift] = useState(4);
   const [mountains, setMountains] = useState(14);
   const [weathering, setWeathering] = useState(35);

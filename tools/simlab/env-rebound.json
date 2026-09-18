@@ -1,0 +1,36 @@
+{
+  "size": 129,
+  "ages": 100,
+  "seeds": [
+    11,
+    22,
+    33
+  ],
+  "archetypes": [
+    "PANGAEA",
+    "CONTINENTS"
+  ],
+  "climate": "TEMPERATE",
+  "plates": 10,
+  "drift": 6,
+  "mountainTarget": 0.12,
+  "upliftStart": 45,
+  "hotspots": 3,
+  "weathering": 35,
+  "riverCarving": 50,
+  "riverDensity": 5,
+  "rebound": [
+    0,
+    25,
+    55,
+    85,
+    100
+  ],
+  "frayChance": 0.25,
+  "beltWidth": 11,
+  "beltFalloff": 2,
+  "deposition": 80,
+  "denudation": 0.65,
+  "glaciation": 40,
+  "_comment": "safe range for rebound"
+}

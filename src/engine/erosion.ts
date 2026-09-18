@@ -138,3 +138,93 @@ function quantise(h: Float64Array, original: Int16Array, size: number): Int16Arr
   }
   return out;
 }
+
+/**
+ * Sediment routing and deposition.
+ *
+ * Every erosion step in an age only ever took material away: thermal erosion, river carving
+ * and denudation all subtract, and nothing put anything back. On a real planet what comes off
+ * the uplands is carried down the rivers and laid down again - alluvial plains, deltas, the
+ * continental shelf - which is why coastlines are smoother than the erosion that cuts them and
+ * why basins fill rather than deepening forever. Without it the model had convoluted outlines
+ * at the 100-300 km scale (box dimension 1.63 over the coarsest steps, against 1.25 for Earth)
+ * and lost land volume every age.
+ *
+ * `removed` is how much each tile lost this age. It is carried down the drainage tree and laid
+ * down where the water slows: in hollows on land, and in the shallows where a river meets the
+ * sea. `strength` 0-100 is the share of what was eroded that settles rather than leaving the
+ * system as dissolved load.
+ */
+export function depositSediment(
+  el: Int16Array, size: number, removed: Float64Array,
+  down: Int32Array, order: Int32Array, strength: number,
+): Int16Array {
+  const out = Int16Array.from(el);
+  if (strength <= 0) return out;
+  const share = Math.min(1, strength / 100);
+  const n = size * size;
+  const flux = new Float64Array(n);
+  for (let i = 0; i < n; i++) flux[i] = Math.max(0, removed[i]) * share;
+
+  // downstream: headwaters first, so a tile hands on what it did not drop
+  for (let k = order.length - 1; k >= 0; k--) {
+    const i = order[k];
+    if (flux[i] <= 0) continue;
+    const j = down[i];
+    if (j < 0) { flux[i] = 0; continue; }
+
+    if (out[j] < SEA) {
+      // Reaching the sea: a delta builds and the shelf progrades. Holding this back to the
+      // shallows was tried and put the coastline straight back to where it started (box
+      // dimension 1.27 -> 1.38), because filling the bays is exactly what smooths a coast.
+      // The land share it adds stays inside what Earth has held.
+      const room = SEA - 1 - out[j];
+      const drop = Math.min(flux[i] * 0.6, Math.max(0, room));
+      out[j] += Math.round(drop);
+      flux[j] += flux[i] - drop;
+      flux[i] = 0;
+      continue;
+    }
+    // on land the river drops what it cannot carry over flat ground
+    const slope = out[i] - out[j];
+    const settle = slope <= 1 ? 0.5 : slope <= 3 ? 0.25 : 0.08;
+    const drop = Math.min(flux[i] * settle, Math.max(0, out[i] - out[j]));
+    out[j] += Math.round(drop);
+    flux[j] += flux[i] - drop;
+    flux[i] = 0;
+  }
+  return out;
+}
+
+/**
+ * Glacial erosion above the snowline - the "glacial buzzsaw".
+ *
+ * Nothing in the model wore a mountain down. Rivers never reach the high ground (measured: no
+ * river tiles at all above elevation 300, 5% between 250 and 300), so stream incision cannot
+ * touch a summit, and with isostatic rebound lifting the crust as fast as weathering shaved it,
+ * peaks held their height for 400 Myr of model time. On Earth the job is done by ice: above the
+ * snowline glaciers cut hard, which is why ranges the world over top out within a kilometre or
+ * so of their local snowline however long they are pushed up.
+ *
+ * The snowline here follows temperature: where a tile is cold, ice forms lower. Ground above it
+ * is cut back towards it, hardest where it stands highest. `strength` 0-100.
+ */
+export function glacialErosion(
+  el: Int16Array, temperature: Int16Array, size: number, strength: number,
+): Int16Array {
+  const out = Int16Array.from(el);
+  if (strength <= 0) return out;
+  const k = Math.min(1, strength / 100);
+  for (let i = 0; i < size * size; i++) {
+    const h = el[i];
+    if (h < SEA) continue;
+    // Warm ground carries its snowline high, cold ground low: 10 degrees of surface
+    // temperature is worth about 25 elevation points of snowline here.
+    const snowline = SEA + 120 + temperature[i] * 2.5;
+    if (h <= snowline) continue;
+    // the cut grows with how far above the line the ground stands
+    const above = h - snowline;
+    out[i] = Math.max(Math.round(snowline), h - Math.round(above * 0.25 * k));
+  }
+  return out;
+}

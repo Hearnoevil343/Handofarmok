@@ -165,6 +165,60 @@ age.
 
 ## 3. Surface: erosion and sediment
 
+**Done 2026-09-18 - nothing was ever laid down.** Every erosion step in an age subtracted:
+thermal erosion, river carving, denudation. The droplet erosion that deposits is not called
+during an age at all. So bays never filled, basins deepened for ever, and the land lost volume
+every age. depositSediment now carries what was removed down the drainage tree and lays it
+down where the water slows - hollows on land, deltas and shelf at the coast. Measured over 144
+worlds: coastline box dimension 1.394 -> 1.273 (into Earth's range for the first time),
+boxFill 42.9 -> 51.0, stray islands 5 -> 2, land share stops leaking.
+
+Holding deposition back to the shallows was tried and put the coastline straight back (1.38),
+which says plainly that filling the bays is what smooths a coast.
+
+**Done 2026-09-18 - isostasy only worked one way.** isostaticRebound counted material taken
+off and clamped the rest to zero, so ground rose where erosion cut it and nothing sank where
+the sediment landed. It is signed now: a delta or a filling basin presses its floor down,
+which is why they go on accepting sediment.
+
+**Done 2026-09-18 - glacial erosion, tied to the ice ages.** Nothing wore a summit down:
+measured, no river tile at all sits above elevation 300 and only 5% between 250 and 300, so
+stream incision cannot reach a peak, and isostatic rebound lifted the crust as fast as
+weathering shaved it (with uplift off for 400 Myr, peaks fell 365 -> 330; at rebound 0, 258).
+glacialErosion cuts ground above a temperature-dependent snowline. An age holds about a
+hundred glacial cycles, so its bite is scaled by how much of the age the planet spent in an
+icehouse (cycles.ts already models icehouse eras of tens of Myr): full bite at a glacial
+maximum, almost none in a hothouse. A range can therefore grow through a greenhouse stretch
+and be planed in the next ice age. Constant ice cost 1.3 points of plateau share; ice tied to
+the eras costs 0.2, within noise.
+
+### Research numbers for these factors
+Literature values, for setting rates rather than guessing them. One age is 10 Myr; at 129
+tiles a tile is about 310 km and a land elevation unit about 10 m (reading the mountain line
+at 300 as Earth's 10%-of-land elevation, ~2 km).
+
+| process | Earth | per age |
+|---|---|---|
+| fluvial bedrock incision | 0.01-1 mm/yr | 100 m - 10 km |
+| mountain denudation | 0.1-1 mm/yr | 1-10 km |
+| average continental denudation | ~0.05 mm/yr | ~500 m |
+| glacial erosion, temperate valley | 1-10 mm/yr, polar far less | caps ranges near the snowline |
+| sediment to the oceans | ~20 Gt/yr | shelves prograde tens of km per Myr |
+| mantle relaxation after a load | ~10 kyr | instant at this resolution |
+| isostatic compensation | ~80% of an Airy column | rebound strength is in that range |
+| plate speed | 4-10 cm/yr | 1.3-3.2 tiles; drift 6 gives 2.6 |
+
+The ceiling those first three imply is the point: at 0.1-1 mm/yr, ten million years removes
+one to ten kilometres. Nothing in a model at this resolution should hold a peak for 400 Myr,
+which is what the measurement above showed it doing.
+
+**Sub-steps, measured 2026-09-18.** Three tectonic sub-steps per age against one, same seeds:
+coastline better (1.313 -> 1.273) but score much worse (0.824 -> 1.72) and flat 2x2 patches up
+from 0.06 to 0.08. That is the resampling blur this plan already flags: each sub-step resamples
+the crust again. Per-plate frames with float offsets have to come first; more compute on its
+own does not buy accuracy here.
+
+
 **Now:** erosion only deletes. `carveRivers` has no slope term and always cuts
 the trunk by the same amount; the hydrology analysis runs twice; thermal
 erosion skips the border ring; nothing is deposited, so there are no deltas or

@@ -59,6 +59,8 @@ function runHistory(cfg) {
       ...(cfg.denudation !== undefined ? { denudation: cfg.denudation } : {}),
       ...(cfg.upliftScale !== undefined ? { upliftScale: cfg.upliftScale } : {}),
       ...(cfg.beltFalloff !== undefined ? { beltFalloff: cfg.beltFalloff } : {}),
+      ...(cfg.deposition !== undefined ? { deposition: cfg.deposition } : {}),
+      ...(cfg.glaciation !== undefined ? { glaciation: cfg.glaciation } : {}),
       ...(cfg.beltWidth !== undefined ? { beltWidth: cfg.beltWidth } : {}),
       ...(cfg.beltWidth !== undefined ? { beltWidth: cfg.beltWidth } : {}),
       age,

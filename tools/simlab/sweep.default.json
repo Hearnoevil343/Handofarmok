@@ -2,17 +2,41 @@
   "_comment": "Every parameter is either a list (swept) or a single value (fixed). The cross product times seeds times archetypes is the run count -- check it with --dry before committing a night to it.",
   "size": 129,
   "ages": 100,
-  "seeds": [11, 22, 33, 44, 55, 66],
-  "archetypes": ["PANGAEA", "CONTINENTS"],
+  "seeds": [
+    11,
+    22,
+    33,
+    44,
+    55,
+    66
+  ],
+  "archetypes": [
+    "PANGAEA",
+    "CONTINENTS"
+  ],
   "climate": "TEMPERATE",
-
-  "plates": 6,
-  "drift": [3, 4, 6],
-  "mountainTarget": [0.1, 0.12],
+  "plates": 10,
+  "drift": [
+    3,
+    4,
+    6
+  ],
+  "mountainTarget": [
+    0.1,
+    0.12
+  ],
   "upliftStart": 45,
-  "hotspots": [2, 3],
+  "hotspots": [
+    2,
+    3
+  ],
   "weathering": 35,
   "riverCarving": 50,
   "riverDensity": 5,
-  "rebound": 55
+  "rebound": 55,
+  "deposition": 80,
+  "denudation": 0.65,
+  "beltWidth": 11,
+  "beltFalloff": 2,
+  "frayChance": 0.25
 }

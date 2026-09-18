@@ -1,5 +1,5 @@
 import { type World, deriveClimate } from "./pipeline";
-import { analyse, carveRivers } from "./hydrology";
+import { analyse, carveRivers, drainageTree } from "./hydrology";
 
 import type { PlateSet } from "./tectonics";
 import { denudeInactive, isostaticRebound, orogenicCollapse } from "./isostasy";
@@ -13,7 +13,7 @@ import {
 } from "./cycles";
 import { type Provinces, seedProvinces, stampOrogen } from "./provinces";
 import { makeRng } from "./noise";
-import { thermalErosion } from "./erosion";
+import { depositSediment, glacialErosion, thermalErosion } from "./erosion";
 import { scaleArea } from "./scale";
 import {
   applySeaLevelRise, basinReferenceRate, conserveContinentalArea, continentalExposure, initOcean, meanOceanDepthMetres,
@@ -104,6 +104,15 @@ export type AgeOptions = {
   plateSpeeds?: boolean;
   /** how far inland mountain belts reach, in tiles (default size/16) */
   beltWidth?: number;
+  /**
+   * How hard ice cuts the ground above the snowline, 0-100. Nothing else in the model wears a
+   * peak down: with uplift off for 400 Myr, peaks fall to 289 with ice against 330 without it.
+   * The bite is scaled by how much of the age the planet spent in an icehouse, so a range grows
+   * through a greenhouse stretch and is planed in the next ice age.
+   */
+  glaciation?: number;
+  /** share of eroded material that settles again rather than leaving, 0-100 (default 80) */
+  deposition?: number;
   /** how sharply belt relief falls off inland: 1 linear, 2-3 keeps it in the core */
   beltFalloff?: number;
   /** relief a boundary makes at full strength (default 420) */
@@ -348,14 +357,31 @@ export function runAge(w: World, size: number, opts: AgeOptions): AgeReport {
   opts.trace?.("collapse", el);
 
   // and anything no longer being pushed starts wearing down
-  el = denudeInactive(el, size, tect.uplifting, opts.denudation ?? 0.5);
+  el = denudeInactive(el, size, tect.uplifting, opts.denudation ?? 0.65);
   opts.trace?.("denude", el);
+
+  // --- the long cycles ------------------------------------------------------
+  // Both callers advance the seed by one per age (the app passes seed + age, simlab
+  // seed * 1000 + age), so seed minus age is constant for a history. That gives each world its
+  // own climate record without new carried state. Worked out before the erosion steps because
+  // ice only cuts when the planet is in an icehouse.
+  const historySeed = (opts.seed ?? 0) - (opts.age ?? 0);
+  const phase = climatePhase(opts.age ?? 0, dispersal(el, size), historySeed);
 
   const beforeErosion = Int16Array.from(el);
 
   // 2. weathering
   if (opts.weathering > 0) el = thermalErosion(el, size, opts.weathering);
   opts.trace?.("weathering", el);
+
+  // 2b. ice above the snowline, which is what stops a range growing without limit
+  // An age holds about a hundred glacial cycles, so what matters is not where the ice is this
+  // moment but how much of the age it spent grinding: full bite in an icehouse at a glacial
+  // maximum, almost none in a hothouse. Mountains can therefore grow through a greenhouse
+  // stretch and be planed down in the next ice age, which is how Earth does it.
+  const iceBite = phase.icehouse ? 0.35 + 0.65 * Math.min(1, phase.iceMetres / 130) : 0.05;
+  el = glacialErosion(el, w.TP, size, (opts.glaciation ?? 40) * iceBite);
+  opts.trace?.("glacial", el);
 
   // 3 + 4. one flow field, used for both carving and climate
   const hydro = analyse(el, size, w.RF, opts.riverDensity);
@@ -364,6 +390,17 @@ export function runAge(w: World, size: number, opts: AgeOptions): AgeReport {
     el = carveRivers(el, size, opts.riverCarving, w.RF, opts.riverDensity, hydro).elevation;
   }
   opts.trace?.("rivers", el);
+
+  // 4b. what came off has to go somewhere: carry it down the rivers and lay it down where the
+  // water slows. Every other step in this age only ever subtracts, which left bays unfilled and
+  // basins deepening for ever.
+  {
+    const removed = new Float64Array(el.length);
+    for (let i = 0; i < el.length; i++) removed[i] = Math.max(0, beforeErosion[i] - el[i]);
+    const tree = drainageTree(el, size, w.RF);
+    el = depositSediment(el, size, removed, tree.down, tree.order, opts.deposition ?? 80);
+  }
+  opts.trace?.("deposition", el);
 
   // 5. the crust rises again where weight came off it
   if (opts.rebound > 0) {
@@ -412,12 +449,7 @@ export function runAge(w: World, size: number, opts: AgeOptions): AgeReport {
 
   const world: World = { EL: el, ...climate, VL };
 
-  // --- the long cycles ------------------------------------------------------
-  // Both callers advance the seed by one per age (the app passes seed + age,
-  // simlab seed * 1000 + age), so seed minus age is constant for a history.
-  // That gives each world its own climate record without new carried state.
-  const historySeed = (opts.seed ?? 0) - (opts.age ?? 0);
-  const phase = climatePhase(opts.age ?? 0, dispersal(el, size), historySeed);
+  // the phase was worked out here; it is needed before the erosion steps now, so it moved up
 
   // Sea level is applied as a DELTA from the previous age. Adding the full
   // offset every age meant the previous one was never undone, and since the

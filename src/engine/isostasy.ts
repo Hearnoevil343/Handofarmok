@@ -38,8 +38,13 @@ export function isostaticRebound(
 ): Int16Array {
   const radius = radiusTiles ?? Math.round(scaleLength(6, size));
   const n = size * size;
-  const removed = new Float64Array(n);
-  for (let i = 0; i < n; i++) removed[i] = Math.max(0, before[i] - after[i]);
+  // Signed, because a crust responds to load both ways. This only counted material taken
+  // off, so the ground rose where erosion cut it and nothing sank where the sediment landed:
+  // with deposition added, the land share climbed past anything Earth has held. A delta or a
+  // filling basin presses its floor down, which is why they go on accepting sediment.
+  const load = new Float64Array(n);
+  for (let i = 0; i < n; i++) load[i] = before[i] - after[i];
+  const removed = load;
 
   // separable box blur, twice, to approximate the flexural response
   const tmp = new Float64Array(n);
@@ -162,7 +167,7 @@ export function denudeInactive(
   // 26% of land sat just under the mountain line, which reads as a plateau rather than as
   // ranges. With the squared belt profile, 0.5 brings that band to 13% and holds mountains
   // near 9% of land.
-  rate = 0.5,
+  rate = 0.65,
 ): Int16Array {
   const SEA = 100;
   const out = Int16Array.from(el);
