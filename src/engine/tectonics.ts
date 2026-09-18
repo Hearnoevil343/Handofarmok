@@ -364,6 +364,10 @@ export function applyBoundaries(
   chance = 1,
   /** how far inland a belt reaches, in tiles at this map size (default size/16) */
   beltWidth?: number,
+  /** relief a boundary makes at full strength (default 420) */
+  upliftScale?: number,
+  /** how sharply belt relief falls off inland: 1 linear, 2 (default) keeps it in the core */
+  beltFalloff?: number,
 ): TectonicResult {
   const n = size * size;
   const { plateId, vx, vy } = plates;
@@ -443,7 +447,7 @@ export function applyBoundaries(
   // than a single boundary can raise them.
   // 420 with denudeInactive at 0.2: at 340 / 0.3 the controller pinned near
   // its ceiling over long histories and mountain cover still decayed.
-  const k = (strength / 100) * 420;
+  const k = (strength / 100) * (upliftScale ?? 420);
   const elevation = Int16Array.from(el);
   const volcanism = new Int16Array(n);
   const uplifting = new Uint8Array(n);
@@ -452,7 +456,10 @@ export function applyBoundaries(
     const kind = kindAt[i];
     if (!kind || dist[i] < 0) continue;
     const d = dist[i];
-    const fade = 1 - d / (reach + 1);
+    // A linear fade spreads belt relief across the whole band, which lifts the ground beside
+    // a range as well as the range: 26% of land ended up just under the mountain line. A
+    // steeper profile keeps the high ground in the core, where a real range has it.
+    const fade = Math.pow(1 - d / (reach + 1), beltFalloff ?? 2);
     const p = power[i] * fade;
     let delta = 0;
     // some boundary kinds must not lift sea floor into new continents
@@ -719,6 +726,10 @@ export type TectonicAgeOptions = {
   strength: number;
   /** how far inland a mountain belt reaches, in tiles (default size/16) */
   beltWidth?: number;
+  /** relief a boundary makes at full strength (default 420) */
+  upliftScale?: number;
+  /** how sharply belt relief falls off inland: 1 linear, 2-3 keeps it in the core */
+  beltFalloff?: number;
   /** share of an age this step covers (sub-steps), scaling volcano spawning */
   volcanoChance?: number;
   seed: number;
@@ -795,7 +806,7 @@ export function tectonicAge(
   const result = applyBoundaries(
     moved.elevation, size,
     { ...plates, plateId: moved.plateId, oceanic },
-    opts.strength, rng, opts.volcanoChance ?? 1, opts.beltWidth,
+    opts.strength, rng, opts.volcanoChance ?? 1, opts.beltWidth, opts.upliftScale, opts.beltFalloff,
   );
   // the seeds travel with their plates so the next age continues this one
   return {

@@ -158,7 +158,11 @@ export function denudeInactive(
   // 0.3 lost to uplift over long histories: across 200 ages the mountain
   // controller climbed to ~90 of 100 and mountains still slid from 11% to 8%.
   // At 0.2, with boundary uplift 420, it settles at 60-65 and holds ~11%.
-  rate = 0.2,
+  // 0.5 after the 2026-09-18 sweeps: at 0.2 the ground beside every range stayed high and
+  // 26% of land sat just under the mountain line, which reads as a plateau rather than as
+  // ranges. With the squared belt profile, 0.5 brings that band to 13% and holds mountains
+  // near 9% of land.
+  rate = 0.5,
 ): Int16Array {
   const SEA = 100;
   const out = Int16Array.from(el);

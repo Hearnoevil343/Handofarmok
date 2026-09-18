@@ -301,7 +301,7 @@ async function main() {
     const rounds = parseInt(arg("--rounds", "6"), 10);
     const keep = parseInt(arg("--keep", "4"), 10);
     fs.mkdirSync(outDir, { recursive: true });
-    const NUMERIC = ["drift", "mountainTarget", "hotspots", "weathering", "riverCarving", "rebound", "plates", "riverDensity", "frayChance"];
+    const NUMERIC = ["drift", "mountainTarget", "hotspots", "weathering", "riverCarving", "rebound", "plates", "riverDensity", "frayChance", "denudation", "beltWidth"];
 
     let current = [{}];
     for (const [k, v] of Object.entries(cfg)) {

@@ -323,6 +323,28 @@ function erosionShape(el, riverMask, N) {
 }
 
 
+/**
+ * How high the land stands, in Dwarf Fortress elevation units, where 100 is sea level and 300
+ * is the mountain line. Metres are deliberately not used here: the metres-per-unit figure is
+ * still provisional (simulation-plan step 4), and judging height in metres against Earth
+ * contradicts the mountain-cover target, which is set from DF itself.
+ *
+ * Two numbers: the middle of the land, and how much of it stands just below the mountain line
+ * (236 to 299, and not counting the mountains themselves). Reading the mountain line as Earth's
+ * 10%-of-land elevation puts it at about 2 km, which makes 236 about 1.4 km: Earth has roughly
+ * 7% of its land in that band. A model that piles crust up faster than anything wears it down
+ * fills the band instead and the continents read as plateaus.
+ */
+function landHeight(el, N) {
+  const land = [];
+  for (let i = 0; i < N * N; i++) if (el[i] >= 100) land.push(el[i]);
+  if (!land.length) return { landMedian: NaN, plateauPct: NaN };
+  land.sort((a, b) => a - b);
+  let band = 0;
+  for (const v of land) if (v >= 236 && v < 300) band++;
+  return { landMedian: land[land.length >> 1], plateauPct: (100 * band) / land.length };
+}
+
 /** Everything, for one age. */
 function measureAge(w, N, engineMetrics) {
   const el = w.EL;
@@ -355,4 +377,4 @@ function measureAge(w, N, engineMetrics) {
   };
 }
 
-module.exports = { masses, boxFill, edgeBias, zonality, plateauShare, longestFlatRun, columnStriping, boundaryPersistence, boundaryStraightness, boundaryClumping, boundaryLongestRun, erosionShape, measureAge };
+module.exports = { masses, boxFill, edgeBias, zonality, plateauShare, longestFlatRun, columnStriping, boundaryPersistence, boundaryStraightness, boundaryClumping, boundaryLongestRun, erosionShape, landHeight, measureAge };

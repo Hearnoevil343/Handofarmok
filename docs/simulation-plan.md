@@ -70,6 +70,45 @@ speed 1 tile/age, rift offset 9, boundary-current reach 20).
 
 ## 2. Plates and tectonics
 
+**Done 2026-09-18 - boundaries stopped collapsing into ruled lines.** Five causes, each found
+by rendering the plate map and measuring it rather than by guessing:
+
+1. Plate growth was plain cost-distance from seeds, so every boundary was the perpendicular
+   bisector between two seeds and fresh maps came out as polygons. The growth front is now
+   jittered per step, Eden-style.
+2. A plume rift cut its host plate along a half-plane, a dead-straight line the carried map
+   then kept for the rest of the history. Cuts now wander along three sine waves.
+3. A plume rifted again every age it lived, and since every cut runs through the plume the
+   boundaries fanned out from one point in pie slices. One rift per plume now.
+4. The majority tidy ran over the whole map every age. A hundred passes of that is curvature
+   flow and irons every wiggle flat. It now only tidies tiles that changed hands.
+5. Every tile of a plate moved with one velocity, so two plates meeting head-on produced a
+   mathematically straight contact - 96-tile vertical runs. Plates now turn about a rotation
+   pole (plateVelocityAt), which also gives the per-plate speed variation this plan wanted.
+
+Also: the flood that hands out a vacated strip takes a random frontier tile, and
+frayBoundaries / breakStraightRuns fret the edges each age the way transforms and slivers do.
+Measured over 144 worlds x 100 ages: straightness (share of boundary on ruled runs of 16+)
+0.30 -> 0.02, longest ruled run 107 -> 15 tiles, persistence unchanged at 88%.
+
+**Done 2026-09-18 - the land was a plateau.** With the uplift controller aiming at 12% mountain
+cover and belt relief fading linearly across a band eleven tiles wide, the ground beside every
+range rose with the range: a quarter of all land sat just under the mountain line. Belt relief
+now falls off as the square of the distance inland, and land that is not being uplifted wears
+down at 0.5 rather than 0.2. That band is now 13%, mountains hold at 8-9% of land, and median
+land height matches Earth once the mountain line is read as Earth's 10%-of-land elevation.
+
+**Note on units.** Judging land height in metres against Earth while mountain cover came from
+DF put two targets in direct conflict: 8800/300 m per unit makes DF's mountain line 5.9 km,
+which Earth has essentially none of. The simlab targets now use one reading - mountain line
+300 is about 2 km, so a unit is about 10 m - and METRES_PER_UNIT_LAND in scale.ts is still the
+provisional 29.3 m, to be revisited with step 4.
+
+**Erosion, checked directly.** With uplift and drift off for 400 Myr: mountain area decays
+13% -> 3%, but peak height barely moves (365 -> 330) and isostatic rebound is what holds it up
+(at rebound 0 peaks fall to 258). Weathering strength barely matters to peaks (35 -> 100 moves
+them 7 points). Erosion wears mountains sideways, not down; that imbalance is still open.
+
 **Now:** sub-tile bilinear advection (accepted: coastline dimension into
 target, degenerate runs 20 -> 2); the rift-weld loop fixed. Still: bilinear
 blur accumulates (largest landmass rose from ~77% to ~81-86%); continent

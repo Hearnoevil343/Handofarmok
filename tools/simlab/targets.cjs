@@ -66,6 +66,18 @@ const TARGETS = {
   // Share of land sitting in a completely flat 3x3 patch: an undissected slab.
   flatShare:        { lo: 0, hi: 0.25, weight: 0.6, note: "erosion should leave few flat slabs" },
 
+  // --- how high the land stands, in DF elevation units --------------------------
+  // One mapping for both of these and for mtnPct: read the mountain line (300) as Earth's
+  // 10%-of-land elevation, about 2 km, so a unit is ~10 m and 236 is ~1.4 km. Judging height
+  // in metres against Earth while mtnPct came from DF put the two in direct conflict.
+  //
+  // Earth's median land is ~800 m, which is elevation 180; the range allows 500-1200 m.
+  landMedian:       { lo: 150, hi: 220, weight: 0.9, note: "Earth median land ~800 m (elevation ~180)" },
+
+  // Land in the band just under the mountain line, mountains excluded. Earth has ~7% between
+  // 1.4 and 2 km; a model that fills this band reads as a plateau rather than as ranges.
+  plateauPct:       { lo: 0, hi: 12, weight: 0.9, note: "Earth ~7% of land between 1.4 and 2 km" },
+
   // --- measured all along, never scored until now -----------------------------
   // How much of last age's boundary is still a boundary this age. Real plate boundaries
   // last tens of millions of years; regrowing the map from seeds every age scored 49%.

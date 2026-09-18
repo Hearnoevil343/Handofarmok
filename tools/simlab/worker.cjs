@@ -6,7 +6,7 @@ const ENGINE = workerData.engineDir;
 const { generateWorld } = require(path.join(ENGINE, "pipeline"));
 const { runAge } = require(path.join(ENGINE, "age"));
 const engineMetrics = require(path.join(ENGINE, "metrics"));
-const { measureAge, boundaryPersistence, boundaryStraightness, boundaryClumping, boundaryLongestRun, erosionShape } = require("./metrics.extra.cjs");
+const { measureAge, boundaryPersistence, boundaryStraightness, boundaryClumping, boundaryLongestRun, erosionShape, landHeight } = require("./metrics.extra.cjs");
 
 /**
  * One world, run forward for N ages, measured every age.
@@ -56,6 +56,10 @@ function runHistory(cfg) {
       ...(cfg.oceanModel !== undefined ? { oceanModel: cfg.oceanModel } : {}),
       ...(cfg.plateSpeeds !== undefined ? { plateSpeeds: cfg.plateSpeeds } : {}),
       ...(cfg.frayChance !== undefined ? { frayChance: cfg.frayChance } : {}),
+      ...(cfg.denudation !== undefined ? { denudation: cfg.denudation } : {}),
+      ...(cfg.upliftScale !== undefined ? { upliftScale: cfg.upliftScale } : {}),
+      ...(cfg.beltFalloff !== undefined ? { beltFalloff: cfg.beltFalloff } : {}),
+      ...(cfg.beltWidth !== undefined ? { beltWidth: cfg.beltWidth } : {}),
       ...(cfg.beltWidth !== undefined ? { beltWidth: cfg.beltWidth } : {}),
       age,
     });
@@ -83,6 +87,7 @@ function runHistory(cfg) {
       boundaryClump: boundaryClumping(plateMap, N),
       boundaryRun: boundaryLongestRun(plateMap, N),
       ...erosionShape(w.EL, r.riverMask, N),
+      ...landHeight(w.EL, N),
       seaRiseM: r.seaLevelMetres ?? 0,
       seaDatumM: r.seaLevelDatum ?? 0,
       plates: plateSet.sx.length,

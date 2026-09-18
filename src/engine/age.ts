@@ -104,6 +104,12 @@ export type AgeOptions = {
   plateSpeeds?: boolean;
   /** how far inland mountain belts reach, in tiles (default size/16) */
   beltWidth?: number;
+  /** how sharply belt relief falls off inland: 1 linear, 2-3 keeps it in the core */
+  beltFalloff?: number;
+  /** relief a boundary makes at full strength (default 420) */
+  upliftScale?: number;
+  /** how fast land that is not being uplifted wears down (default 0.5) */
+  denudation?: number;
   /** how readily plate edges fret each age, 0-1 (default 0.25) */
   frayChance?: number;
   /** pole layout, spin and axial tilt the climate follows (planet.ts); Earth by default */
@@ -212,6 +218,8 @@ export function runAge(w: World, size: number, opts: AgeOptions): AgeReport {
     distance: distance / steps,
     strength: strength / steps,
     beltWidth: opts.beltWidth,
+    upliftScale: opts.upliftScale,
+    beltFalloff: opts.beltFalloff,
     volcanoChance: 1 / steps,
     seed: opts.seed,
     province: provinces.id,
@@ -229,6 +237,8 @@ export function runAge(w: World, size: number, opts: AgeOptions): AgeReport {
       distance: distance / steps,
       strength: strength / steps,
     beltWidth: opts.beltWidth,
+    upliftScale: opts.upliftScale,
+    beltFalloff: opts.beltFalloff,
       volcanoChance: 1 / steps,
       seed: opts.seed + 7919 * s,
       province: prev.province,
@@ -338,7 +348,7 @@ export function runAge(w: World, size: number, opts: AgeOptions): AgeReport {
   opts.trace?.("collapse", el);
 
   // and anything no longer being pushed starts wearing down
-  el = denudeInactive(el, size, tect.uplifting);
+  el = denudeInactive(el, size, tect.uplifting, opts.denudation ?? 0.5);
   opts.trace?.("denude", el);
 
   const beforeErosion = Int16Array.from(el);
