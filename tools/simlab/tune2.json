@@ -1,7 +1,7 @@
 {
-  "_comment": "Starting point for `search`. Numeric parameters are nudged up and down each round; the best few survive and seed the next. Fewer seeds and ages than a sweep, because search trades depth per run for breadth across parameter space.",
+  "_comment": "mountain belt shape: how far inland a belt reaches",
   "size": 129,
-  "ages": 80,
+  "ages": 100,
   "seeds": [
     11,
     22,
@@ -21,5 +21,11 @@
   "riverCarving": 50,
   "riverDensity": 5,
   "rebound": 55,
-  "frayChance": 0.25
+  "frayChance": 0.25,
+  "beltWidth": [
+    4,
+    6,
+    8,
+    11
+  ]
 }

@@ -55,6 +55,8 @@ function runHistory(cfg) {
       ...(cfg.conserveLand !== undefined ? { conserveLand: cfg.conserveLand } : {}),
       ...(cfg.oceanModel !== undefined ? { oceanModel: cfg.oceanModel } : {}),
       ...(cfg.plateSpeeds !== undefined ? { plateSpeeds: cfg.plateSpeeds } : {}),
+      ...(cfg.frayChance !== undefined ? { frayChance: cfg.frayChance } : {}),
+      ...(cfg.beltWidth !== undefined ? { beltWidth: cfg.beltWidth } : {}),
       age,
     });
     w = r.world;

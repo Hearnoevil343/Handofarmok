@@ -102,6 +102,10 @@ export type AgeOptions = {
   seaLevelDatum?: number;
   /** oceanic plates faster than continental ones (TectonicAgeOptions.plateSpeeds) */
   plateSpeeds?: boolean;
+  /** how far inland mountain belts reach, in tiles (default size/16) */
+  beltWidth?: number;
+  /** how readily plate edges fret each age, 0-1 (default 0.25) */
+  frayChance?: number;
   /** pole layout, spin and axial tilt the climate follows (planet.ts); Earth by default */
   planet?: Planet;
   /** sea-level offset already baked into EL from the previous age */
@@ -207,6 +211,7 @@ export function runAge(w: World, size: number, opts: AgeOptions): AgeReport {
     plates: opts.plates,
     distance: distance / steps,
     strength: strength / steps,
+    beltWidth: opts.beltWidth,
     volcanoChance: 1 / steps,
     seed: opts.seed,
     province: provinces.id,
@@ -223,6 +228,7 @@ export function runAge(w: World, size: number, opts: AgeOptions): AgeReport {
       plates: opts.plates,
       distance: distance / steps,
       strength: strength / steps,
+    beltWidth: opts.beltWidth,
       volcanoChance: 1 / steps,
       seed: opts.seed + 7919 * s,
       province: prev.province,
@@ -293,7 +299,7 @@ export function runAge(w: World, size: number, opts: AgeOptions): AgeReport {
     riftAtPlumes(tect.plateSet, spots, plateId, size, 0.08, rng);
   }
   // plate edges fret every age, so no cut stays a ruled line
-  frayBoundaries(plateId, size, makeRng(opts.seed ^ 0x3a17));
+  frayBoundaries(plateId, size, makeRng(opts.seed ^ 0x3a17), opts.frayChance ?? 0.25);
   compactPlates(tect.plateSet, plateId);
 
   // Welds only ever reduce the plate count, and with the map carried a plume

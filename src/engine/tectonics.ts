@@ -362,6 +362,8 @@ export function applyBoundaries(
   el: Int16Array, size: number, plates: Plates, strength: number, rng: () => number,
   /** share of an age this step covers, so volcano spawning keeps its rate per Myr */
   chance = 1,
+  /** how far inland a belt reaches, in tiles at this map size (default size/16) */
+  beltWidth?: number,
 ): TectonicResult {
   const n = size * size;
   const { plateId, vx, vy } = plates;
@@ -416,7 +418,7 @@ export function applyBoundaries(
   }
 
   // spread influence inland so belts have width
-  const reach = Math.max(4, Math.round(size / 16));
+  const reach = Math.max(2, Math.round(beltWidth ?? size / 12));
   for (let head = 0; head < queue.length; head++) {
     const i = queue[head];
     const d = dist[i];
@@ -715,6 +717,8 @@ export type TectonicAgeOptions = {
   distance: number;
   /** relief produced at boundaries, 0-100 */
   strength: number;
+  /** how far inland a mountain belt reaches, in tiles (default size/16) */
+  beltWidth?: number;
   /** share of an age this step covers (sub-steps), scaling volcano spawning */
   volcanoChance?: number;
   seed: number;
@@ -791,7 +795,7 @@ export function tectonicAge(
   const result = applyBoundaries(
     moved.elevation, size,
     { ...plates, plateId: moved.plateId, oceanic },
-    opts.strength, rng, opts.volcanoChance ?? 1,
+    opts.strength, rng, opts.volcanoChance ?? 1, opts.beltWidth,
   );
   // the seeds travel with their plates so the next age continues this one
   return {
@@ -856,6 +860,7 @@ export function tectonicAgeToTarget(
  * and leaves the plate shapes themselves alone.
  */
 export function frayBoundaries(plateId: Int16Array, size: number, rng: () => number, chance = 0.25): void {
+  breakStraightRuns(plateId, size, rng);
   const before = Int16Array.from(plateId);
   for (let y = 0; y < size; y++) {
     for (let x = 0; x < size; x++) {
@@ -871,6 +876,49 @@ export function frayBoundaries(plateId: Int16Array, size: number, rng: () => num
       // neighbour sits on a smooth line, one with three is already ragged
       const pick = nb[Math.floor(rng() * 4)];
       if (pick !== own && rng() < 1 / foreign) plateId[i] = pick;
+    }
+  }
+}
+
+/**
+ * Break any stretch of boundary that has gone ruler-straight.
+ *
+ * General fraying wears edges down everywhere, but a long straight run is exactly the
+ * artifact that reads as wrong, and it survives light fraying because only its ends move.
+ * This looks for runs of eight tiles or more in any of the four directions and pushes a
+ * few tiles across, which puts a kink in the line where there was none.
+ */
+function breakStraightRuns(plateId: Int16Array, size: number, rng: () => number, minRun = 8): void {
+  const n = size * size;
+  const at = (x: number, y: number) => {
+    if (y < 0 || y >= size) return -1;
+    return plateId[y * size + (((x % size) + size) % size)];
+  };
+  const isEdge = (x: number, y: number) => {
+    const own = at(x, y);
+    if (own < 0) return false;
+    return at(x + 1, y) !== own || at(x - 1, y) !== own || at(x, y + 1) !== own || at(x, y - 1) !== own;
+  };
+  for (const [dx, dy] of [[1, 0], [0, 1], [1, 1], [1, -1]]) {
+    for (let y = 0; y < size; y++) {
+      for (let x = 0; x < size; x++) {
+        if (!isEdge(x, y) || isEdge(x - dx, y - dy)) continue;
+        let run = 0;
+        while (isEdge(x + run * dx, y + run * dy) && run < size) run++;
+        if (run < minRun) continue;
+        // push a couple of tiles across the line, chosen along the run
+        for (let k = 1; k < run - 1; k++) {
+          if (rng() > 0.35) continue;
+          const tx = x + k * dx, ty = y + k * dy;
+          if (ty < 1 || ty >= size - 1) continue;
+          const i = ty * size + (((tx % size) + size) % size);
+          const own = plateId[i];
+          const nb = [
+            at(tx + 1, ty), at(tx - 1, ty), at(tx, ty + 1), at(tx, ty - 1),
+          ].filter((p) => p >= 0 && p !== own);
+          if (nb.length) plateId[i] = nb[Math.floor(rng() * nb.length)];
+        }
+      }
     }
   }
 }

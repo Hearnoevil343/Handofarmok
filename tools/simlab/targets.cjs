@@ -66,6 +66,21 @@ const TARGETS = {
   // Share of land sitting in a completely flat 3x3 patch: an undissected slab.
   flatShare:        { lo: 0, hi: 0.25, weight: 0.6, note: "erosion should leave few flat slabs" },
 
+  // --- measured all along, never scored until now -----------------------------
+  // How much of last age's boundary is still a boundary this age. Real plate boundaries
+  // last tens of millions of years; regrowing the map from seeds every age scored 49%.
+  boundaryPersist:  { lo: 70, hi: 100, weight: 0.8, note: "boundaries must last, not re-route" },
+
+  // Share of land elevation sitting on ruled straight runs. This metric was added for the
+  // "straight diagonal scars" and then never given a target, so nothing scored it.
+  straightAfter:    { lo: 0, hi: 6, weight: 0.8, note: "no ruled lines in the terrain itself" },
+
+  // Share of the map in flat 2x2 patches: advection blur and gap-fill residue.
+  flat2x2:          { lo: 0, hi: 0.5, weight: 0.5, note: "resampling blur shows as flat blocks" },
+
+  // Land under permanent ice. Earth is about 10% in an interglacial, more in a glacial.
+  frozenPct:        { lo: 2, hi: 20, weight: 0.6, note: "Earth ~10% of land, 25% at a glacial maximum" },
+
   // Share of boundary tiles in the busiest tenth of 16x16 blocks. Even spread is about 0.1;
   // everything piled into one corner approaches 1.
   boundaryClump:    { lo: 0, hi: 0.30, weight: 0.6, note: "boundaries should spread over the map" },
