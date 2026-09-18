@@ -492,7 +492,7 @@ export function runAge(w: World, size: number, opts: AgeOptions): AgeReport {
   // assembled — the actual mechanism.
   let spots = opts.spots ?? [];
   // more heat to shed, more plumes to shed it through
-  const wantSpots = Math.round((opts.hotspots ?? 2) * volcanismFactor(heat));
+  const wantSpots = Math.round((opts.hotspots ?? 3) * volcanismFactor(heat));
   const fresh = seedHotspots(el, size, tect.plateSet, plateId,
                              Math.max(0, wantSpots - spots.filter((s) => !s.plume).length), rng);
   const hasPlume = spots.some((s) => s.plume);

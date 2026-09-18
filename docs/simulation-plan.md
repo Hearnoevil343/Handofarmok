@@ -326,6 +326,54 @@ and a rifted child has none; and plates with a pole ignore `wilsonDrive`, which 
 Also fixed on the way: `variants` in a simlab config was being expanded as a swept list as well as
 merged, so a six-variant sweep ran 648 worlds for 108.
 
+## 2d. Plate motion: travel, not circling
+
+**Done 2026-09-18.** Seen in the app first: continents stayed together and no plate held a
+direction. Three causes, all in how motion was represented, none a dial:
+
+1. A plate's motion was one rotation about a pole. The map wraps east-west, so the pole that
+   counted was never more than half a map away and plates circled it - 35-75 degrees of turn in
+   60 ages - instead of travelling.
+2. The plate heading (`vx/vy`) was read back off the pole every age, so nothing that steers the
+   heading did anything to a plate with a pole: not the Wilson drive, not a rift's opening push.
+   Only rifted children, which had no pole, responded.
+3. Welds, rifts and `compactPlates` renumbered `sx/sy/vx/vy` but not the poles, so after the
+   first weld a plate could carry another plate's pole.
+
+Now the heading is the travel and the named drives steer it; the plate turn (`spin`, same size as
+before) is about the plate's own centre, which still gives every tile its own heading - the
+reason poles were added, to stop ruled contacts - and `spin` is renumbered with everything else.
+Both engines (frames and the raster) use the same motion.
+
+New target **driftStraight**: of a plate's last 20 ages of travel, the share in one direction
+(plates followed across renumbering by nearest centre). 108 worlds, same seeds
+(`motion108.json`), both sides scored with the new target:
+
+| | before | after |
+|---|---|---|
+| score mean / worst | 3.37 / 5.52 | 2.96 / 4.98 |
+| driftStraight | 0.69 | 0.80 |
+| largest landmass, % of land | 80 | 61 |
+| Wilson penalty | 0.14 | 0.09 |
+| plateau share | 16.6 | 15.6 |
+| land step | 1.25 | 1.12 |
+| land drift penalty | 0.11 | 0.00 |
+| agreement | 0.819 | 0.823 |
+| births per age | 0.33 | 0.375 |
+
+Births went up: continents that really part make more new landmasses, and some of that is the
+metric counting a rifted-off piece that the 0.3-overlap rule does not match.
+
+**Measured and not adopted: slab pull** (`plateSpeeds`, oceanic plates up to 1.45x, continental
+down to 0.55x) with the new motion: 3.83 / 8.60 worst against 2.96, births 0.495. It stays off.
+
+Every mechanism now has a name in `docs/engine-glossary.md`, with what drives it and whether it is
+on. The hotspot default went 2 -> 3, the value every sweep has measured; the app was running 2.
+
+Still open here: boundary relief remains the largest loss of agreement (0.93 -> 0.86 in one
+step), and headings are re-aimed by the Wilson drive every age with a strong blend (0.34-0.62),
+which is what holds driftStraight at 0.80 rather than higher.
+
 ## 3. Surface: erosion and sediment
 
 **Done 2026-09-18 - nothing was ever laid down.** Every erosion step in an age subtracted:
