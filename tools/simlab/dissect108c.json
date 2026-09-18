@@ -1,5 +1,4 @@
 {
-  "_comment": "Every parameter is either a list (swept) or a single value (fixed). The cross product times seeds times archetypes is the run count -- check it with --dry before committing a night to it. A list of whole configurations can go in \"variants\" instead, to compare settings that only make sense together. Values here are the engine's defaults unless a sweep says otherwise.",
   "size": 129,
   "ages": 100,
   "seeds": [
@@ -8,7 +7,37 @@
     33,
     44,
     55,
-    66
+    66,
+    77,
+    88,
+    99,
+    110,
+    121,
+    132,
+    143,
+    154,
+    165,
+    176,
+    187,
+    198,
+    209,
+    220,
+    231,
+    242,
+    253,
+    264,
+    275,
+    286,
+    297,
+    308,
+    319,
+    330,
+    341,
+    352,
+    363,
+    374,
+    385,
+    396
   ],
   "archetypes": [
     "ARCHIPELAGO",
@@ -26,7 +55,6 @@
   "riverDensity": 5,
   "rebound": 55,
   "deposition": 80,
-  "denudation": 0.3,
   "beltWidth": 11,
   "beltFalloff": 3,
   "frayChance": 0.25,
@@ -37,5 +65,18 @@
   "heatStart": 1,
   "crustProduction": 0.002,
   "iceLoading": 100,
-  "dissection": 10
+  "variants": [
+    {
+      "dissection": 10,
+      "denudation": 0.3
+    },
+    {
+      "dissection": 15,
+      "denudation": 0.2
+    },
+    {
+      "dissection": 25,
+      "denudation": 0
+    }
+  ]
 }

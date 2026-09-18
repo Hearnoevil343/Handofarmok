@@ -9,7 +9,8 @@ Scripts worth knowing about before writing another one.
   one world, which stage inside each age moves the shoreline and by how much, net land per
   stage, age-to-age agreement and landmass births. Run after `npm run simlab:build`. The place to
   start when the film looks wrong. Also prints agreement with last age's land after each stage
-  (the move split from boundary relief); `STAGE_AGREE=advect,rebound` adds the per-age series.
+  (the move split from boundary relief), and a budget per step - what each raises and lowers per
+  age and the mountain tiles it makes or removes. Size a new factor against that before sweeping; `STAGE_AGREE=advect,rebound` adds the per-age series.
 - **wiring.cjs** (`node tools/simlab/wiring.cjs [ages=3]`) - changes each dial alone on three worlds
   and reports how far the map moved; a row of zeros is a dial connected to nothing. Keep it short:
   the engine is chaotic, so by 12 ages every change looks equally large.

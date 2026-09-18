@@ -54,10 +54,11 @@ Scale: elevation 0-400, sea level 100, mountains 300+. One age is 10 Myr.
 | Name | What it does | Code | Driven by | Status |
 |---|---|---|---|---|
 | **Orogenic collapse** | Crust above the mountain ceiling spreads sideways; hot crust holds less. | `orogenicCollapse` | mantle heat | On. |
-| **Denudation** | Ranges no longer being pushed wear down. | `denudeInactive` | uplift map | On. |
+| **Denudation** | Ranges no longer being pushed wear down. Also, in practice, what stops land growing. | `denudeInactive` | uplift map | On (0.3). Two jobs in one: see plan 3b. |
 | **Weathering** | Slopes relax (thermal erosion). | `thermalErosion` | slope | On. |
 | **Ice bite** | Glaciers cut above the snowline, hard in an icehouse, barely in a hothouse. | `glacialErosion` | temperature, climate phase | On. |
 | **Stream power** | Rivers cut by drainage area and slope. | `carveRivers` | rainfall, slope | On. |
+| **Dissection** | Droplet erosion over all land, so every slope drains, not just trunk rivers. Shares one erosion budget with Denudation. | `dissectLand`, `erosion.ts` | slope | On (10), paired with denudation 0.3. |
 | **Deposition** | What was eroded is carried downstream and laid down where water slows. | `depositSediment` | stream power | On. |
 | **Rebound** | Crust rises where weight came off it. | `isostaticRebound` | erosion | On. Spills land across the coast (+700 tiles an age); balanced by the shelf smoother. Costs 0.03 of agreement. |
 | **Ice load** | Crust sinks under ice sheets and rises when they melt. | `iceSheetLoad` | climate phase | On. |
