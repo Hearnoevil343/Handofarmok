@@ -83,6 +83,11 @@ function runHistory(cfg) {
       ...(cfg.shelfSmoothInBand !== undefined ? { shelfSmoothInBand: cfg.shelfSmoothInBand } : {}),
       ...(cfg.gradeBand !== undefined ? { gradeBand: cfg.gradeBand } : {}),
       ...(cfg.coastSmoothBand !== undefined ? { coastSmoothBand: cfg.coastSmoothBand } : {}),
+      ...(cfg.coastModel !== undefined ? { coastModel: cfg.coastModel } : {}),
+      ...(cfg.warpPerAge !== undefined ? { warpPerAge: cfg.warpPerAge } : {}),
+      ...(cfg.speckFloor !== undefined ? { speckFloor: cfg.speckFloor } : {}),
+      ...(cfg.shelfGradient !== undefined ? { shelfGradient: cfg.shelfGradient } : {}),
+      ...(cfg.shelfFloor !== undefined ? { shelfFloor: cfg.shelfFloor } : {}),
       // heat is an object in the engine; flat in configs so it can be swept
       ...(cfg.heatStart !== undefined || cfg.heatTauMyr !== undefined
         ? { heat: {

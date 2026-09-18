@@ -301,6 +301,8 @@ export function separateCrust(
   smoothLo = 92, smoothHi = 145,
   /** average with in-band neighbours only, never past the band's top */
   inBand = false,
+  /** run the shelf smoother at all; off when shelfProfile shapes the shelf instead */
+  smooth = true,
 ): Int16Array {
   const out = new Int16Array(el.length);
   // Split below the middle of the band: more of the slope belongs to the ocean
@@ -327,7 +329,7 @@ export function separateCrust(
     }
     out[i] = Math.min(400, Math.max(0, Math.round(v + (target - v) * strength)));
   }
-  return smoothShelf(out, Math.round(Math.sqrt(el.length)), smoothLo, smoothHi, undefined, inBand);
+  return smooth ? smoothShelf(out, Math.round(Math.sqrt(el.length)), smoothLo, smoothHi, undefined, inBand) : out;
 }
 
 /**
@@ -697,6 +699,55 @@ export function thermalSubsidence(
     const v = el[i];
     if (v >= ceiling || v <= abyssal) continue;
     out[i] = Math.round(v - (v - abyssal) * rate);
+  }
+  return out;
+}
+
+/**
+ * The shelf as a ramp, not a plane.
+ *
+ * Smoothing the shelf to one value made it a plane three units under the sea -
+ * measured, 2,400 tiles at exactly 97 - and a plane floods all at once: a
+ * sea-level step of one unit flipped 4,000 tiles, a quarter of the map. A real
+ * shelf deepens away from the shore, from the beach to about 130 m at the
+ * shelf break, so a rise in the sea takes a strip along the coast and not the
+ * whole shelf. Sea tiles in the shelf band settle toward a depth set by their
+ * distance from land: at the shore just under the sea, one unit deeper per
+ * tile out, down to the shelf floor. Relaxed, so a delta or a drowned valley
+ * survives a while; land is not touched.
+ */
+export function shelfProfile(
+  el: Int16Array, size: number,
+  /** the shelf band: sea tiles this shallow or shallower are shelf */
+  bandLo = 88,
+  /** depth at the shore and at the shelf floor, in units */
+  shoreDepth = 99, floorDepth = 95,
+  /** units deeper per tile away from the shore */
+  gradient = 1,
+  rate = 0.3,
+): Int16Array {
+  const SEA = 100;
+  const n = size * size;
+  // distance to the nearest land tile, by flood from the land, wrapping east-west
+  const dist = new Int16Array(n).fill(-1);
+  const q: number[] = [];
+  for (let i = 0; i < n; i++) if (el[i] >= SEA) { dist[i] = 0; q.push(i); }
+  const reach = Math.ceil((shoreDepth - floorDepth) / gradient) + 1;
+  for (let h = 0; h < q.length; h++) {
+    const i = q[h];
+    if (dist[i] >= reach) continue;
+    const x = i % size, y = (i / size) | 0;
+    for (const j of [y * size + ((x + size - 1) % size), y * size + ((x + 1) % size),
+                     y > 0 ? i - size : -1, y < size - 1 ? i + size : -1]) {
+      if (j >= 0 && dist[j] < 0) { dist[j] = dist[i] + 1; q.push(j); }
+    }
+  }
+  const out = Int16Array.from(el);
+  for (let i = 0; i < n; i++) {
+    if (el[i] >= SEA || el[i] < bandLo) continue;
+    const d = dist[i] < 0 ? reach : dist[i];
+    const target = Math.max(floorDepth, shoreDepth - (d - 1) * gradient);
+    out[i] = Math.max(0, Math.min(SEA - 1, Math.round(el[i] + (target - el[i]) * rate)));
   }
   return out;
 }

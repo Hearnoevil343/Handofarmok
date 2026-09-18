@@ -17,8 +17,9 @@
 - Rivers cut into the high ground instead of only the valleys, so ranges come
   out as ranges rather than as one raised slab.
 - Plate boundaries no longer collapse into ruled lines.
-- Continents keep their shape from one age to the next: sea level moves the
-  way Earth's does and the coast is no longer redrawn wholesale each age.
+- Continents keep their shape better from one age to the next: sea level moves
+  the way Earth's does, the coast is no longer redrawn wholesale each age, and
+  the pass that scrubs straight seams no longer jitters the shoreline.
 
 ## 0.2.5
 

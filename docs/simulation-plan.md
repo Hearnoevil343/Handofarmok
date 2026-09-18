@@ -250,12 +250,31 @@ ramp smoother (no effect). Best of the eight combinations scored 4.27 against th
 of them remain as options (`reboundOnLand`, `separateEveryAge`, `gradeBand`, `shelfSmoothInBand`,
 `coastSmoothBand`, `reboundRadius`).
 
-The conclusion is not "leave the pair alone". It is that nothing in the engine models what holds
-a coastline - a continuous depositional surface across the shoreline, and marine planation of
-what pokes up through it - and until something does, the pair is the only thing standing in for
-it. That model, and per-plate frames so that a landmass translates instead of being resampled
-(tectonics is still the largest mover at ~2,000 flips an age), are the next two steps; the
-targets are 0.88 agreement and 0.05 births an age, and the engine is at 0.81 and 0.36.
+**Done 2026-09-18 - one more win, and the coast model tried and measured.** The anti-seam warp
+(`deStraighten`) was re-rolled every age, so every straight stretch of coast was displaced
+somewhere new each time - 200-500 shoreline tiles an age of pure jitter. Seeded once per history
+it is a fixed displacement: score 3.43 -> 3.21, agreement 0.807 -> 0.814, births 0.36 -> 0.33.
+
+Then the coast as a physical package, behind `coastModel`: the shelf as a ramp by distance from
+the shore (a flat shelf floods as a slab - measured, one sea-level step flipped 4,000 tiles),
+rebound and collapse on land only, erosion graded to base level, only one- and two-tile specks
+culled so real islands survive. On 126 worlds at four shelf steepnesses it scores 6.1 to 6.8
+against 3.2, and steepness makes no difference. The ablations all point the same way: put the old
+land-side smoother back and it recovers to 3.9; put the old rebound back and agreement is the
+best measured (0.824) and births the fewest (0.235) but land runs away and worlds go degenerate.
+The old rebound spill was thinning the shelf by pushing it over the line, and the old smoother
+was building a ramp from that shelf up into the coastal plain; between them they kept the band
+near sea level narrow, and nothing physical in the package does that as well. The engine keeps
+the pair.
+
+What that leaves. Agreement is 0.81 against 0.88 and births 0.33 an age against 0.05.
+`continuity.cjs` on the kept engine: tectonics 2,000-2,400 flips an age, the warp 500, sea level
+400, conserveCrust 200-300, specks 70-170. Tectonics is the one large mover left and the only one
+that is structural: each age resamples last age's raster at a sub-tile offset, so a landmass is
+re-interpolated a hundred times and its edge blurs and speckles. Per-plate frames - each plate
+carrying its own raster and an accumulated rigid transform, the world grid composited from them
+and erosion deltas scattered back - would sample the base terrain once from its own frame. That is
+the next step, and it is a change to the tectonics core rather than a dial.
 
 Also fixed on the way: `variants` in a simlab config was being expanded as a swept list as well as
 merged, so a six-variant sweep ran 648 worlds for 108.

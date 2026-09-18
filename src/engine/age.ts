@@ -9,7 +9,7 @@ import { compactPlates, frayBoundaries } from "./tectonics";
 import { deStraighten, measureStraightness } from "./artifacts";
 import {
   MEAN_ICE_METRES, climatePhase, conserveCrust, dispersal, drownSpecks,
-  separateCrust, smoothShelf, thermalSubsidence, weldCollidedPlates, wilsonDrive,
+  separateCrust, shelfProfile, smoothShelf, thermalSubsidence, weldCollidedPlates, wilsonDrive,
 } from "./cycles";
 import { type Provinces, seedProvinces, stampOrogen } from "./provinces";
 import { makeRng } from "./noise";
@@ -185,6 +185,33 @@ export type AgeOptions = {
    */
   reboundRadius?: number;
   /**
+   * The coast as one physical package, off by default: the shelf shaped as a
+   * ramp by distance from the shore; rebound and orogenic collapse on land
+   * only; erosion graded to base level; only one- and two-tile specks culled.
+   * Measured on 126 worlds at four shelf steepnesses it scores 6.1-6.8 against
+   * 3.2 for the engine it was meant to replace, and every ablation says the
+   * same thing: the old rebound spill and the land-side shelf smoother are a
+   * balanced pair that hold the shoreline, and nothing in this package holds it
+   * as well (docs/simulation-plan.md, 2c). Kept for the next attempt; the
+   * individual options override it either way.
+   */
+  coastModel?: boolean;
+  /**
+   * How steeply the shelf deepens away from the shore, units per tile (default
+   * 4), and the depth it deepens to (default 86, below the slope band so the
+   * crust separation carries it on down to the abyss). A gentle ramp made a
+   * shelf a fifth of the map lay within a unit or two of the sea, against ~5%
+   * of Earth's surface, and every sea-level step flooded a slab of it; steep
+   * makes the shelf one or two tiles wide, which is what a margin is at 310 km
+   * a tile.
+   */
+  shelfGradient?: number;
+  shelfFloor?: number;
+  /** re-roll the anti-seam warp every age (the old behaviour; default false, measured 3.43 against 3.21) */
+  warpPerAge?: boolean;
+  /** landmasses smaller than this many tiles (at 129) are drowned; default 3 with the coast model, 10 without */
+  speckFloor?: number;
+  /**
    * Rebound lifts the crust that was loaded and not the sea floor beside it,
    * and orogenic collapse spreads onto land only. Physically right, and off by
    * default: measured on 144 worlds, the coast has nothing else holding it and
@@ -303,6 +330,14 @@ export function runAge(w: World, size: number, opts: AgeOptions): AgeReport {
   // crust can hold, how shallow the basins are and how fast arcs make continent.
   // At the default it is 1 for ever and nothing changes.
   const heat = mantleHeat(opts.age ?? 0, opts.heat);
+  const coast = opts.coastModel === true;
+  const reboundOnLand = opts.reboundOnLand ?? coast;
+  const gradeBand = opts.gradeBand ?? (coast ? 12 : 0);
+  const warpPerAge = opts.warpPerAge === true;
+  const speckFloor = opts.speckFloor ?? (coast ? 3 : 10);
+  // Both callers advance the seed by one per age, so seed minus age is constant for a history
+  // (the climate reads it below for the same reason).
+  const historySeed = (opts.seed ?? 0) - (opts.age ?? 0);
 
   // 0. plates are driven by the arrangement of the continents, not by fixed
   //    random headings — this is what lets the Wilson cycle close
@@ -488,11 +523,11 @@ export function runAge(w: World, size: number, opts: AgeOptions): AgeReport {
 
   // crust past the limit spreads sideways instead of stacking into a plateau —
   // and hot crust is weak, so a young planet cannot hold as much of one up
-  el = orogenicCollapse(el, size, mountainCeiling(heat), undefined, undefined, opts.reboundOnLand === true);
+  el = orogenicCollapse(el, size, mountainCeiling(heat), undefined, undefined, reboundOnLand);
   opts.trace?.("collapse", el);
 
   // and anything no longer being pushed starts wearing down
-  el = denudeInactive(el, size, tect.uplifting, opts.denudation ?? 0.5, opts.gradeBand ?? 0);
+  el = denudeInactive(el, size, tect.uplifting, opts.denudation ?? 0.5, gradeBand);
   opts.trace?.("denude", el);
 
   // --- the long cycles ------------------------------------------------------
@@ -500,7 +535,6 @@ export function runAge(w: World, size: number, opts: AgeOptions): AgeReport {
   // seed * 1000 + age), so seed minus age is constant for a history. That gives each world its
   // own climate record without new carried state. Worked out before the erosion steps because
   // ice only cuts when the planet is in an icehouse.
-  const historySeed = (opts.seed ?? 0) - (opts.age ?? 0);
   const phase = climatePhase(opts.age ?? 0, dispersal(el, size), historySeed,
                              { seaLevelScale: opts.seaLevelScale, walk: opts.seaLevelWalk });
 
@@ -543,7 +577,7 @@ export function runAge(w: World, size: number, opts: AgeOptions): AgeReport {
   if (opts.riverCarving > 0) {
     // same surface as the analysis just above, so reuse it rather than run it twice
     el = carveRivers(el, size, opts.riverCarving, w.RF, opts.riverDensity, hydro,
-                     opts.channelSlope ?? 1, opts.gradeBand ?? 0).elevation;
+                     opts.channelSlope ?? 1, gradeBand).elevation;
   }
   opts.trace?.("rivers", el);
 
@@ -561,13 +595,16 @@ export function runAge(w: World, size: number, opts: AgeOptions): AgeReport {
   // 5. the crust rises again where weight came off it
   if (opts.rebound > 0) {
     el = isostaticRebound(beforeErosion, el, size, opts.rebound / 100, opts.reboundRadius ?? 6,
-                          opts.reboundOnLand === true);
+                          reboundOnLand);
   }
   opts.trace?.("rebound", el);
 
   // 5b. scrub the straight seams rigid operations leave behind
   const straightBefore = measureStraightness(el, size).straightShare;
-  if (opts.deArtifact !== false) el = deStraighten(el, size, 1, opts.seed + 3);
+  // Seeded once per history. Re-rolled every age, the warp moved every straight
+  // stretch of coast somewhere new each time: 200-500 shoreline tiles an age of
+  // pure jitter. Fixed, the same stretch gets the same displacement and stays put.
+  if (opts.deArtifact !== false) el = deStraighten(el, size, 1, (warpPerAge ? opts.seed : historySeed) + 3);
   opts.trace?.("deStraighten", el);
   const straightAfter = measureStraightness(el, size).straightShare;
 
@@ -599,11 +636,13 @@ export function runAge(w: World, size: number, opts: AgeOptions): AgeReport {
     const sep = opts.crustSeparation ?? ((firstAge || opts.separateEveryAge !== false) ? 0.8 : 0);
     if (sep > 0) {
       el = separateCrust(el, sep, 62, 96, 34, opts.shelfCeiling ?? 99, 92, opts.shelfSmoothTop ?? 145,
-                         opts.shelfSmoothInBand === true);
-    } else if (opts.shelfSmooth !== false) {
+                         opts.shelfSmoothInBand === true, opts.shelfSmooth ?? !coast);
+    } else if (opts.shelfSmooth ?? !coast) {
       // the shelf stays flat; the slope it sits above was made once
       el = smoothShelf(el, size, 92, opts.shelfSmoothTop ?? 145, undefined, opts.shelfSmoothInBand === true);
     }
+    // the shelf deepens away from the shore, so a rising sea takes a strip and not a slab
+    if (coast) el = shelfProfile(el, size, 80, 99, opts.shelfFloor ?? 86, opts.shelfGradient ?? 4);
     if ((opts.coastSmoothBand ?? 0) > 0) {
       const b = opts.coastSmoothBand ?? 0;
       el = smoothShelf(el, size, 100 - b, 100 + b, 1);
@@ -702,8 +741,10 @@ export function runAge(w: World, size: number, opts: AgeOptions): AgeReport {
   // shift: culling before it left every speck the falling sea had just exposed.
   let specksDrowned = 0;
   if (opts.cullSpecks !== false) {
-    // under ~1 million km² (10 tiles at 129) is a speck, not a landmass
-    const culled = drownSpecks(world.EL, size, Math.max(1, Math.round(scaleArea(10, size))));
+    // Specks: one or two tiles with the coast model, which is advection residue;
+    // ten before, which drowned every island up to a million square kilometres
+    // (Iceland to Japan) and then culled it again each time jitter re-exposed it.
+    const culled = drownSpecks(world.EL, size, Math.max(1, Math.round(scaleArea(speckFloor, size))));
     world.EL = culled.elevation;
     specksDrowned = culled.removed;
   }
