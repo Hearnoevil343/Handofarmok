@@ -116,6 +116,12 @@ const TARGETS = {
   // keeping 65-75%, which is continents teleporting.
   landAgree:        { lo: 0.88, hi: 1.0, weight: 1.2, note: "Africa stays Africa; Earth ~0.95 per 10 Myr" },
 
+  // Of the distance a plate travelled in its last 20 ages (200 Myr), the share that was in one
+  // direction: 1 is a straight line, 0 a closed loop. Earth's plates hold a heading for tens of
+  // Myr and bend rather than circle (the Hawaiian-Emperor bend is one turn in 80 Myr). Nothing
+  // scored this, and plates were circling a nearby pole without it showing anywhere.
+  driftStraight:    { lo: 0.7, hi: 1.0, weight: 1.0, note: "plates travel; they do not circle" },
+
   // How far land share moves between one age and the next, in points. Earth's
   // whole Phanerozoic swing is ~15 points over 500 Myr.
   landStep:         { lo: 0, hi: 1.2, weight: 0.8, note: "the coast moves with the sea, not by a sixth of the map" },

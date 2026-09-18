@@ -75,20 +75,19 @@ class Heap {
  * and eventually pile back together.
  */
 export type PlateSet = {
-  /** rotation pole per plate, in tiles (usually off the map), and its turn rate */
-  px?: number[];
-  py?: number[];
-  spin?: number[];
   sx: number[];
   sy: number[];
+  /** the plate's heading: the way it travels, which the named drives (wilsonDrive) steer */
   vx: number[];
   vy: number[];
+  /** plate turn: radians turned about the plate's own centre per tile travelled */
+  spin?: number[];
 };
 
 export function newPlateSet(size: number, count: number, rng: () => number): PlateSet {
   const n = size * size;
   const sx: number[] = [], sy: number[] = [], vx: number[] = [], vy: number[] = [];
-  const px: number[] = [], py: number[] = [], spin: number[] = [];
+  const spin: number[] = [];
   for (let p = 0; p < count; p++) {
     let best = -1, bestD = -1;
     for (let attempt = 0; attempt < 12; attempt++) {
@@ -108,50 +107,53 @@ export function newPlateSet(size: number, count: number, rng: () => number): Pla
     sy.push((best / size) | 0);
     const a = rng() * Math.PI * 2;
     vx.push(Math.cos(a)); vy.push(Math.sin(a));
-    // Plates turn about a pole rather than sliding as a block. With one velocity for the
-    // whole plate, two plates meeting head-on produce a mathematically straight contact -
-    // the ruled vertical lines that ran the height of the map. A pole set well outside the
-    // plate gives each tile its own heading, so contacts curve the way real ones do.
-    const poleAngle = rng() * Math.PI * 2;
-    const reach = size * (0.7 + rng() * 1.6);
-    px.push((best % size) + Math.cos(poleAngle) * reach);
-    py.push(((best / size) | 0) + Math.sin(poleAngle) * reach);
-    spin.push((rng() < 0.5 ? -1 : 1) / reach);
+    spin.push(newPlateTurn(size, rng));
   }
-  return { sx, sy, vx, vy, px, py, spin };
+  return { sx, sy, vx, vy, spin };
 }
 
 /**
- * How fast and which way plate `p` carries the tile at (x, y), as a unit-ish vector: 1 at the
- * plate's seed, more further from the pole, less nearer it. Falls back to the plate's stored
- * heading when a set has no poles (an older saved history).
+ * Plate turn for a new plate. With one velocity for the whole plate, two plates meeting head-on
+ * make a mathematically straight contact - the ruled vertical lines that ran the height of the
+ * map - so every plate also turns a little as it goes, which gives each tile its own heading and
+ * curves the contacts.
+ *
+ * The turn is about the plate's own centre and the travel is the heading. It used to be one
+ * rotation about a distant pole, but the map wraps, so the pole that counted was never more than
+ * half a map away: plates circled it (35-75 degrees of turn in 60 ages) instead of travelling,
+ * and because the heading was read back off the pole every age, nothing that steered the heading
+ * (wilsonDrive, a rift's opening direction) had any effect on a plate that had a pole.
+ */
+export function newPlateTurn(size: number, rng: () => number): number {
+  const reach = size * (0.7 + rng() * 1.6);
+  return (rng() < 0.5 ? -1 : 1) / reach;
+}
+
+/**
+ * How fast and which way plate `p` carries the tile at (x, y): its heading, plus the plate turn
+ * about its own centre.
  */
 export function plateVelocityAt(
   ps: PlateSet, p: number, x: number, y: number, size: number,
 ): [number, number] {
-  if (!ps.px || !ps.py || !ps.spin || ps.px[p] === undefined) return [ps.vx[p], ps.vy[p]];
-  let rx = x - ps.px[p];
+  const w = ps.spin?.[p] ?? 0;
+  if (!w) return [ps.vx[p], ps.vy[p]];
+  let rx = x - ps.sx[p];
   if (rx > size / 2) rx -= size;
   if (rx < -size / 2) rx += size;
-  const ry = y - ps.py[p];
-  return [-ry * ps.spin[p], rx * ps.spin[p]];
+  const ry = y - ps.sy[p];
+  return [ps.vx[p] - ry * w, ps.vy[p] + rx * w];
 }
 
 /** Move the seeds with their plates. East-west wraps; north-south clamps. */
 export function advancePlateSet(ps: PlateSet, size: number, distance: number): PlateSet {
   const out: PlateSet = {
     sx: [...ps.sx], sy: [...ps.sy], vx: [...ps.vx], vy: [...ps.vy],
-    px: ps.px ? [...ps.px] : undefined,
-    py: ps.py ? [...ps.py] : undefined,
     spin: ps.spin ? [...ps.spin] : undefined,
   };
   for (let i = 0; i < ps.sx.length; i++) {
-    const [ux, uy] = plateVelocityAt(ps, i, ps.sx[i], ps.sy[i], size);
-    out.sx[i] = (((ps.sx[i] + ux * distance) % size) + size) % size;
-    out.sy[i] = Math.min(size - 1, Math.max(0, ps.sy[i] + uy * distance));
-    // the stored heading stays the plate's heading at its own centre, which is what the
-    // boundary classifier compares
-    out.vx[i] = ux; out.vy[i] = uy;
+    out.sx[i] = (((ps.sx[i] + ps.vx[i] * distance) % size) + size) % size;
+    out.sy[i] = Math.min(size - 1, Math.max(0, ps.sy[i] + ps.vy[i] * distance));
   }
   return out;
 }
@@ -199,6 +201,7 @@ export function compactPlates(ps: PlateSet, plateId: Int16Array): void {
   const keep = (_: number, p: number) => area[p] > 0;
   ps.sx = ps.sx.filter(keep); ps.sy = ps.sy.filter(keep);
   ps.vx = ps.vx.filter(keep); ps.vy = ps.vy.filter(keep);
+  if (ps.spin) ps.spin = ps.spin.filter(keep);
 }
 
 /**
