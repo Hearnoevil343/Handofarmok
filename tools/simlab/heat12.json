@@ -1,0 +1,12 @@
+{
+  "_comment": "how much sediment stays on land, and how far a mountain root spreads",
+  "size": 129, "ages": 100, "seeds": [11, 22, 33, 44],
+  "archetypes": ["ARCHIPELAGO", "CONTINENTS"], "climate": "TEMPERATE",
+  "plates": 10, "drift": 6, "upliftStart": 45, "mountainTarget": 0.12,
+  "hotspots": 3, "weathering": 35, "riverCarving": 50, "riverDensity": 5,
+  "rebound": 55, "frayChance": 0.25, "beltWidth": 11, "beltFalloff": 3,
+  "glaciation": 40, "upliftScale": 700, "denudation": 0.5, "channelSlope": 1,
+  "landBudget": true, "heatStart": 1, "crustProduction": 0.002, "iceLoading": 100,
+  "deposition": [30, 50, 80],
+  "weathering": [35, 55]
+}

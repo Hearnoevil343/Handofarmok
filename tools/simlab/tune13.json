@@ -1,7 +1,7 @@
 {
-  "_comment": "Starting point for `search`. Numeric parameters are nudged up and down each round; the best few survive and seed the next. Fewer seeds and ages than a sweep, because search trades depth per run for breadth across parameter space.",
+  "_comment": "plate count: Earth has 7 majors and a tail, we had 6 with the largest at 32%",
   "size": 129,
-  "ages": 80,
+  "ages": 100,
   "seeds": [
     11,
     22,
@@ -12,7 +12,11 @@
     "CONTINENTS"
   ],
   "climate": "TEMPERATE",
-  "plates": 6,
+  "plates": [
+    6,
+    9,
+    12
+  ],
   "drift": 6,
   "mountainTarget": 0.12,
   "upliftStart": 45,
@@ -21,5 +25,9 @@
   "riverCarving": 50,
   "riverDensity": 5,
   "rebound": 55,
-  "frayChance": 0.25
+  "frayChance": 0.25,
+  "beltWidth": 11,
+  "beltFalloff": 2,
+  "deposition": 80,
+  "denudation": 0.65
 }

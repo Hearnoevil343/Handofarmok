@@ -1,0 +1,61 @@
+{
+  "_comment": "final head-to-head: old defaults, best score, and best-looking belts",
+  "size": 129,
+  "ages": 100,
+  "seeds": [
+    11,
+    22,
+    33,
+    44,
+    55,
+    66
+  ],
+  "archetypes": [
+    "ARCHIPELAGO",
+    "PANGAEA",
+    "CONTINENTS"
+  ],
+  "climate": "TEMPERATE",
+  "plates": 10,
+  "drift": 6,
+  "upliftStart": 45,
+  "mountainTarget": 0.12,
+  "hotspots": 3,
+  "weathering": 35,
+  "riverCarving": 50,
+  "riverDensity": 5,
+  "rebound": 55,
+  "frayChance": 0.25,
+  "beltWidth": 11,
+  "deposition": 80,
+  "glaciation": 40,
+  "heatStart": 1,
+  "crustProduction": 0.002,
+  "iceLoading": 100,
+  "variants": [
+    {
+      "_name": "before",
+      "landBudget": false,
+      "beltFalloff": 2,
+      "upliftScale": 420,
+      "denudation": 0.65,
+      "channelSlope": 0
+    },
+    {
+      "_name": "score",
+      "landBudget": true,
+      "beltFalloff": 3,
+      "upliftScale": 540,
+      "denudation": 0.5,
+      "channelSlope": 0
+    },
+    {
+      "_name": "belts",
+      "landBudget": true,
+      "beltFalloff": 3,
+      "upliftScale": 700,
+      "denudation": 0.5,
+      "channelSlope": 1
+    }
+  ]
+}

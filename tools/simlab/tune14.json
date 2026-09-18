@@ -1,7 +1,7 @@
 {
-  "_comment": "Starting point for `search`. Numeric parameters are nudged up and down each round; the best few survive and seed the next. Fewer seeds and ages than a sweep, because search trades depth per run for breadth across parameter space.",
+  "_comment": "ice tied to the ice ages, and sub-steps: does finer time inside an age help",
   "size": 129,
-  "ages": 80,
+  "ages": 100,
   "seeds": [
     11,
     22,
@@ -12,7 +12,7 @@
     "CONTINENTS"
   ],
   "climate": "TEMPERATE",
-  "plates": 6,
+  "plates": 10,
   "drift": 6,
   "mountainTarget": 0.12,
   "upliftStart": 45,
@@ -21,5 +21,17 @@
   "riverCarving": 50,
   "riverDensity": 5,
   "rebound": 55,
-  "frayChance": 0.25
+  "frayChance": 0.25,
+  "beltWidth": 11,
+  "beltFalloff": 2,
+  "deposition": 80,
+  "denudation": 0.65,
+  "glaciation": [
+    0,
+    40
+  ],
+  "subSteps": [
+    1,
+    3
+  ]
 }

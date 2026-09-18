@@ -1,5 +1,5 @@
 {
-  "_comment": "Every parameter is either a list (swept) or a single value (fixed). The cross product times seeds times archetypes is the run count -- check it with --dry before committing a night to it. A list of whole configurations can go in \"variants\" instead, to compare settings that only make sense together. Values here are the engine's defaults unless a sweep says otherwise.",
+  "_comment": "confirmation: bare defaults against the stable-warp variant (3.206 / 4.292)",
   "size": 129,
   "ages": 100,
   "seeds": [

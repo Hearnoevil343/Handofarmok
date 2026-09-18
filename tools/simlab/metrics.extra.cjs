@@ -213,7 +213,256 @@ function boundaryPersistence(prevMap, map, N, r = 2) {
   return total ? (100 * kept) / total : NaN;
 }
 
+/**
+ * How much of a plate boundary lies on ruled straight lines. A plume rift used to
+ * cut its plate along a half-plane, which leaves a dead-straight edge that the
+ * carried plate map then keeps for the rest of the history, collecting uplift.
+ * Real boundaries wander; Earth has no 20-tile straight plate edges.
+ * Returns the share (0-1) of boundary tiles inside a straight run of len or more,
+ * counting horizontal, vertical and both diagonal directions.
+ */
+function boundaryStraightness(map, N, len = 16) {
+  if (!map) return NaN;
+  const b = boundaryMask(map, N);
+  const onLine = new Uint8Array(b.length);
+  let total = 0;
+  for (let i = 0; i < b.length; i++) if (b[i]) total++;
+  if (!total) return NaN;
+  const at = (x, y) => (y < 0 || y >= N ? 0 : b[y * N + (((x % N) + N) % N)]);
+  const mark = (x, y) => { if (y >= 0 && y < N) onLine[y * N + (((x % N) + N) % N)] = 1; };
+  for (const [dx, dy] of [[1, 0], [0, 1], [1, 1], [1, -1]]) {
+    for (let y = 0; y < N; y++) {
+      for (let x = 0; x < N; x++) {
+        if (!at(x, y)) continue;
+        // only start a run where the previous tile in this direction is not a boundary
+        if (at(x - dx, y - dy)) continue;
+        let run = 0;
+        while (at(x + run * dx, y + run * dy)) run++;
+        if (run >= len) for (let k = 0; k < run; k++) mark(x + k * dx, y + k * dy);
+      }
+    }
+  }
+  let straight = 0;
+  for (let i = 0; i < onLine.length; i++) if (onLine[i]) straight++;
+  return straight / total;
+}
+
+/** The longest ruled run anywhere on a plate boundary, in tiles. Earth has none over ~10. */
+function boundaryLongestRun(map, N) {
+  if (!map) return NaN;
+  const b = boundaryMask(map, N);
+  const at = (x, y) => (y < 0 || y >= N ? 0 : b[y * N + (((x % N) + N) % N)]);
+  let longest = 0;
+  for (const [dx, dy] of [[1, 0], [0, 1], [1, 1], [1, -1]]) {
+    for (let y = 0; y < N; y++) {
+      for (let x = 0; x < N; x++) {
+        if (!at(x, y) || at(x - dx, y - dy)) continue;
+        let run = 0;
+        while (at(x + run * dx, y + run * dy) && run <= N) run++;
+        if (run > longest) longest = run;
+      }
+    }
+  }
+  return longest;
+}
+
+/**
+ * How evenly the boundaries are spread over the map. A ragged edge is not clumping, so this
+ * counts by area rather than by neighbour: the share of all boundary tiles that falls in the
+ * busiest tenth of 16x16 blocks. Spread over the whole map that is about 0.1; every boundary
+ * piled into one corner approaches 1.
+ */
+function boundaryClumping(map, N) {
+  if (!map) return NaN;
+  const b = boundaryMask(map, N);
+  const B = 16, blocks = Math.ceil(N / B);
+  const count = new Float64Array(blocks * blocks);
+  let total = 0;
+  for (let y = 0; y < N; y++) for (let x = 0; x < N; x++) {
+    if (!b[y * N + x]) continue;
+    count[((y / B) | 0) * blocks + ((x / B) | 0)]++;
+    total++;
+  }
+  if (!total) return NaN;
+  const sorted = [...count].sort((p, q) => q - p);
+  const top = Math.max(1, Math.round(sorted.length * 0.1));
+  let sum = 0;
+  for (let i = 0; i < top; i++) sum += sorted[i];
+  return sum / total;
+}
+
+/**
+ * Is erosion doing its job? Three numbers, all on land:
+ * - drainage density: share of land tiles carrying a river (Earth's dissected uplands are webbed)
+ * - relief: mean height above the local 9-tile minimum, in METRES (1 land unit = 8800/300 m)
+ * - flatShare: share of land tiles whose 3x3 neighbourhood is entirely one height (undissected slab)
+ */
+function erosionShape(el, riverMask, N) {
+  let land = 0, rivers = 0, relief = 0, flat = 0;
+  for (let y = 1; y < N - 1; y++) {
+    for (let x = 1; x < N - 1; x++) {
+      const i = y * N + x;
+      if (el[i] < 100) continue;
+      land++;
+      if (riverMask && riverMask[i]) rivers++;
+      let lo = Infinity, same = true;
+      for (let dy = -1; dy <= 1; dy++) {
+        for (let dx = -1; dx <= 1; dx++) {
+          const v = el[(y + dy) * N + x + dx];
+          if (v < lo) lo = v;
+          if (v !== el[i]) same = false;
+        }
+      }
+      relief += el[i] - lo;
+      if (same) flat++;
+    }
+  }
+  return land
+    ? { drainageDensity: rivers / land, localRelief: (relief / land) * (8800 / 300), flatShare: flat / land }
+    : { drainageDensity: NaN, localRelief: NaN, flatShare: NaN };
+}
+
+
+/**
+ * How high the land stands, in Dwarf Fortress elevation units, where 100 is sea level and 300
+ * is the mountain line. Metres are deliberately not used here: the metres-per-unit figure is
+ * still provisional (simulation-plan step 4), and judging height in metres against Earth
+ * contradicts the mountain-cover target, which is set from DF itself.
+ *
+ * Two numbers: the middle of the land, and how much of it stands just below the mountain line
+ * (236 to 299, and not counting the mountains themselves). Reading the mountain line as Earth's
+ * 10%-of-land elevation puts it at about 2 km, which makes 236 about 1.4 km: Earth has roughly
+ * 7% of its land in that band. A model that piles crust up faster than anything wears it down
+ * fills the band instead and the continents read as plateaus.
+ */
+function landHeight(el, N) {
+  const land = [];
+  for (let i = 0; i < N * N; i++) if (el[i] >= 100) land.push(el[i]);
+  if (!land.length) return { landMedian: NaN, plateauPct: NaN };
+  land.sort((a, b) => a - b);
+  let band = 0;
+  for (const v of land) if (v >= 236 && v < 300) band++;
+  return { landMedian: land[land.length >> 1], plateauPct: (100 * band) / land.length };
+}
+
+/**
+ * Are the ranges varied, or has everything worn to the same stumps?
+ *
+ * A world can hold its mountain share and still be dull: every range the same height, none
+ * young and high, none old and low. Earth has both at once - the Himalaya rising while the
+ * Urals are worn down - so the spread of mountain heights matters as much as their number.
+ *
+ * peakEl is the highest ground, mountainSpread the gap between the tallest tenth of mountain
+ * tiles and the shortest tenth, both in elevation units.
+ */
+function mountainVariety(el, N) {
+  const mtn = [];
+  let peak = 0;
+  for (let i = 0; i < N * N; i++) {
+    if (el[i] > peak) peak = el[i];
+    if (el[i] >= 300) mtn.push(el[i]);
+  }
+  if (mtn.length < 10) return { peakEl: peak, mountainSpread: 0 };
+  mtn.sort((a, b) => a - b);
+  const lo = mtn[Math.floor(mtn.length * 0.1)], hi = mtn[Math.floor(mtn.length * 0.9)];
+  return { peakEl: peak, mountainSpread: hi - lo };
+}
+
 /** Everything, for one age. */
+
+/**
+ * Continuity: does this age look like last age, moved a bit?
+ *
+ * Every other metric here scores one age on its own. Nothing asked whether the
+ * land in age N could be explained by the land in age N-1 carried along on its
+ * plates, so a world could pass every target at every age while its continents
+ * teleported - and, measured, it did: 28-35% of the land/sea pattern changed
+ * every age and a Europe-sized landmass appeared from nothing every two or
+ * three ages. Earth over ten million years is a few per cent, and a new
+ * landmass is a rift finishing, once in a couple of hundred million years.
+ *
+ * Land agreement subtracts each plate's own motion: for each plate in last
+ * age's map, its land tiles are shifted by whatever whole-tile offset best
+ * lands them on this age's land (searched within +-4), and the matched share
+ * is summed over plates. Births and deaths are landmasses of `bigMass` tiles or
+ * more with no counterpart covering 30% of them, after the single best global
+ * shift - coarser, but a birth is coarse.
+ */
+function continuity(prevEl, prevPlate, el, N, bigMass = 100) {
+  const n = N * N;
+  const prev = new Uint8Array(n), cur = new Uint8Array(n);
+  for (let i = 0; i < n; i++) { prev[i] = prevEl[i] >= SEA ? 1 : 0; cur[i] = el[i] >= SEA ? 1 : 0; }
+
+  let plates = 0;
+  for (let i = 0; i < n; i++) if (prevPlate[i] + 1 > plates) plates = prevPlate[i] + 1;
+  const tiles = Array.from({ length: plates }, () => []);
+  for (let i = 0; i < n; i++) if (prev[i]) tiles[prevPlate[i]].push(i);
+  let matched = 0, prevLand = 0, curLand = 0;
+  for (let i = 0; i < n; i++) { prevLand += prev[i]; curLand += cur[i]; }
+  for (let p = 0; p < plates; p++) {
+    const t = tiles[p];
+    if (!t.length) continue;
+    let best = 0;
+    for (let dy = -4; dy <= 4; dy++) for (let dx = -4; dx <= 4; dx++) {
+      let hit = 0;
+      for (let k = 0; k < t.length; k++) {
+        const i = t[k], x = i % N, y = (i / N) | 0, sy = y + dy;
+        if (sy < 0 || sy >= N) continue;
+        if (cur[sy * N + ((x + dx + N) % N)]) hit++;
+      }
+      if (hit > best) best = hit;
+    }
+    matched += best;
+  }
+  const union = prevLand + curLand - matched;
+  const landAgree = union > 0 ? matched / union : 1;
+
+  // one global shift for the landmass bookkeeping
+  let bestDx = 0, bestDy = 0, bestAll = -1;
+  for (let dy = -4; dy <= 4; dy++) for (let dx = -4; dx <= 4; dx++) {
+    let hit = 0;
+    for (let y = 0; y < N; y++) {
+      const sy = y + dy; if (sy < 0 || sy >= N) continue;
+      for (let x = 0; x < N; x++) if (prev[y * N + x] && cur[sy * N + ((x + dx + N) % N)]) hit++;
+    }
+    if (hit > bestAll) { bestAll = hit; bestDx = dx; bestDy = dy; }
+  }
+  const label = (m) => {
+    const lab = new Int32Array(n).fill(-1); const sizes = [];
+    for (let s0 = 0; s0 < n; s0++) {
+      if (!m[s0] || lab[s0] >= 0) continue;
+      const id = sizes.length; let size = 0; const st = [s0]; lab[s0] = id;
+      while (st.length) {
+        const i = st.pop(); size++;
+        const x = i % N, y = (i / N) | 0;
+        for (const j of [y * N + ((x + N - 1) % N), y * N + ((x + 1) % N), y > 0 ? i - N : -1, y < N - 1 ? i + N : -1]) {
+          if (j >= 0 && m[j] && lab[j] < 0) { lab[j] = id; st.push(j); }
+        }
+      }
+      sizes.push(size);
+    }
+    return { lab, sizes };
+  };
+  const P = label(prev), C = label(cur);
+  const counterpart = (A, B, sx, sy) => {
+    const hits = A.sizes.map(() => new Map());
+    for (let y = 0; y < N; y++) {
+      const ty = y + sy; if (ty < 0 || ty >= N) continue;
+      for (let x = 0; x < N; x++) {
+        const a = A.lab[y * N + x]; if (a < 0) continue;
+        const b = B.lab[ty * N + ((x + sx + N) % N)]; if (b < 0) continue;
+        hits[a].set(b, (hits[a].get(b) || 0) + 1);
+      }
+    }
+    return hits.map((h) => Math.max(0, ...h.values()));
+  };
+  const pc = counterpart(P, C, bestDx, bestDy), cp = counterpart(C, P, -bestDx, -bestDy);
+  let massBirths = 0, massDeaths = 0;
+  for (let c = 0; c < C.sizes.length; c++) if (C.sizes[c] >= bigMass && cp[c] < 0.3 * C.sizes[c]) massBirths++;
+  for (let q = 0; q < P.sizes.length; q++) if (P.sizes[q] >= bigMass && pc[q] < 0.3 * P.sizes[q]) massDeaths++;
+  return { landAgree, massBirths, massDeaths };
+}
+
 function measureAge(w, N, engineMetrics) {
   const el = w.EL;
   const block = blockiness(el, N);
@@ -245,4 +494,4 @@ function measureAge(w, N, engineMetrics) {
   };
 }
 
-module.exports = { masses, boxFill, edgeBias, zonality, plateauShare, longestFlatRun, columnStriping, boundaryPersistence, measureAge };
+module.exports = { masses, boxFill, edgeBias, zonality, plateauShare, longestFlatRun, columnStriping, boundaryPersistence, boundaryStraightness, boundaryClumping, boundaryLongestRun, erosionShape, landHeight, mountainVariety, continuity, measureAge };
