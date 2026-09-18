@@ -14,7 +14,7 @@ import {
 } from "./cycles";
 import { type Provinces, seedProvinces, stampOrogen } from "./provinces";
 import { makeRng } from "./noise";
-import { depositSediment, glacialErosion, thermalErosion } from "./erosion";
+import { depositSediment, dissectLand, glacialErosion, thermalErosion } from "./erosion";
 import { scaleArea } from "./scale";
 import {
   applySeaLevelRise, basinReferenceRate, conserveContinentalArea, continentalExposure, continentalGrowth,
@@ -57,6 +57,11 @@ export type AgeOptions = {
    */
   plateFrames?: boolean;
   frames?: PlateFrames;
+  /**
+   * Droplet erosion over the land each age, 0-100 (erosion.ts dissectLand). Default 10, and it
+   * is paired with denudation 0.3: the two share one erosion budget (simulation-plan 3b).
+   */
+  dissection?: number;
   frameNearest?: boolean;
   frameSoft?: boolean;
   /**
@@ -549,7 +554,7 @@ export function runAge(w: World, size: number, opts: AgeOptions): AgeReport {
   opts.trace?.("collapse", el);
 
   // and anything no longer being pushed starts wearing down
-  el = denudeInactive(el, size, tect.uplifting, opts.denudation ?? 0.5, gradeBand);
+  el = denudeInactive(el, size, tect.uplifting, opts.denudation ?? 0.3, gradeBand);
   opts.trace?.("denude", el);
 
   // --- the long cycles ------------------------------------------------------
@@ -602,6 +607,10 @@ export function runAge(w: World, size: number, opts: AgeOptions): AgeReport {
                      opts.channelSlope ?? 1, gradeBand).elevation;
   }
   opts.trace?.("rivers", el);
+
+  // 4a. dissection: every slope drains, not only the ones with a trunk river on them
+  el = dissectLand(el, size, opts.dissection ?? 10, opts.seed + 11);
+  opts.trace?.("dissect", el);
 
   // 4b. what came off has to go somewhere: carry it down the rivers and lay it down where the
   // water slows. Every other step in this age only ever subtracts, which left bays unfilled and
