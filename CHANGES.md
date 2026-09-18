@@ -25,6 +25,8 @@
   ranges stay sharp over a long history.
 - Plates travel in a steady direction instead of circling, so continents part
   and come back together over a history.
+- Run Age now cuts valleys across all the land each age (the look World Forge's
+  hydraulic erosion gives), not only along the main rivers.
 - Added `docs/engine-glossary.md`: a name for every piece of simulation logic.
 - Added `docs/science-gaps.md`: the simulation compared with real Earth science and
   published simulators, with a ranked list of what is missing.

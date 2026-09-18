@@ -66,7 +66,7 @@ Sources are listed at the end.
 | Glacial loading | ice depresses crust by rho_ice/rho_m = 0.28 of thickness | **Ice load** (917/3300) | present |
 | Hotspot chains, age-progressive | | **Hotspots** | present |
 | Large igneous provinces, dynamic topography | ~1 km swells | none | missing |
-| Continental crust grows over time | | **Land budget** | **saturated: see section 8** |
+| Continental crust grows over time | | **Land budget** | present; only worlds that start under 30% land have room to grow (section 8) |
 
 ## 5. Surface
 
@@ -110,11 +110,16 @@ Sources are listed at the end.
 Every dial was changed alone on three worlds and the map compared after 1, 3 and 12 ages. The
 engine is repeatable (same input, identical output).
 
-- **Dead: `crustProduction`.** 0.002 -> 0.02 changes nothing, even over 12 ages. The crust share
-  starts at land / 0.707 and the ceiling is 0.42, so any world that starts with 30% land or more is
-  at the ceiling on day one and **Land budget** growth never happens; sweeps report a crust share of
-  42.67% on every world. Not yet confirmed per archetype.
-- **`landBudget` off**: no effect for 3 ages, small by 12. Same cause.
+- **`crustProduction` and `landBudget`: not dead - corrected 2026-09-18.** The wiring test showed
+  no change in the map over 12 ages, and this file first called the land budget dead. Traced
+  directly on an archipelago it is alive: at 0.002 the crust share goes 25.5 -> 25.9% in six ages
+  and the land target 17.9 -> 18.2%; at 0.02, 26.3 -> 29.7% and 18.4 -> 20.8%. The map does not
+  show it in a short test because **Crust conservation** moves the coast at most two units an age
+  and ignores errors under one point, so it is pinned at the same cap either way. Over a history
+  it follows (archipelago 15.6 -> 24.1% land in 100 ages, measured earlier). What is true: a world
+  that starts with 30% land or more begins at or above the 0.42 crust ceiling, so only ocean-rich
+  worlds ever grow. That is a design choice, not a fault. Lesson for the tool: zero change in the
+  map is a prompt to trace the mechanism, not proof it is disconnected.
 - **Weak in one age:** Ice bite (0.01), Speck cull, Ice load, `riverDensity` (rain only). Expected
   for a temperate world; not faults.
 - **One age late:** Fray (acts on the plate map after the surface is made). Not a fault.
@@ -138,10 +143,9 @@ engine is repeatable (same input, identical output).
 
 | # | Gap | What you would see | Effort | Risk |
 |---|---|---|---|---|
-| 1 | **Landscape dissection** - bring droplet erosion into Run Age | land cut into valleys and ridges every age, as Forge leaves it | small | coast balance, run time |
+| 1 | ~~Landscape dissection~~ **done 2026-09-18** (plan 3b): in at strength 10, swapped against denudation | land cut into valleys and ridges every age, as Forge leaves it | small | coast balance, run time |
 | 2 | **Boundary relief that persists** - build belts where the boundary has been, stop re-rolling transform noise | coasts and ranges stop redrawing each age; the largest remaining loss of continuity | medium | mountain share needs retuning |
 | 3 | **Collision resistance + real slab pull** - speed from trench length, slow on collision | fast ocean plates, slow continents, India-style slow-down; plates with a reason for their speed | medium | the proxy already scored worse; needs the real rule |
-| 4 | **Land budget unstuck** - fix the ceiling so crust can grow | young worlds start ocean-rich and gain continent over a billion years | small | land share targets move |
 | 5 | **Crust thickness layer** (Airy isostasy) | plateaus behind collisions, basins where crust is thinned, rebound that is physical instead of balanced by a smoother | large - touches frames, relief, rebound, the coast pair | high; would replace the rebound/smoother balance |
 | 6 | **Rock type controls erosion** - provinces set K | old shields wear flat, young belts stay sharp | small | low |
 | 7 | **Flexure** - foreland basins, island moats | lowland troughs beside ranges where rivers and sediment collect | medium | low |

@@ -83,11 +83,12 @@ let plateSet, plateMap, frames, spots, provinces, crustShare, iceLoad, sea = 0, 
 let land0 = 0; for (let i = 0; i < NN; i++) if (w.EL[i] >= 100) land0++;
 const baselineLand = Math.min(0.6, Math.max(0.08, land0 / NN));
 
-const stageFlips = {}, stageNet = {}, stageAgree = {}, stageOrder = [];
+const stageFlips = {}, stageNet = {}, stageAgree = {}, stageOrder = [], budget = {};
 let prev = mask(w.EL);
 const rows = [];
 for (let age = 1; age <= AGES; age++) {
   const trace = [["start", mask(w.EL)]];
+  let lastEl = Int16Array.from(w.EL);
   const startEl = w.EL, startPlates = plateMap;
   const r = runAge(w, N, {
     plateSet, plateMap, frames, spots, provinces, crustShare, iceLoad,
@@ -96,6 +97,17 @@ for (let age = 1; age <= AGES; age++) {
     rebound: 55, hotspots: 3, climate: "TEMPERATE", seed: seed * 1000 + age, age,
     trace: (stage, el) => {
       trace.push([stage, mask(el)]);
+      // the budget: what this step did to the ground, in the same units for every step
+      {
+        const b = (budget[stage] ??= { up: 0, down: 0, mtn: 0, n: 0 });
+        let up = 0, down = 0, mtn = 0, land = 0;
+        for (let i = 0; i < NN; i++) {
+          if (lastEl[i] >= 100 || el[i] >= 100) { land++; const d = el[i] - lastEl[i]; if (d > 0) up += d; else down -= d; }
+          mtn += (el[i] >= 300 ? 1 : 0) - (lastEl[i] >= 300 ? 1 : 0);
+        }
+        b.up += up / Math.max(1, land); b.down += down / Math.max(1, land); b.mtn += mtn; b.n++;
+        lastEl = Int16Array.from(el);
+      }
       // how well last age's land, carried on its plates, still explains the surface here
       if (startPlates) (stageAgree[stage] ??= []).push(continuity(startEl, startPlates, el, N).landAgree);
     },
@@ -137,3 +149,7 @@ for (const r of rows) if (r.age <= 12 || r.age % 10 === 0) {
   console.log(`${String(r.age).padStart(3)}  ${r.land.toFixed(1).padStart(5)}  ${r.target === null ? "  -  " : r.target.toFixed(1).padStart(5)}  ${r.seaLevel.toFixed(1).padStart(5)}  ${r.raw.toFixed(3)}  ${r.shifted.toFixed(3)}    ${r.born}/${r.died}      ${r.phase}`);
 }
 if (process.env.STAGE_AGREE) for (const s of process.env.STAGE_AGREE.split(",")) console.log(`\n${s} agreement by age: ` + (stageAgree[s] || []).map((v) => v.toFixed(3)).join(" "));
+console.log("\nBudget per step, per age (elevation units averaged over land, 1 unit ~ 30 m; mountain = 300+):");
+console.log("  " + "step".padEnd(14) + "raises".padStart(9) + "lowers".padStart(9) + "net".padStart(9) + "mountain tiles".padStart(16));
+for (const s of stageOrder) { const b = budget[s]; if (!b) continue;
+  console.log("  " + s.padEnd(14) + (b.up / b.n).toFixed(2).padStart(9) + (b.down / b.n).toFixed(2).padStart(9) + ((b.up - b.down) / b.n).toFixed(2).padStart(9) + ((b.mtn / b.n >= 0 ? "+" : "") + (b.mtn / b.n).toFixed(1)).padStart(16)); }
