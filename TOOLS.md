@@ -10,6 +10,9 @@ Scripts worth knowing about before writing another one.
   stage, age-to-age agreement and landmass births. Run after `npm run simlab:build`. The place to
   start when the film looks wrong. Also prints agreement with last age's land after each stage
   (the move split from boundary relief); `STAGE_AGREE=advect,rebound` adds the per-age series.
+- **wiring.cjs** (`node tools/simlab/wiring.cjs [ages=3]`) - changes each dial alone on three worlds
+  and reports how far the map moved; a row of zeros is a dial connected to nothing. Keep it short:
+  the engine is chaotic, so by 12 ages every change looks equally large.
 - **compare.cjs** (`node tools/simlab/compare.cjs runs/results.json [key,key]`) - variants of one
   sweep side by side: score, mean penalty per target (largest first), and every metric.
 - **presets** (`tools/presets/`) - builds hand-made presets such as Middle-earth from measured
