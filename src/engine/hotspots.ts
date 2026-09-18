@@ -159,7 +159,7 @@ export function applyHotspots(
  * which is where the crust is hot and weak.
  */
 export function riftAtPlumes(
-  plates: { sx: number[]; sy: number[]; vx: number[]; vy: number[] },
+  plates: { sx: number[]; sy: number[]; vx: number[]; vy: number[]; spin?: number[] },
   spots: Hotspot[],
   plateId: Int16Array,
   size: number,
@@ -233,6 +233,11 @@ export function riftAtPlumes(
     // the two halves pull apart along the axis
     plates.sx.push(cx(sinA, cosA)); plates.sy.push(yA / nA);
     plates.vx.push(ax / m); plates.vy.push(ay / m);
+    // the new plate turns its own way; the host keeps its turn
+    if (plates.spin) {
+      while (plates.spin.length < child) plates.spin.push(0);
+      plates.spin.push((draw() < 0.5 ? -1 : 1) / (size * (0.7 + draw() * 1.6)));
+    }
     plates.sx[host] = cx(sinB, cosB); plates.sy[host] = yB / nB;
     plates.vx[host] = -ax / m; plates.vy[host] = -ay / m;
     // A plume opens one rift. It used to cut again every age it lived, and because every
