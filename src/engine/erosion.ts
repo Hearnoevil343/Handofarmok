@@ -93,6 +93,87 @@ export function hydraulicErosion(
 }
 
 /**
+ * Dissection: the droplet erosion World Forge has, made fit for Run Age.
+ *
+ * Stream power only cuts along the trunk rivers, so between them the land stayed smooth: drainage
+ * density sat at 0.05, the bottom edge of its band, and an aged world never looked river-cut the
+ * way a forged one does. Every slope drains, not just the ones with a river on them.
+ *
+ * Differences from `hydraulicErosion`: east-west wraps like everything else in an age (a droplet
+ * that died at the map edge left the edges uneroded); droplets start on land only, and one that
+ * reaches the sea stops there, its load left to `depositSediment`, which sees it as ground that
+ * was removed; the shoreline itself cannot move (`quantise`), because the coast is held by other
+ * steps. `strength` 0-100 scales how many droplets run.
+ */
+export function dissectLand(
+  el: Int16Array, size: number, strength: number, seed: number,
+): Int16Array {
+  if (strength <= 0) return el;
+  const rng = makeRng(seed);
+  const n = size * size;
+  const h = new Float64Array(n);
+  const land: number[] = [];
+  for (let i = 0; i < n; i++) { h[i] = el[i]; if (el[i] >= SEA) land.push(i); }
+  if (!land.length) return el;
+
+  const at = (x: number, y: number) =>
+    h[Math.min(size - 1, Math.max(0, y)) * size + (((x % size) + size) % size)];
+  const smp = (x: number, y: number) => {
+    const x0 = Math.floor(x), y0 = Math.floor(y), fx = x - x0, fy = y - y0;
+    return at(x0, y0) * (1 - fx) * (1 - fy) + at(x0 + 1, y0) * fx * (1 - fy)
+      + at(x0, y0 + 1) * (1 - fx) * fy + at(x0 + 1, y0 + 1) * fx * fy;
+  };
+  const put = (x: number, y: number, amount: number) => {
+    const x0 = Math.floor(x), y0 = Math.floor(y), fx = x - x0, fy = y - y0;
+    for (let k = 0; k < 4; k++) {
+      const yy = y0 + (k >> 1);
+      if (yy < 0 || yy >= size) continue;
+      const j = yy * size + ((((x0 + (k & 1)) % size) + size) % size);
+      // the sea floor is not this step's to change
+      if (el[j] >= SEA) h[j] += amount * ((k & 1) ? fx : 1 - fx) * ((k >> 1) ? fy : 1 - fy);
+    }
+  };
+
+  // as many droplets per land tile as the Forge step runs per map tile
+  const drops = Math.round(land.length * (strength / 100) * 1.1);
+  const LIFETIME = 34, INERTIA = 0.05, CAPACITY = 4, MIN_CAP = 0.01;
+  const ERODE = 0.35, DEPOSIT = 0.3, EVAPORATE = 0.02, GRAVITY = 12;
+
+  for (let d = 0; d < drops; d++) {
+    const start = land[Math.floor(rng() * land.length)];
+    let x = (start % size) + rng(), y = ((start / size) | 0) + rng();
+    let dx = 0, dy = 0, speed = 1, water = 1, sediment = 0;
+    for (let step = 0; step < LIFETIME; step++) {
+      if (y < 1 || y >= size - 2) break;
+      const here = smp(x, y);
+      if (here < SEA) break;                           // reached the sea
+      const gx = smp(x + 1, y) - smp(x - 1, y), gy = smp(x, y + 1) - smp(x, y - 1);
+      dx = dx * INERTIA - gx * (1 - INERTIA);
+      dy = dy * INERTIA - gy * (1 - INERTIA);
+      const len = Math.hypot(dx, dy);
+      if (len < 1e-6) break;
+      dx /= len; dy /= len;
+      x += dx; y += dy;
+      if (y < 1 || y >= size - 2) break;
+      const drop = smp(x, y) - here;                   // negative = downhill
+      const capacity = Math.max(-drop * speed * water * CAPACITY, MIN_CAP);
+      if (sediment > capacity || drop > 0) {
+        const amount = drop > 0 ? Math.min(drop, sediment) : (sediment - capacity) * DEPOSIT;
+        sediment -= amount;
+        put(x - dx, y - dy, amount);
+      } else {
+        const amount = Math.min((capacity - sediment) * ERODE, -drop);
+        sediment += amount;
+        put(x - dx, y - dy, -amount);
+      }
+      speed = Math.sqrt(Math.max(0, speed * speed - drop * GRAVITY));
+      water *= 1 - EVAPORATE;
+    }
+  }
+  return quantise(h, el, size);
+}
+
+/**
  * Thermal erosion: material slumps wherever a slope exceeds the talus angle.
  * Softens the knife-edge ridges that ridged noise produces.
  */
