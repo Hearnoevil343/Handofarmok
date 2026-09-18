@@ -414,6 +414,41 @@ fast as it is raised, so boundary uplift goes from 420 to 700 and the belt profi
 to cubed, keeping relief in the core of the belt rather than spreading it over the ground beside
 it.
 
+### 3b. Dissection, and the erosion budget it has to share (2026-09-18)
+
+World Forge left land river-cut and Run Age did not, because droplet erosion existed only in the
+Forge. `dissectLand` is that step made fit for an age: it wraps east-west, starts droplets on land
+only, stops them at the sea and cannot move the shoreline.
+
+**It could not simply be added.** On 108 worlds, on top of everything else: strength 25 scored 3.88
+against 2.96 (mountain cover 9.7 -> 6.3%, uplift governor pinned at 99), and even 5 scored 3.30.
+The whole-world score said "worse" and not why. `continuity.cjs` now prints a **budget per step**
+(what each step raises and lowers per age, averaged over land, and the mountain tiles it makes or
+removes), and that did: boundary relief adds 24.5 units an age; denudation removes 13.6,
+weathering 7.3, stream power 7.3; dissection at 25 removed another 14.4. The erosion side of the
+ledger was already full, and the largest entry on it was the least physical one - denudation, a
+blanket lowering of every range not being pushed.
+
+**So dissection replaces part of denudation.** Same 108 worlds:
+
+| dissection / denudation | score mean / worst | agreement | births/age | plateau % | largest landmass % | land drift |
+|---|---|---|---|---|---|---|
+| 0 / 0.5 (was) | 2.96 / 4.98 | 0.823 | 0.375 | 15.6 | 61 | 4.0 |
+| **10 / 0.3 (now)** | **2.94 / 4.76** | **0.831** | **0.337** | **14.5** | 75 | 8.3 |
+| 15 / 0.2 | 2.87 / 5.22 | 0.848 | 0.27 | 14.6 | 85 | 13.2 |
+| 25 / 0 | 7.59 / 22.1 | 0.882 | 0.16 | 15.0 | 94 | 24.3 |
+
+Less denudation means better continuity at every step - agreement after boundary relief went
+0.862 -> 0.887 -> 0.918 on one world, because the uplift governor no longer has to rebuild what
+the blanket lowering took - but denudation is also what sinks old land, so without it land grows
+and continents merge. 10 / 0.3 is the point that gains on continuity, births and plateau without
+the land running away. **The dependency to remember: denudation is doing two jobs, wearing down
+ranges and holding the land budget. Going further needs the second job done by something else**
+(crust conservation with a wider reach, or real isostasy - science-gaps #5).
+
+Method note: size a new factor against the budget table first (one world, one minute), then
+confirm on 108 worlds. Three 108-world sweeps here would have been one.
+
 ### Research numbers for these factors
 Literature values, for setting rates rather than guessing them. One age is 10 Myr; at 129
 tiles a tile is about 310 km and a land elevation unit about 10 m (reading the mountain line
