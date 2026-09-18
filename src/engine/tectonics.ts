@@ -889,7 +889,6 @@ export function frayBoundaries(plateId: Int16Array, size: number, rng: () => num
  * few tiles across, which puts a kink in the line where there was none.
  */
 function breakStraightRuns(plateId: Int16Array, size: number, rng: () => number, minRun = 8): void {
-  const n = size * size;
   const at = (x: number, y: number) => {
     if (y < 0 || y >= size) return -1;
     return plateId[y * size + (((x % size) + size) % size)];
