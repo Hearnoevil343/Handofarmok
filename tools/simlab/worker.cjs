@@ -6,7 +6,7 @@ const ENGINE = workerData.engineDir;
 const { generateWorld } = require(path.join(ENGINE, "pipeline"));
 const { runAge } = require(path.join(ENGINE, "age"));
 const engineMetrics = require(path.join(ENGINE, "metrics"));
-const { measureAge, boundaryPersistence, boundaryStraightness, boundaryClumping, boundaryLongestRun, erosionShape, landHeight } = require("./metrics.extra.cjs");
+const { measureAge, boundaryPersistence, boundaryStraightness, boundaryClumping, boundaryLongestRun, erosionShape, landHeight, mountainVariety } = require("./metrics.extra.cjs");
 
 /**
  * One world, run forward for N ages, measured every age.
@@ -20,6 +20,7 @@ function runHistory(cfg) {
   const N = cfg.size;
   let w = generateWorld(N, cfg.archetype, cfg.climate, cfg.seed);
   let plateSet, plateMap, crust, oceanAge, basinDepthRef, freeboardRef, continentalAreaRef, seaLevelDatum;
+  let waterVolume, iceLoad, crustShare;
   let spots, provinces, sea = 0;
   let uplift = cfg.upliftStart;
 
@@ -32,6 +33,7 @@ function runHistory(cfg) {
   for (let age = 1; age <= cfg.ages; age++) {
     const r = runAge(w, N, {
       plateSet, plateMap, crust, oceanAge, basinDepthRef, freeboardRef, continentalAreaRef, seaLevelDatum,
+      waterVolume, iceLoad, crustShare,
       spots, provinces,
       upliftStrength: uplift,
       seaLevelOffset: sea,
@@ -62,7 +64,19 @@ function runHistory(cfg) {
       ...(cfg.deposition !== undefined ? { deposition: cfg.deposition } : {}),
       ...(cfg.glaciation !== undefined ? { glaciation: cfg.glaciation } : {}),
       ...(cfg.beltWidth !== undefined ? { beltWidth: cfg.beltWidth } : {}),
-      ...(cfg.beltWidth !== undefined ? { beltWidth: cfg.beltWidth } : {}),
+      ...(cfg.crustProduction !== undefined ? { crustProduction: cfg.crustProduction } : {}),
+      ...(cfg.crustCeiling !== undefined ? { crustCeiling: cfg.crustCeiling } : {}),
+      ...(cfg.waterBudget !== undefined ? { waterBudget: cfg.waterBudget } : {}),
+      ...(cfg.iceLoading !== undefined ? { iceLoading: cfg.iceLoading } : {}),
+      ...(cfg.landBudget !== undefined ? { landBudget: cfg.landBudget } : {}),
+      ...(cfg.channelSlope !== undefined ? { channelSlope: cfg.channelSlope } : {}),
+      // heat is an object in the engine; flat in configs so it can be swept
+      ...(cfg.heatStart !== undefined || cfg.heatTauMyr !== undefined
+        ? { heat: {
+            ...(cfg.heatStart !== undefined ? { heatStart: cfg.heatStart } : {}),
+            ...(cfg.heatTauMyr !== undefined ? { heatTauMyr: cfg.heatTauMyr } : {}),
+          } }
+        : {}),
       age,
     });
     w = r.world;
@@ -75,6 +89,9 @@ function runHistory(cfg) {
     freeboardRef = r.freeboardRef;
     continentalAreaRef = r.continentalAreaRef;
     seaLevelDatum = r.seaLevelDatum;
+    waterVolume = r.waterVolume;
+    iceLoad = r.iceLoad;
+    crustShare = r.crustShare;
     spots = r.spots;
     provinces = r.provinces;
     uplift = r.nextUpliftStrength;
@@ -90,7 +107,19 @@ function runHistory(cfg) {
       boundaryRun: boundaryLongestRun(plateMap, N),
       ...erosionShape(w.EL, r.riverMask, N),
       ...landHeight(w.EL, N),
+      ...mountainVariety(w.EL, N),
+      // Against the share this world is meant to be holding, not against the one
+      // it was generated with. With the land budget on, the target moves as arcs
+      // build crust and the planet cools, and a world that follows it is doing
+      // exactly what it should - scoring that as drift punished the feature for
+      // working.
+      landDrift: m.landPct - (r.landTarget !== undefined ? 100 * r.landTarget : 100 * baselineLand),
       seaRiseM: r.seaLevelMetres ?? 0,
+      heat: +r.heat.toFixed(3),
+      crustSharePct: crustShare !== undefined ? 100 * crustShare : undefined,
+      landTargetPct: r.landTarget !== undefined ? 100 * r.landTarget : undefined,
+      exposure: r.exposure !== undefined ? 100 * r.exposure : undefined,
+      crustPct: crust ? (100 * crust.reduce((a, b) => a + b, 0)) / crust.length : undefined,
       seaDatumM: r.seaLevelDatum ?? 0,
       plates: plateSet.sx.length,
       volcanoes: r.volcanoes,

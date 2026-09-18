@@ -9,7 +9,7 @@
  * elevation of 262 against an interior of 84 — the grey band down the side of
  * the world.
  */
-import { scaleLength } from "./scale";
+import { METRES_PER_UNIT_LAND, scaleLength } from "./scale";
 
 const wrapX = (x: number, size: number) => (x + size) % size;
 const clampY = (y: number, size: number) => (y < 0 ? 0 : y >= size ? size - 1 : y);
@@ -198,4 +198,58 @@ export function denudeInactive(
     }
   }
   return out;
+}
+
+/**
+ * Ice-sheet loading.
+ *
+ * An ice sheet is heavy. Three kilometres of ice presses the crust down by
+ * nearly a kilometre — ice is about 917 kg/m³ against a mantle near 3,300, so
+ * the ground settles by a bit over a quarter of the ice's thickness — and when
+ * the ice goes the ground comes back up. Scandinavia is still rising eight
+ * millimetres a year from ice that finished melting ten thousand years ago, and
+ * Hudson Bay is a basin mostly because it was under the thickest part of the
+ * Laurentide.
+ *
+ * Nothing in the model did this. Ice cut mountains down (`glacialErosion`) but
+ * never weighed anything down, so glaciated continents kept their height while
+ * being planed, and no basin was ever left behind by a departed ice sheet.
+ *
+ * Mantle relaxation takes about ten thousand years, which at ten million years
+ * an age is instant: the depression here is the equilibrium one, and the caller
+ * applies the difference from last age, so a retreating sheet rebounds.
+ *
+ * `iceMetres` is the sea-level equivalent of the water locked up, as
+ * `cycles.ts` reports it; it is spread over the coldest ground, thickest where
+ * it is coldest, so that the total matches.
+ */
+export function iceSheetLoad(
+  el: Int16Array, temperature: Int16Array, iceMetres: number,
+  /** ice starts to hold below this temperature */
+  freezingAt = -4,
+  /** share of the ice's thickness the crust settles by */
+  ratio = 917 / 3300,
+): Float32Array {
+  const load = new Float32Array(el.length);
+  if (iceMetres <= 0) return load;
+  const SEA = 100;
+  // where ice sits, and how heavily, before it is scaled to the water available
+  let weightSum = 0;
+  for (let i = 0; i < el.length; i++) {
+    if (el[i] < SEA) continue;
+    const cold = freezingAt - temperature[i];
+    if (cold <= 0) continue;
+    // colder ground holds a thicker sheet, levelling off: a sheet is limited by
+    // how fast ice can flow out of it, not only by how cold it is
+    load[i] = Math.min(1, cold / 20);
+    weightSum += load[i];
+  }
+  if (weightSum <= 0) return new Float32Array(el.length);
+  // iceMetres is over the whole map; share it out by weight, then convert the
+  // ice thickness to how far the crust sinks under it, in elevation units
+  const metresPerWeight = (iceMetres * el.length) / weightSum;
+  for (let i = 0; i < load.length; i++) {
+    if (load[i] > 0) load[i] = (load[i] * metresPerWeight * ratio) / METRES_PER_UNIT_LAND;
+  }
+  return load;
 }

@@ -325,6 +325,18 @@ export function assignPlates(
 }
 
 /**
+ * How vigorous the collision between two particular plates is: a steady multiplier around 1,
+ * the same every age for as long as both plates exist, from the pair alone.
+ */
+function pairVigour(a: number, b: number): number {
+  const lo = Math.min(a, b), hi = Math.max(a, b);
+  let h = (lo * 73856093) ^ (hi * 19349663);
+  h = Math.imul(h ^ (h >>> 13), 1274126177);
+  const u = ((h ^ (h >>> 16)) >>> 0) / 4294967295;
+  return 0.55 + 1.0 * u;
+}
+
+/**
  * Crust type is read at the boundary itself, not from a plate average.
  *
  * A plate average fails on any ocean-heavy world: split 38% land across six
@@ -414,7 +426,13 @@ export function applyBoundaries(
       kindAt[i] = kind;
       counts[kind]++;
       dist[i] = 0;
-      power[i] = Math.max(Math.abs(closing), shear);
+      // Not every collision is the Himalaya. Left to itself the model gave every boundary the
+      // same vigour, so once the uplift controller settled, every range came out the same
+      // height and a world was either all high ground or all worn stumps. Each pair of plates
+      // gets its own steady multiplier instead, so some sutures throw up high country and
+      // others little more than hills - and because it depends only on the pair, a belt keeps
+      // its character for as long as those two plates are pushing.
+      power[i] = Math.max(Math.abs(closing), shear) * pairVigour(a, b);
       // the continental side is the one that rides over
       overriding[i] = el[i] >= SEA ? 1 : 0;
       queue.push(i);
@@ -447,7 +465,11 @@ export function applyBoundaries(
   // than a single boundary can raise them.
   // 420 with denudeInactive at 0.2: at 340 / 0.3 the controller pinned near
   // its ceiling over long histories and mountain cover still decayed.
-  const k = (strength / 100) * (upliftScale ?? 420);
+  // 700 rather than 420: with the slope half of stream power carving the uplands
+  // (hydrology.ts) a belt is dissected as fast as it is raised, so it takes more
+  // push to hold a range up. Measured over 108 worlds, the pair together score
+  // 0.709 against 0.994, and belt elongation goes from 1.84 to 2.01.
+  const k = (strength / 100) * (upliftScale ?? 700);
   const elevation = Int16Array.from(el);
   const volcanism = new Int16Array(n);
   const uplifting = new Uint8Array(n);
@@ -459,7 +481,9 @@ export function applyBoundaries(
     // A linear fade spreads belt relief across the whole band, which lifts the ground beside
     // a range as well as the range: 26% of land ended up just under the mountain line. A
     // steeper profile keeps the high ground in the core, where a real range has it.
-    const fade = Math.pow(1 - d / (reach + 1), beltFalloff ?? 2);
+    // cubed rather than squared: relief stays in the core of the belt instead of
+    // spreading out over the ground beside it as a plateau
+    const fade = Math.pow(1 - d / (reach + 1), beltFalloff ?? 3);
     const p = power[i] * fade;
     let delta = 0;
     // some boundary kinds must not lift sea floor into new continents

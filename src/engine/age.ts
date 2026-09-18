@@ -2,7 +2,7 @@ import { type World, deriveClimate } from "./pipeline";
 import { analyse, carveRivers, drainageTree } from "./hydrology";
 
 import type { PlateSet } from "./tectonics";
-import { denudeInactive, isostaticRebound, orogenicCollapse } from "./isostasy";
+import { denudeInactive, iceSheetLoad, isostaticRebound, orogenicCollapse } from "./isostasy";
 import { tectonicAge } from "./tectonics";
 import { type Hotspot, applyHotspots, riftAtPlumes, seedHotspots } from "./hotspots";
 import { compactPlates, frayBoundaries } from "./tectonics";
@@ -16,10 +16,15 @@ import { makeRng } from "./noise";
 import { depositSediment, glacialErosion, thermalErosion } from "./erosion";
 import { scaleArea } from "./scale";
 import {
-  applySeaLevelRise, basinReferenceRate, conserveContinentalArea, continentalExposure, initOcean, meanOceanDepthMetres,
-  relaxBathymetry, restoreFreeboard, seaLevelFromBasins, updateCrust,
+  applySeaLevelRise, basinReferenceRate, conserveContinentalArea, continentalExposure, continentalGrowth,
+  initOcean, meanOceanDepthMetres, relaxBathymetry, restoreFreeboard, seaLevelForVolume, seaLevelFromBasins,
+  updateCrust, waterVolume,
 } from "./ocean";
 import { MYR_PER_AGE } from "./timescale";
+import {
+  type HeatOptions, EXPOSURE_NOW, basinShallowingMetres, crustProductionFactor, landShareFor,
+  mantleHeat, mountainCeiling, plateSpeedFactor, volcanismFactor,
+} from "./heat";
 import type { Planet } from "./planet";
 
 /**
@@ -125,6 +130,51 @@ export type AgeOptions = {
   planet?: Planet;
   /** sea-level offset already baked into EL from the previous age */
   seaLevelOffset?: number;
+  /**
+   * Internal heat (heat.ts): faster plates, shallower basins, more volcanism,
+   * a lower ceiling on mountains and faster crust production, all declining
+   * together over the history. Default is a planet already as cool as Earth is
+   * now, which is exactly what the engine did before.
+   */
+  heat?: HeatOptions;
+  /**
+   * Ocean model: how fast arcs make new continental crust, as a share of the
+   * map per age at present-day heat (default 0.002, about four cubic kilometres
+   * a year at 40 km thick, which is the order arc production runs at).
+   */
+  crustProduction?: number;
+  /** ocean model: where continental crust levels off, share of the map (default 0.42) */
+  crustCeiling?: number;
+  /**
+   * Ocean model: hold the water volume fixed and let the sea find its own level
+   * in the basins the world has, instead of reading sea level off mean basin
+   * depth. The honest version, and the one that lets a world stay dry or stay
+   * drowned rather than drifting toward Earth.
+   */
+  waterBudget?: boolean;
+  /** carried water volume, metre-tiles (AgeReport.waterVolume) */
+  waterVolume?: number;
+  /** how far ice sheets press the crust down, 0-100 (default 100: the real ratio) */
+  iceLoading?: number;
+  /** carried ice load from the previous age (AgeReport.iceLoad) */
+  iceLoad?: Float32Array;
+  /**
+   * Let the land share be a budget rather than a setting: continental crust
+   * grows as arcs make it, the sea stands higher over a hotter planet and lower
+   * when ice holds the water, and the land share follows from the two (heat.ts).
+   * Without it the world is held at the share it was generated with, for ever.
+   * On by default; set false for the old behaviour.
+   */
+  landBudget?: boolean;
+  /** carried share of the map that is continental crust (AgeReport.crustShare) */
+  crustShare?: number;
+  /**
+   * The slope half of stream power, the `n` in A^m S^n. River carving used
+   * drainage area alone, so steep ground was cut no harder than flat and the
+   * uplands - which have almost no drainage area - were never dissected at all.
+   * 0 is that old behaviour; 1 is the default and the textbook exponent.
+   */
+  channelSlope?: number;
 };
 
 export type AgeReport = {
@@ -161,6 +211,18 @@ export type AgeReport = {
   seaLevelMetres?: number;
   /** ocean model: how far the sea now stands above where the history started */
   seaLevelDatum?: number;
+  /** the planet's internal heat this age, 1 being the present day */
+  heat: number;
+  /** ocean model: water held, metre-tiles; pass back in next age */
+  waterVolume?: number;
+  /** how far the crust is currently pressed down by ice; pass back in next age */
+  iceLoad?: Float32Array;
+  /** land as a share of continental crust: what freeboard actually delivered */
+  exposure?: number;
+  /** share of the map that is continental crust; pass back in next age */
+  crustShare?: number;
+  /** the land share the budget asked for this age */
+  landTarget?: number;
   /**
    * this age: tiles of new sea floor opened, extra claims where plates
    * overlapped, continental tiles lost in overlaps, and (ocean model) tiles
@@ -173,6 +235,12 @@ export type AgeReport = {
 };
 
 export function runAge(w: World, size: number, opts: AgeOptions): AgeReport {
+  // The planet's internal heat this age. One number, declining over the history,
+  // that every process below reads: plate speed, volcanism, how much relief the
+  // crust can hold, how shallow the basins are and how fast arcs make continent.
+  // At the default it is 1 for ever and nothing changes.
+  const heat = mantleHeat(opts.age ?? 0, opts.heat);
+
   // 0. plates are driven by the arrangement of the continents, not by fixed
   //    random headings — this is what lets the Wilson cycle close
   if (opts.plateSet) wilsonDrive(opts.plateSet, w.EL, size, opts.age ?? 0);
@@ -218,7 +286,8 @@ export function runAge(w: World, size: number, opts: AgeOptions): AgeReport {
     for (let i = 0; i < oceanState.crust.length; i++) continentalAreaRef += oceanState.crust[i];
   }
   const steps = Math.max(1, Math.round(opts.subSteps ?? 1));
-  const distance = (opts.drift / 100) * (size / 3);
+  // a hotter mantle convects harder, so the plates run faster
+  const distance = (opts.drift / 100) * (size / 3) * plateSpeedFactor(heat);
   const strength = opts.upliftStrength ?? 45;
   let tect = tectonicAge(w.EL, size, {
     plateSet: opts.plateSet,
@@ -302,8 +371,10 @@ export function runAge(w: World, size: number, opts: AgeOptions): AgeReport {
   // every age instead, which also lets a plume appear *because* a continent has
   // assembled — the actual mechanism.
   let spots = opts.spots ?? [];
+  // more heat to shed, more plumes to shed it through
+  const wantSpots = Math.round((opts.hotspots ?? 2) * volcanismFactor(heat));
   const fresh = seedHotspots(el, size, tect.plateSet, plateId,
-                             Math.max(0, (opts.hotspots ?? 2) - spots.filter((s) => !s.plume).length), rng);
+                             Math.max(0, wantSpots - spots.filter((s) => !s.plume).length), rng);
   const hasPlume = spots.some((s) => s.plume);
   for (const f of fresh) {
     if (f.plume && hasPlume) continue;   // one superplume at a time
@@ -341,7 +412,7 @@ export function runAge(w: World, size: number, opts: AgeOptions): AgeReport {
     }
   }
 
-  if ((opts.hotspots ?? 2) > 0 && spots.length) {
+  if (wantSpots > 0 && spots.length) {
     const hot = applyHotspots(el, size, spots, {
       strength: 70, seed: opts.seed + 7,
     });
@@ -352,12 +423,13 @@ export function runAge(w: World, size: number, opts: AgeOptions): AgeReport {
 
   opts.trace?.("hotspots", el);
 
-  // crust past the limit spreads sideways instead of stacking into a plateau
-  el = orogenicCollapse(el, size);
+  // crust past the limit spreads sideways instead of stacking into a plateau —
+  // and hot crust is weak, so a young planet cannot hold as much of one up
+  el = orogenicCollapse(el, size, mountainCeiling(heat));
   opts.trace?.("collapse", el);
 
   // and anything no longer being pushed starts wearing down
-  el = denudeInactive(el, size, tect.uplifting, opts.denudation ?? 0.65);
+  el = denudeInactive(el, size, tect.uplifting, opts.denudation ?? 0.5);
   opts.trace?.("denude", el);
 
   // --- the long cycles ------------------------------------------------------
@@ -367,6 +439,25 @@ export function runAge(w: World, size: number, opts: AgeOptions): AgeReport {
   // ice only cuts when the planet is in an icehouse.
   const historySeed = (opts.seed ?? 0) - (opts.age ?? 0);
   const phase = climatePhase(opts.age ?? 0, dispersal(el, size), historySeed);
+
+  // How much continent there is, and therefore how much land there can be. The
+  // crust grows as arcs make it - fast on a hot young planet, barely at all once
+  // it has cooled - and the sea stands higher over shallow hot basins and lower
+  // when ice holds the water. This is what lets a world start mostly ocean and
+  // become a world with continents on it, instead of holding whatever share it
+  // was generated with for a billion years.
+  let crustShare = opts.crustShare;
+  let landTarget: number | undefined;
+  if (opts.landBudget !== false) {
+    if (crustShare === undefined) {
+      crustShare = Math.min(0.9, Math.max(0.02, (opts.baselineLand ?? 0.3) / EXPOSURE_NOW));
+    }
+    crustShare = continentalGrowth(
+      crustShare * el.length, el.length, crustProductionFactor(heat),
+      opts.crustProduction ?? 0, opts.crustCeiling ?? 0.42,
+    ) / el.length;
+    landTarget = landShareFor(crustShare, heat, phase.iceMetres, MEAN_ICE_METRES);
+  }
 
   const beforeErosion = Int16Array.from(el);
 
@@ -387,7 +478,8 @@ export function runAge(w: World, size: number, opts: AgeOptions): AgeReport {
   const hydro = analyse(el, size, w.RF, opts.riverDensity);
   if (opts.riverCarving > 0) {
     // same surface as the analysis just above, so reuse it rather than run it twice
-    el = carveRivers(el, size, opts.riverCarving, w.RF, opts.riverDensity, hydro).elevation;
+    el = carveRivers(el, size, opts.riverCarving, w.RF, opts.riverDensity, hydro,
+                     opts.channelSlope ?? 1).elevation;
   }
   opts.trace?.("rivers", el);
 
@@ -422,9 +514,18 @@ export function runAge(w: World, size: number, opts: AgeOptions): AgeReport {
     motion.accreted = changed.accreted;
     motion.foundered = changed.foundered;
     if (continentalAreaRef !== undefined) {
-      motion.areaRestored = conserveContinentalArea(el, tect.crust, tect.oceanAge, size, continentalAreaRef);
+      // arcs make new continent, and made it faster when the mantle was hotter;
+      // at the default rate of 0 the area is simply conserved, as before
+      continentalAreaRef = continentalGrowth(
+        continentalAreaRef, el.length, crustProductionFactor(heat),
+        opts.crustProduction ?? 0.002, opts.crustCeiling ?? 0.42,
+      );
+      motion.areaRestored = conserveContinentalArea(
+        el, tect.crust, tect.oceanAge, size, continentalAreaRef, 0.2, VL,
+      );
     }
-    el = relaxBathymetry(el, tect.crust, tect.oceanAge, datum);
+    el = relaxBathymetry(el, tect.crust, tect.oceanAge, datum, 0.5, 0.3, size,
+                         basinShallowingMetres(heat));
     opts.trace?.("bathymetry", el);
   } else {
     const sep = opts.crustSeparation ?? 0.8;
@@ -443,7 +544,9 @@ export function runAge(w: World, size: number, opts: AgeOptions): AgeReport {
     el = restoreFreeboard(el, tect.crust, freeboardRef, datum);
     opts.trace?.("freeboard", el);
   } else {
-    if (opts.conserveLand !== false) el = conserveCrust(el, opts.baselineLand ?? 0.3, opts.seaLevelOffset ?? 0);
+    if (opts.conserveLand !== false) {
+      el = conserveCrust(el, landTarget ?? opts.baselineLand ?? 0.3, opts.seaLevelOffset ?? 0);
+    }
     opts.trace?.("conserveCrust", el);
   }
 
@@ -465,7 +568,23 @@ export function runAge(w: World, size: number, opts: AgeOptions): AgeReport {
   // Ocean model: sea level from how deep the basins are and how much water the
   // ice holds, against where this world's basins settle (ocean.ts).
   let seaRise = 0, seaLevelDatum = datum, basinDepthRef = opts.basinDepthRef;
-  if (oceanState && tect.crust && tect.oceanAge) {
+  let water = opts.waterVolume;
+  if (oceanState && tect.crust && tect.oceanAge && opts.waterBudget) {
+    // The planet has this much water and the basins are shaped as they are, so
+    // the sea stands where those two meet. Nothing pulls it toward Earth's
+    // level: a world with little water stays a world with little water, and
+    // deepening basins are paid for by the sea falling.
+    //
+    // The volume is read off the map the first time, *after* the sea floor has
+    // been relaxed toward the depths its ages imply — reading it from painted
+    // bathymetry instead made the first age pay for that mismatch all at once
+    // and the sea fell hundreds to thousands of metres.
+    const iceHeld = phase.iceMetres * world.EL.length;
+    if (water === undefined) water = waterVolume(world.EL, 0) + iceHeld;
+    seaRise = seaLevelForVolume(world.EL, Math.max(0, water - iceHeld));
+    seaLevelDatum = datum + seaRise;
+    world.EL = applySeaLevelRise(world.EL, seaRise);
+  } else if (oceanState && tect.crust && tect.oceanAge) {
     const depth = meanOceanDepthMetres(tect.crust, tect.oceanAge);
     basinDepthRef = basinDepthRef === undefined
       ? depth
@@ -473,6 +592,23 @@ export function runAge(w: World, size: number, opts: AgeOptions): AgeReport {
     seaLevelDatum = seaLevelFromBasins(depth, basinDepthRef, phase.iceMetres, MEAN_ICE_METRES);
     seaRise = seaLevelDatum - datum;
     world.EL = applySeaLevelRise(world.EL, seaRise);
+  }
+
+  // Ice is heavy. The crust under a sheet settles by about a quarter of the
+  // ice's thickness and comes back up when it melts, which is why Hudson Bay is
+  // a basin and why Scandinavia is still rising. Applied as the change since
+  // last age, since at ten million years an age the mantle's ten-thousand-year
+  // relaxation is instantaneous.
+  let iceLoad = opts.iceLoad;
+  if ((opts.iceLoading ?? 100) > 0) {
+    const next = iceSheetLoad(world.EL, world.TP, phase.iceMetres, -4,
+                              (917 / 3300) * ((opts.iceLoading ?? 100) / 100));
+    const prev = iceLoad && iceLoad.length === next.length ? iceLoad : null;
+    for (let i = 0; i < next.length; i++) {
+      const delta = next[i] - (prev ? prev[i] : 0);
+      if (delta !== 0) world.EL[i] = Math.min(400, Math.max(0, Math.round(world.EL[i] - delta)));
+    }
+    iceLoad = next;
   }
   opts.trace?.("seaLevel", world.EL);
 
@@ -536,6 +672,12 @@ export function runAge(w: World, size: number, opts: AgeOptions): AgeReport {
     continentalAreaRef,
     seaLevelMetres: seaRise,
     seaLevelDatum: oceanState ? seaLevelDatum : undefined,
+    heat,
+    crustShare,
+    landTarget,
+    waterVolume: water,
+    iceLoad,
+    exposure: oceanState && tect.crust ? continentalExposure(world.EL, tect.crust, seaLevelDatum) : undefined,
     motion,
   };
 }

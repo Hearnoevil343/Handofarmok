@@ -163,6 +163,55 @@ age.
 - [ ] Hotspot count 10-15 at 129, life 50-150 Myr, Gaussian bump on the plate
       overhead; large igneous provinces every 10-20 Myr.
 
+## 2b. The planet's own history: heat, crust and water
+
+**Done 2026-09-18.** Everything in the engine treated the planet as though it had always been
+the age it is now. The dials below are the ones real planets have that this did not, taken as
+an inventory rather than patched in one at a time.
+
+`heat.ts` carries one number - internal heat as a multiple of the present day - and every
+coupling reads from it, so changing the decay changes them together. Earth's radiogenic heat
+production has fallen by roughly a factor of four since it formed and mantle temperature with
+it; the effective decay behaves like a single exponential near 2.5 Gyr, so a hundred-age history
+(one billion years) starting at 2.0 ends near 1.7. What it drives: plate speed (sqrt, because
+the geological record is far more equivocal than boundary-layer scaling), plume count, the
+ceiling on mountain height (hot crust is weak and flows), how shallow the basins sit (a hotter
+mantle melts more at a ridge, making thicker and more buoyant sea floor), and how fast arcs make
+continental crust.
+
+**Land share is now a budget, not a setting.** `conserveCrust` held every world at the share it
+was generated with for ever. The target moves now: continental crust grows as arcs make it -
+saturating, because the fuller the surface the more of what is made is simply recycled - and the
+sea stands higher over a hot planet's shallow basins and lower when ice holds the water.
+Measured: an archipelago world goes from 15.6% land to 24.1% over a billion years, where before
+it sat flat at about 20%. Starting hotter starts it lower and it still grows.
+
+**Ice loads the crust.** Ice cut mountains down but never weighed anything down. The crust under
+a sheet settles by about 917/3300 of the ice's thickness and rebounds when it melts, which is why
+Hudson Bay is a basin. At ten million years an age the mantle's ten-thousand-year relaxation is
+instant, so the equilibrium depression is applied as the change since last age.
+
+**Measured and not adopted: the explicit ocean model.** Solving sea level from a conserved water
+volume against the real bathymetry is the honest version and it is implemented
+(`waterBudget`, `seaLevelForVolume`). It scores about half as well - 1.54 against 0.71 - chiefly
+on hypsometric bimodality and a coastline that comes out at 1.40 against Earth's 1.25, and the
+sea walks 500 to 700 m down over a history as the basins deepen. The reduced form above carries
+the two numbers that actually decide the answer and lets the existing crust conservation put the
+shoreline where they say.
+
+Two bugs found on the way, both worth keeping in mind: shifting every elevation by a constant and
+rounding back to an integer collapses neighbours onto the same value, and after a hundred ages
+the land is visibly stair-stepped (0.08% of land in flat 2x2 blocks became 0.92%, against a 0.5%
+limit) - fixed with a fixed per-tile offset inside the rounding interval, which adds no noise and
+does not drift. And abyssal-hill relief on new sea floor is real at 100-300 m but broadened the
+abyssal peak enough to cost 0.11 of bimodality, so it is off by default.
+
+**Open: the plateau band.** Land sitting just under the mountain line runs at 15% against Earth's
+7%, and every dial that lowers it lowers mountain cover with it one for one - denudation,
+deposition, and the slope term below were each swept and each traded at about that rate. That
+says the model makes relief as broad swells rather than as peaks, and the fix is the shape of
+the uplift profile, not any rate.
+
 ## 3. Surface: erosion and sediment
 
 **Done 2026-09-18 - nothing was ever laid down.** Every erosion step in an age subtracted:
@@ -191,6 +240,17 @@ icehouse (cycles.ts already models icehouse eras of tens of Myr): full bite at a
 maximum, almost none in a hothouse. A range can therefore grow through a greenhouse stretch
 and be planed in the next ice age. Constant ice cost 1.3 points of plateau share; ice tied to
 the eras costs 0.2, within noise.
+
+**Done 2026-09-18 - stream power was missing its slope.** River carving eroded on drainage area
+alone: `A^m` with no `S^n`. A tile was cut the same amount whether it stood on a cliff or a flat,
+and since drainage area is near zero along a divide, high ground was never touched at all - which
+is why an uplifted region stayed an uplifted region instead of being dissected into ranges with
+valleys between them. With the slope term at the textbook exponent of 1, belt elongation goes
+from 1.84 to 2.01, mountain spread from 45 to 49, and the worst-case score across 108 worlds
+halves from 2.65 to 1.10. It takes more push to hold a range up once it is being dissected as
+fast as it is raised, so boundary uplift goes from 420 to 700 and the belt profile from squared
+to cubed, keeping relief in the core of the belt rather than spreading it over the ground beside
+it.
 
 ### Research numbers for these factors
 Literature values, for setting rates rather than guessing them. One age is 10 Myr; at 129

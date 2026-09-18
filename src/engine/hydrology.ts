@@ -12,6 +12,7 @@
  * Water is routed to the ocean or into a lake, exactly as you would expect —
  * a river that cannot reach the sea ponds where it stops.
  */
+import { scaleSlope } from "./scale";
 
 const SEA = 100;
 
@@ -166,6 +167,20 @@ export function carveRivers(
   riverDensity = 4,
   /** the analysis of this same surface, if the caller already has it */
   hydrology?: Hydrology,
+  /**
+   * How hard the slope term bites, the `n` in stream power. Zero is the old
+   * behaviour: erosion from drainage area alone.
+   *
+   * Stream power is A^m S^n - how much water, and how steeply it falls. Only
+   * the first half was here, so a tile eroded the same amount whether it sat on
+   * a cliff or on a flat, and since drainage area is near zero along a divide,
+   * high ground was barely touched: measured, no river tile at all above
+   * elevation 300 and 5% between 250 and 300. That is why an uplifted region
+   * stayed an uplifted region. With the slope term, steep ground is cut hard,
+   * headwaters bite back into the uplands, and a broad swell is dissected into
+   * ranges with valleys between them rather than being lowered as one slab.
+   */
+  slopePower = 0,
 ): { elevation: Int16Array; river: Uint8Array; lakeDepth: Float64Array } {
   const { accumulation, lakeDepth, river } = hydrology ?? analyse(el, size, rainfall, riverDensity);
   const n = size * size;
@@ -175,10 +190,28 @@ export function carveRivers(
   let maxA = 1;
   for (let i = 0; i < n; i++) if (accumulation[i] > maxA) maxA = accumulation[i];
 
+  // the slope a tile is compared against: steeper than this cuts faster, gentler
+  // slower. About 180 m over 310 km, which is a modest continental gradient.
+  const REFERENCE_SLOPE = scaleSlope(6, size);
+
   for (let i = 0; i < n; i++) {
     if (el[i] < SEA) { out[i] = el[i]; continue; }
     const a = Math.pow(accumulation[i] / maxA, 0.42);   // m exponent
-    out[i] = Math.round(Math.min(400, Math.max(SEA, el[i] - a * k)));
+    let bite = a * k;
+    if (slopePower > 0) {
+      const x = i % size, y = (i / size) | 0;
+      let lowest = el[i];
+      for (const j of [
+        y * size + ((x + size - 1) % size), y * size + ((x + 1) % size),
+        y > 0 ? i - size : -1, y < size - 1 ? i + size : -1,
+      ]) {
+        if (j >= 0 && el[j] < lowest) lowest = el[j];
+      }
+      const slope = (el[i] - lowest) / REFERENCE_SLOPE;
+      // capped, because one cliff tile should not be cut to the sea in one age
+      bite *= Math.min(4, Math.pow(slope, slopePower));
+    }
+    out[i] = Math.round(Math.min(400, Math.max(SEA, el[i] - bite)));
   }
   return { elevation: out, river, lakeDepth };
 }

@@ -11,7 +11,15 @@
 const TARGETS = {
   // Earth runs 18% land at a Cretaceous sea-level high and 33% at a glacial
   // maximum, on continental crust whose area does not change.
-  landPct:       { lo: 18, hi: 34, weight: 1.0, note: "Earth 18-33% across the Phanerozoic" },
+  // A wide sanity band only. Judging a world against Earth absolutely punishes the simulation
+  // for holding the share its archetype was built with: CONTINENTS starts at 38% land and
+  // HIGHLANDS at 68%, both deliberate. What matters is whether the run holds its world steady,
+  // which landDrift below measures.
+  landPct:       { lo: 10, hi: 60, weight: 0.4, note: "sanity band; archetypes start 18-68%" },
+
+  // How far land share has wandered from where this world started, in points. Earth moves about
+  // 8 points either way across the Phanerozoic as ice and sea level come and go.
+  landDrift:     { lo: -8, hi: 8, weight: 1.0, note: "Earth swings ~8 points; a run should not drift further" },
 
   // Mountains are about a tenth of land area. Ours reached half.
   mtnPct:        { lo: 8,  hi: 16, weight: 1.2, note: "Earth ~10-14% of land" },
@@ -65,6 +73,15 @@ const TARGETS = {
 
   // Share of land sitting in a completely flat 3x3 patch: an undissected slab.
   flatShare:        { lo: 0, hi: 0.25, weight: 0.6, note: "erosion should leave few flat slabs" },
+
+  // --- are the ranges varied, or all the same worn stumps ----------------------
+  // The tallest ground on the map. A world whose peaks all sit just over the mountain line has
+  // no Himalaya in it; one pinned at the 400 ceiling has nothing but.
+  peakEl:           { lo: 330, hi: 395, weight: 0.7, note: "there should be somewhere genuinely high" },
+
+  // The gap between the tallest tenth of mountain tiles and the shortest tenth. Earth has young
+  // ranges rising while old ones wear down, so the spread is wide.
+  mountainSpread:   { lo: 25, hi: 100, weight: 0.7, note: "young high ranges and old worn ones at once" },
 
   // --- how high the land stands, in DF elevation units --------------------------
   // One mapping for both of these and for mtnPct: read the mountain line (300) as Earth's
@@ -143,6 +160,28 @@ function scoreRun(rows) {
   const cycleMiss = Math.max(0, expected - cycles) * 0.8;
   parts.wilsonCycles = { median: cycles, miss: expected, penalty: +cycleMiss.toFixed(3) };
   total += cycleMiss;
+
+  // How far land share travels across the whole history, in points. A world
+  // that never moves is a picture rather than a planet; one that swings forty
+  // points is not a planet either. Earth's land has run from about 18% at a
+  // Cretaceous high stand to 33% at a glacial maximum.
+  const lands = rows.map((r) => r.landPct).filter(Number.isFinite);
+  if (lands.length > 10) {
+    const swing = Math.max(...lands) - Math.min(...lands);
+    const swingMiss = swing < 6 ? (6 - swing) / 19 : swing > 25 ? (swing - 25) / 19 : 0;
+    parts.landSwing = { median: +swing.toFixed(1), miss: +swingMiss.toFixed(3), penalty: +(swingMiss * 0.6).toFixed(3) };
+    total += swingMiss * 0.6;
+
+    // And where it ended up against where it started: a planet may genuinely
+    // gain land as its arcs build continent, or lose it as the sea rises, but
+    // it should not double or vanish. Averaged over ten ages at each end so one
+    // glacial age does not decide it.
+    const mean = (xs) => xs.reduce((a, b) => a + b, 0) / xs.length;
+    const trend = mean(lands.slice(-10)) - mean(lands.slice(0, 10));
+    const trendMiss = trend < -15 ? (-15 - trend) / 35 : trend > 20 ? (trend - 20) / 35 : 0;
+    parts.landTrend = { median: +trend.toFixed(1), miss: +trendMiss.toFixed(3), penalty: +(trendMiss * 0.3).toFixed(3) };
+    total += trendMiss * 0.3;
+  }
 
   // Degenerate outcomes are disqualifying, not merely bad.
   const dead = rows.filter((r) => r.landPct < 5).length;

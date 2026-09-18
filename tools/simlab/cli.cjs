@@ -42,6 +42,16 @@ function expand(cfg) {
     for (const c of combos) for (const v of cfg[k]) next.push({ ...c, [k]: v });
     combos = next;
   }
+  // Named variants: a list of whole configurations to compare, rather than a
+  // cross product of single parameters. A cross product cannot express "these
+  // three settings go together", which is what comparing a proposed default
+  // against the current one actually needs.
+  if (Array.isArray(cfg.variants) && cfg.variants.length) {
+    const merged = [];
+    for (const c of combos) for (const v of cfg.variants) merged.push({ ...c, ...v });
+    combos = merged;
+  }
+
   const jobs = [];
   let id = 0;
   for (const c of combos) {
@@ -49,7 +59,7 @@ function expand(cfg) {
       for (const seed of cfg.seeds) {
         const full = {};
         for (const [k, v] of Object.entries(cfg)) {
-          if (k.startsWith("_") || ["seeds", "archetypes"].includes(k)) continue;
+          if (k.startsWith("_") || ["seeds", "archetypes", "variants"].includes(k)) continue;
           full[k] = Array.isArray(v) ? c[k] : v;
         }
         jobs.push({ id: id++, cfg: { ...full, ...c, archetype, seed, keepWorld: true } });

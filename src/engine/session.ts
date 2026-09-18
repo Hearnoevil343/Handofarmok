@@ -29,6 +29,10 @@ export type Session = {
   seaLevelOffset: number;
   /** land share this world settles toward, sampled when the history begins */
   baselineLand: number | null;
+  /** share of the map that is continental crust, which arcs slowly add to */
+  crustShare: number | null;
+  /** how far the crust is currently pressed down by ice, so it rebounds when it melts */
+  iceLoad: Float32Array | null;
 };
 
 const sessions = new Map<string, Session>();
@@ -37,7 +41,8 @@ export function getSession(key: string): Session {
   let s = sessions.get(key);
   if (!s) {
     s = { plates: null, age: 0, plateMap: null, plateGridSize: 0, upliftStrength: 45,
-      spots: [], provinces: null, seaLevelOffset: 0, baselineLand: null };
+      spots: [], provinces: null, seaLevelOffset: 0, baselineLand: null,
+      crustShare: null, iceLoad: null };
     sessions.set(key, s);
   }
   return s;

@@ -55,6 +55,8 @@ export function RunAge() {
       upliftStrength: session.upliftStrength,
       seaLevelOffset: session.seaLevelOffset,
       baselineLand: session.baselineLand,
+      crustShare: session.crustShare ?? undefined,
+      iceLoad: session.iceLoad ?? undefined,
       plates,
       drift,
       mountainTarget: mountains / 100,
@@ -74,6 +76,8 @@ export function RunAge() {
     session.provinces = r.provinces;
     session.upliftStrength = r.nextUpliftStrength;
     session.seaLevelOffset = r.seaLevelOffset;
+    session.crustShare = r.crustShare ?? null;
+    session.iceLoad = r.iceLoad ?? null;
     session.age += 1;
     write(r.world);
     const kinds = Object.entries(r.boundaries)
@@ -86,7 +90,10 @@ export function RunAge() {
       `Age ${session.age} (${(session.age * MYR_PER_AGE).toLocaleString()} million years): ` +
       `${r.mountainPct.toFixed(0)}% mountain, ${r.plateSet.sx.length} plates, ` +
       `${r.riverTiles} river tiles, ${r.lakeTiles} standing water, ${r.volcanoes} volcanoes, ` +
-      `${r.spots.length} active plumes. Mostly ${kinds}. ${r.phase}.`
+      `${r.spots.length} active plumes. Mostly ${kinds}. ${r.phase}.` +
+      (r.crustShare !== undefined
+        ? ` Continental crust ${(100 * r.crustShare).toFixed(0)}% of the world.`
+        : "")
     );
   };
 

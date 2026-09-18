@@ -1,5 +1,5 @@
 {
-  "_comment": "Every parameter is either a list (swept) or a single value (fixed). The cross product times seeds times archetypes is the run count -- check it with --dry before committing a night to it.",
+  "_comment": "Every parameter is either a list (swept) or a single value (fixed). The cross product times seeds times archetypes is the run count -- check it with --dry before committing a night to it. A list of whole configurations can go in \"variants\" instead, to compare settings that only make sense together. Values here are the engine's defaults unless a sweep says otherwise.",
   "size": 129,
   "ages": 100,
   "seeds": [
@@ -11,32 +11,30 @@
     66
   ],
   "archetypes": [
+    "ARCHIPELAGO",
     "PANGAEA",
     "CONTINENTS"
   ],
   "climate": "TEMPERATE",
   "plates": 10,
-  "drift": [
-    3,
-    4,
-    6
-  ],
-  "mountainTarget": [
-    0.1,
-    0.12
-  ],
+  "drift": 6,
+  "mountainTarget": 0.12,
   "upliftStart": 45,
-  "hotspots": [
-    2,
-    3
-  ],
+  "hotspots": 3,
   "weathering": 35,
   "riverCarving": 50,
   "riverDensity": 5,
   "rebound": 55,
   "deposition": 80,
-  "denudation": 0.65,
+  "denudation": 0.5,
   "beltWidth": 11,
-  "beltFalloff": 2,
-  "frayChance": 0.25
+  "beltFalloff": 3,
+  "frayChance": 0.25,
+  "upliftScale": 700,
+  "channelSlope": 1,
+  "glaciation": 40,
+  "landBudget": true,
+  "heatStart": 1,
+  "crustProduction": 0.002,
+  "iceLoading": 100
 }

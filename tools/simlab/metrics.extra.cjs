@@ -345,6 +345,29 @@ function landHeight(el, N) {
   return { landMedian: land[land.length >> 1], plateauPct: (100 * band) / land.length };
 }
 
+/**
+ * Are the ranges varied, or has everything worn to the same stumps?
+ *
+ * A world can hold its mountain share and still be dull: every range the same height, none
+ * young and high, none old and low. Earth has both at once - the Himalaya rising while the
+ * Urals are worn down - so the spread of mountain heights matters as much as their number.
+ *
+ * peakEl is the highest ground, mountainSpread the gap between the tallest tenth of mountain
+ * tiles and the shortest tenth, both in elevation units.
+ */
+function mountainVariety(el, N) {
+  const mtn = [];
+  let peak = 0;
+  for (let i = 0; i < N * N; i++) {
+    if (el[i] > peak) peak = el[i];
+    if (el[i] >= 300) mtn.push(el[i]);
+  }
+  if (mtn.length < 10) return { peakEl: peak, mountainSpread: 0 };
+  mtn.sort((a, b) => a - b);
+  const lo = mtn[Math.floor(mtn.length * 0.1)], hi = mtn[Math.floor(mtn.length * 0.9)];
+  return { peakEl: peak, mountainSpread: hi - lo };
+}
+
 /** Everything, for one age. */
 function measureAge(w, N, engineMetrics) {
   const el = w.EL;
@@ -377,4 +400,4 @@ function measureAge(w, N, engineMetrics) {
   };
 }
 
-module.exports = { masses, boxFill, edgeBias, zonality, plateauShare, longestFlatRun, columnStriping, boundaryPersistence, boundaryStraightness, boundaryClumping, boundaryLongestRun, erosionShape, landHeight, measureAge };
+module.exports = { masses, boxFill, edgeBias, zonality, plateauShare, longestFlatRun, columnStriping, boundaryPersistence, boundaryStraightness, boundaryClumping, boundaryLongestRun, erosionShape, landHeight, mountainVariety, measureAge };
