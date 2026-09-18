@@ -2,6 +2,7 @@ import { type World, deriveClimate } from "./pipeline";
 import { analyse, carveRivers, drainageTree } from "./hydrology";
 
 import type { PlateSet } from "./tectonics";
+import { type PlateFrames, syncFrames } from "./frames";
 import { denudeInactive, iceSheetLoad, isostaticRebound, orogenicCollapse } from "./isostasy";
 import { tectonicAge } from "./tectonics";
 import { type Hotspot, applyHotspots, riftAtPlumes, seedHotspots } from "./hotspots";
@@ -49,6 +50,15 @@ export type AgeOptions = {
   plateSet?: PlateSet;
   /** plate ownership per tile from the previous age (AgeReport.plateMap) */
   plateMap?: Int16Array;
+  /**
+   * Per-plate frames (frames.ts): each plate carries its own raster and transform and the world
+   * is composited from them, instead of last age's grid being resampled. `frames` is the state
+   * carried from the previous age (AgeReport.frames). On by default; false is the old raster.
+   */
+  plateFrames?: boolean;
+  frames?: PlateFrames;
+  frameNearest?: boolean;
+  frameSoft?: boolean;
   /**
    * how many steps the age's plate motion is split into; 1 is one 10 Myr jump,
    * 5 is five 2 Myr steps (docs/simulation-plan.md, one clock)
@@ -279,6 +289,8 @@ export type AgeReport = {
   boundaries: Record<string, number>;
   /** plate ownership per tile, for drawing the boundaries */
   plateMap: Int16Array;
+  /** per-plate frames to pass back in next age, when `plateFrames` is on */
+  frames?: PlateFrames;
   spots: Hotspot[];
   /** provinces after this age; the record of what came from where */
   provinces: Provinces;
@@ -402,6 +414,8 @@ export function runAge(w: World, size: number, opts: AgeOptions): AgeReport {
     crust: oceanState?.crust,
     oceanAge: oceanState?.oceanAge,
     plateSpeeds: opts.plateSpeeds,
+    plateFrames: opts.plateFrames !== false, frames: opts.frames, frameNearest: opts.frameNearest, frameSoft: opts.frameSoft,
+    trace: opts.trace,
   });
   const motion = { ...tect.motion, accreted: 0, foundered: 0, areaRestored: 0 };
   for (let s = 1; s < steps; s++) {
@@ -421,6 +435,8 @@ export function runAge(w: World, size: number, opts: AgeOptions): AgeReport {
       crust: prev.crust,
       oceanAge: prev.oceanAge,
       plateSpeeds: opts.plateSpeeds,
+      plateFrames: opts.plateFrames !== false, frames: prev.frames, frameNearest: opts.frameNearest, frameSoft: opts.frameSoft,
+      trace: opts.trace,
     });
     motion.gaps += tect.motion.gaps;
     motion.overlaps += tect.motion.overlaps;
@@ -432,6 +448,12 @@ export function runAge(w: World, size: number, opts: AgeOptions): AgeReport {
     }
     for (const k of Object.keys(tect.counts) as (keyof typeof tect.counts)[]) tect.counts[k] += prev.counts[k];
   }
+  // the grid as the frames last saw it: everything below edits the grid, and the difference
+  // goes back to the frames at the end of the age
+  const framed = tect.frames ? {
+    el: Int16Array.from(tect.elevation), id: Int16Array.from(tect.plateId),
+    province: tect.province?.slice(), crust: tect.crust?.slice(), oceanAge: tect.oceanAge?.slice(),
+  } : undefined;
   if (tect.province) provinces.id = tect.province;
   // the sea floor that survived the age is ten million years older
   if (tect.oceanAge) for (let i = 0; i < tect.oceanAge.length; i++) tect.oceanAge[i] += MYR_PER_AGE;
@@ -750,6 +772,11 @@ export function runAge(w: World, size: number, opts: AgeOptions): AgeReport {
   }
   opts.trace?.("specks", world.EL);
 
+  if (tect.frames && framed) {
+    syncFrames(tect.frames, framed.el, world.EL, framed.id, plateId, tect.plateSet.sx.length, framed,
+               { province: provinces.id, crust: tect.crust, oceanAge: tect.oceanAge });
+  }
+
   let land = 0, mtn = 0, rivers = 0, lakes = 0, volc = 0;
   for (let i = 0; i < world.EL.length; i++) {
     if (world.EL[i] >= 100) { land++; if (world.EL[i] >= 300) mtn++; }
@@ -770,6 +797,7 @@ export function runAge(w: World, size: number, opts: AgeOptions): AgeReport {
     volcanoes: volc,
     boundaries: tect.counts,
     plateMap: plateId,
+    frames: tect.frames,
     nextUpliftStrength: (() => {
       const got = land ? mtn / land : 0;
       const err = opts.mountainTarget - got;

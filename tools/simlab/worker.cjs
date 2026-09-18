@@ -19,7 +19,7 @@ const { measureAge, boundaryPersistence, boundaryStraightness, boundaryClumping,
 function runHistory(cfg) {
   const N = cfg.size;
   let w = generateWorld(N, cfg.archetype, cfg.climate, cfg.seed);
-  let plateSet, plateMap, crust, oceanAge, basinDepthRef, freeboardRef, continentalAreaRef, seaLevelDatum;
+  let plateSet, plateMap, frames, crust, oceanAge, basinDepthRef, freeboardRef, continentalAreaRef, seaLevelDatum;
   let waterVolume, iceLoad, crustShare;
   let prevEl = null, prevLandPct = null;
   let spots, provinces, sea = 0;
@@ -33,7 +33,7 @@ function runHistory(cfg) {
   const rows = [];
   for (let age = 1; age <= cfg.ages; age++) {
     const r = runAge(w, N, {
-      plateSet, plateMap, crust, oceanAge, basinDepthRef, freeboardRef, continentalAreaRef, seaLevelDatum,
+      plateSet, plateMap, frames, crust, oceanAge, basinDepthRef, freeboardRef, continentalAreaRef, seaLevelDatum,
       waterVolume, iceLoad, crustShare,
       spots, provinces,
       upliftStrength: uplift,
@@ -55,6 +55,9 @@ function runHistory(cfg) {
       ...(cfg.crustSeparation !== undefined ? { crustSeparation: cfg.crustSeparation } : {}),
       ...(cfg.deArtifact !== undefined ? { deArtifact: cfg.deArtifact } : {}),
       ...(cfg.subSteps !== undefined ? { subSteps: cfg.subSteps } : {}),
+      ...(cfg.plateFrames !== undefined ? { plateFrames: cfg.plateFrames } : {}),
+      ...(cfg.frameNearest !== undefined ? { frameNearest: cfg.frameNearest } : {}),
+      ...(cfg.frameSoft !== undefined ? { frameSoft: cfg.frameSoft } : {}),
       ...(cfg.conserveLand !== undefined ? { conserveLand: cfg.conserveLand } : {}),
       ...(cfg.oceanModel !== undefined ? { oceanModel: cfg.oceanModel } : {}),
       ...(cfg.plateSpeeds !== undefined ? { plateSpeeds: cfg.plateSpeeds } : {}),
@@ -103,6 +106,7 @@ function runHistory(cfg) {
     plateSet = r.plateSet;
     const persist = boundaryPersistence(plateMap, r.plateMap, N);
     plateMap = r.plateMap;
+    frames = r.frames;
     crust = r.crust;
     oceanAge = r.oceanAge;
     basinDepthRef = r.basinDepthRef;

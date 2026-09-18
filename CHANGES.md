@@ -20,6 +20,9 @@
 - Continents keep their shape better from one age to the next: sea level moves
   the way Earth's does, the coast is no longer redrawn wholesale each age, and
   the pass that scrubs straight seams no longer jitters the shoreline.
+- Each plate now carries its own terrain and is placed on the map where it has
+  drifted to, instead of the whole map being resampled every age, so coasts and
+  ranges stay sharp over a long history.
 
 ## 0.2.5
 

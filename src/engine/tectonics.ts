@@ -1,4 +1,5 @@
 import { fbm, makeRng } from "./noise";
+import { type PlateFrames, compositeFrames, ensureFrames, moveFrames, syncFrames } from "./frames";
 
 /**
  * Plate tectonics with plates that break where crust is weak, and mountains
@@ -768,6 +769,19 @@ export type TectonicAgeOptions = {
    * Off: every plate moves at the drift setting.
    */
   plateSpeeds?: boolean;
+  /**
+   * Per-plate frames (frames.ts): the world is composited from each plate's own raster at its
+   * accumulated transform instead of resampling last age's grid. `frames` is the carried state;
+   * absent, frames are cut from the grid as it stands.
+   */
+  plateFrames?: boolean;
+  frames?: PlateFrames;
+  /** called with the surface after the plates have moved and before boundary relief */
+  trace?: (stage: string, el: Int16Array) => void;
+  /** sample frames at the nearest tile instead of interpolating (for measurement) */
+  frameNearest?: boolean;
+  /** bilinear everywhere, no Catmull-Rom inside the plate (for measurement) */
+  frameSoft?: boolean;
 };
 
 /** Drift the plates, then lay down the geology their boundaries imply. */
@@ -776,6 +790,7 @@ export function tectonicAge(
 ): TectonicResult & {
   plateSet: PlateSet; province?: Int16Array; crust?: Uint8Array; oceanAge?: Float32Array;
   motion: { gaps: number; overlaps: number; lostContinental: number };
+  frames?: PlateFrames;
 } {
   const rng = makeRng(opts.seed);
   const ps = opts.plateSet
@@ -807,12 +822,22 @@ export function tectonicAge(
     speed = tot.map((t, p) => (t ? 0.55 + 0.9 * (sea[p] / t) : 1));
   }
 
-  const moved = opts.distance > 0
+  const layers = { province: opts.province, crust: opts.crust, oceanAge: opts.oceanAge };
+  const frames = opts.plateFrames
+    ? ensureFrames(opts.frames, el, plates.plateId, plates.count, size, layers) : undefined;
+  let base: Float32Array | Int16Array = el;
+  if (frames && opts.distance > 0) moveFrames(frames, ps, opts.distance, speed);
+  const composite = frames && opts.distance > 0
+    ? compositeFrames(frames, rng, opts.province, opts.frameNearest, opts.frameSoft) : undefined;
+  if (composite) base = composite.base;
+  const moved = composite ?? (opts.distance > 0
     ? advect(el, size, plates, opts.distance, rng, opts.province, opts.crust, opts.oceanAge, speed)
     : {
       elevation: Int16Array.from(el), plateId: Int16Array.from(plates.plateId), province: opts.province,
       crust: opts.crust?.slice(), oceanAge: opts.oceanAge?.slice(), gaps: 0, overlaps: 0, lostContinental: 0,
-    };
+    });
+  opts.trace?.("advect", moved.elevation);
+  const composedId = frames ? Int16Array.from(moved.plateId) : undefined;
   // Only tidy tiles the move actually left ragged. Running the majority filter over the
   // whole map every age is curvature flow: a hundred passes iron every wiggle out of a
   // boundary and leave it straight, which is what the plate maps showed late in a history.
@@ -832,8 +857,18 @@ export function tectonicAge(
     { ...plates, plateId: moved.plateId, oceanic },
     opts.strength, rng, opts.volcanoChance ?? 1, opts.beltWidth, opts.upliftScale, opts.beltFalloff,
   );
+  if (frames && composedId) {
+    // boundary relief goes back to the frames now, so a further sub-step composites it; a tile
+    // the tidy handed to another plate has no history in its new frame
+    if (base instanceof Float32Array) {
+      for (let i = 0; i < composedId.length; i++) if (composedId[i] !== moved.plateId[i]) base[i] = NaN;
+    }
+    const after = { province: moved.province, crust: moved.crust, oceanAge: moved.oceanAge };
+    syncFrames(frames, base, result.elevation, moved.plateId, moved.plateId, plates.count, after, after);
+  }
   // the seeds travel with their plates so the next age continues this one
   return {
+    frames,
     ...result, plateSet: followPlates(ps, moved.plateId, size, opts.distance), province: moved.province,
     crust: moved.crust, oceanAge: moved.oceanAge,
     motion: { gaps: moved.gaps, overlaps: moved.overlaps, lostContinental: moved.lostContinental },

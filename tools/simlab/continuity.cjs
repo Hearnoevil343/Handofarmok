@@ -11,6 +11,7 @@ const path = require("path");
 const ENGINE = path.join(__dirname, "build");
 const { generateWorld } = require(path.join(ENGINE, "pipeline"));
 const { runAge } = require(path.join(ENGINE, "age"));
+const { continuity } = require("./metrics.extra.cjs");
 
 const N = 129, NN = N * N, AGES = 100;
 const archetype = process.argv[2] || "CONTINENTS", seed = +(process.argv[3] || 44);
@@ -78,21 +79,26 @@ function churn(prevM, curM, dx, dy, minSize) {
 }
 
 let w = generateWorld(N, archetype, "TEMPERATE", seed);
-let plateSet, plateMap, spots, provinces, crustShare, iceLoad, sea = 0, uplift = 45;
+let plateSet, plateMap, frames, spots, provinces, crustShare, iceLoad, sea = 0, uplift = 45;
 let land0 = 0; for (let i = 0; i < NN; i++) if (w.EL[i] >= 100) land0++;
 const baselineLand = Math.min(0.6, Math.max(0.08, land0 / NN));
 
-const stageFlips = {}, stageNet = {}, stageOrder = [];
+const stageFlips = {}, stageNet = {}, stageAgree = {}, stageOrder = [];
 let prev = mask(w.EL);
 const rows = [];
 for (let age = 1; age <= AGES; age++) {
   const trace = [["start", mask(w.EL)]];
+  const startEl = w.EL, startPlates = plateMap;
   const r = runAge(w, N, {
-    plateSet, plateMap, spots, provinces, crustShare, iceLoad,
+    plateSet, plateMap, frames, spots, provinces, crustShare, iceLoad,
     upliftStrength: uplift, seaLevelOffset: sea, baselineLand,
     plates: 10, drift, mountainTarget: 0.12, weathering: 35, riverCarving: 50, riverDensity: 5,
     rebound: 55, hotspots: 3, climate: "TEMPERATE", seed: seed * 1000 + age, age,
-    trace: (stage, el) => trace.push([stage, mask(el)]),
+    trace: (stage, el) => {
+      trace.push([stage, mask(el)]);
+      // how well last age's land, carried on its plates, still explains the surface here
+      if (startPlates) (stageAgree[stage] ??= []).push(continuity(startEl, startPlates, el, N).landAgree);
+    },
     ...extra,
   });
   for (let k = 1; k < trace.length; k++) {
@@ -102,7 +108,7 @@ for (let age = 1; age <= AGES; age++) {
     let a = 0, b = 0; for (let i = 0; i < NN; i++) { a += trace[k - 1][1][i]; b += m[i]; }
     stageNet[name].push(b - a);
   }
-  w = r.world; plateSet = r.plateSet; plateMap = r.plateMap; spots = r.spots; provinces = r.provinces;
+  w = r.world; plateSet = r.plateSet; plateMap = r.plateMap; frames = r.frames; spots = r.spots; provinces = r.provinces;
   crustShare = r.crustShare; iceLoad = r.iceLoad; uplift = r.nextUpliftStrength; sea = r.seaLevelOffset;
   const cur = mask(w.EL);
   const raw = iou(prev, cur, 0, 0), bs = bestShift(prev, cur);
@@ -120,6 +126,8 @@ const med = (xs) => { const s = [...xs].sort((a, b) => a - b); return s[s.length
 console.log(`\n${archetype} seed ${seed} drift ${drift} ${JSON.stringify(extra)}: ${AGES} ages\n`);
 console.log("Land<->sea flips per age, by stage (mean tiles; land is ~" + Math.round(mean(rows.map((r) => r.land)) / 100 * NN) + " tiles):");
 for (const s of stageOrder) console.log(`  ${s.padEnd(14)} ${mean(stageFlips[s]).toFixed(1).padStart(7)}   max ${String(Math.max(...stageFlips[s])).padStart(5)}   net land ${(mean(stageNet[s]) >= 0 ? "+" : "") + mean(stageNet[s]).toFixed(1)} tiles/age`);
+console.log("\nAgreement with last age's land (per-plate best shift, the simlab landAgree) as the age proceeds:");
+for (const s of stageOrder) if (stageAgree[s]) console.log(`  ${s.padEnd(14)} ${mean(stageAgree[s]).toFixed(3)}`);
 console.log(`\nAge-to-age land-mask agreement (IoU): raw ${mean(rows.map((r) => r.raw)).toFixed(3)}  after best shift ${mean(rows.map((r) => r.shifted)).toFixed(3)}  (median shift |dx|,|dy| = ${med(rows.map((r) => Math.abs(r.dx)))},${med(rows.map((r) => Math.abs(r.dy)))})`);
 console.log(`Landmasses (>=20 tiles) per age: ${mean(rows.map((r) => r.masses)).toFixed(1)};  born per age ${mean(rows.map((r) => r.born)).toFixed(2)} (>=100 tiles: ${mean(rows.map((r) => r.bornBig)).toFixed(2)});  lost per age ${mean(rows.map((r) => r.died)).toFixed(2)} (>=100: ${mean(rows.map((r) => r.diedBig)).toFixed(2)})`);
 const dl = rows.slice(1).map((r, i) => Math.abs(r.land - rows[i].land));
@@ -128,3 +136,4 @@ console.log("\nage  land%  target  sea   rawIoU shiftIoU  born/lost  phase");
 for (const r of rows) if (r.age <= 12 || r.age % 10 === 0) {
   console.log(`${String(r.age).padStart(3)}  ${r.land.toFixed(1).padStart(5)}  ${r.target === null ? "  -  " : r.target.toFixed(1).padStart(5)}  ${r.seaLevel.toFixed(1).padStart(5)}  ${r.raw.toFixed(3)}  ${r.shifted.toFixed(3)}    ${r.born}/${r.died}      ${r.phase}`);
 }
+if (process.env.STAGE_AGREE) for (const s of process.env.STAGE_AGREE.split(",")) console.log(`\n${s} agreement by age: ` + (stageAgree[s] || []).map((v) => v.toFixed(3)).join(" "));

@@ -50,6 +50,7 @@ export function RunAge() {
       plateSet: session.plates ?? undefined,
       // boundaries persist: the plate map is carried state, not redrawn each age
       plateMap: session.plateGridSize === size ? session.plateMap ?? undefined : undefined,
+      frames: session.frames ?? undefined,
       spots: session.spots,
       provinces: session.provinces ?? undefined,
       upliftStrength: session.upliftStrength,
@@ -71,6 +72,7 @@ export function RunAge() {
     });
     session.plates = r.plateSet;
     session.plateMap = r.plateMap;
+    session.frames = r.frames ?? null;
     session.plateGridSize = size;
     session.spots = r.spots;
     session.provinces = r.provinces;
@@ -126,6 +128,7 @@ export function RunAge() {
     s.plates = null;
     s.age = 0;
     s.plateMap = null;
+    s.frames = null;
     s.spots = [];
     s.provinces = null;
     s.upliftStrength = 45;

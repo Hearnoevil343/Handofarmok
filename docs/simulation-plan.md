@@ -276,6 +276,43 @@ carrying its own raster and an accumulated rigid transform, the world grid compo
 and erosion deltas scattered back - would sample the base terrain once from its own frame. That is
 the next step, and it is a change to the tectonics core rather than a dial.
 
+**Done 2026-09-18 - per-plate frames (`frames.ts`), on by default; `plateFrames: false` is the old
+raster.** Each plate carries its own raster and an accumulated rigid transform (a turn about its
+pole, or a slide where it has none); the grid is composited from them every step, and what boundary
+relief, erosion, rebound and the sea do to the grid goes back to the frames nearest tile
+(`syncFrames`, once after boundaries so sub-steps see it, once at the end of the age). The plate map
+stays the truth about ownership: a frame tile whose place belongs to another plate is dropped, a
+tile a plate owns with nothing in its frame is adopted. Welds, rifts, fray and compaction renumber
+plates without knowing about frames, so the sync works out from the change in the plate map which
+frame each plate inherits (a rift's two halves share the parent's frame, one by copy, and lose no
+sample; a weld adopts the smaller partner's tiles once). Provinces, crust type and sea-floor age
+ride in the frames.
+
+Measured, 108 worlds each, same seeds (`frames108.json`): score 3.53 / 5.66 worst -> 3.10 / 5.71,
+agreement 0.803 -> 0.829, births 0.37 -> 0.33 an age, land step 1.31 -> 1.21, land drift 6.7 -> 4.0,
+coast dimension 1.31 -> 1.29, and the uplift the mountain controller needs 69 -> 48 because relief
+is no longer blurred away. Worse: plateau share 15.8 -> 16.6, largest landmass 76 -> 82% and with it
+the Wilson-cycle penalty 0.10 -> 0.18. One defect was specific to frames and worth remembering:
+tiles a continent vacates inside a suture were filled as sea floor, pits the raster's blur used to
+heal and a frame keeps for ever; before they took the mean of the land around them frames scored
+3.48 against 3.21 on the 18 default worlds, after it 3.02.
+
+**The diagnosis above was half wrong, and the tool says so now.** `continuity.cjs` prints the
+agreement with last age's land after every stage, with the move (`advect`) split from boundary
+relief. On either engine the move alone leaves agreement at 0.93-0.94 - sub-tile motion a whole-tile
+shift cannot express, and real overlap - and its 1,400 flips are real motion. The losses are
+boundary relief, 0.93 -> 0.86, and rebound, 0.85 -> 0.82; `separateCrust` gives 0.02 back. Frames
+were never going to reach 0.88 alone. What does: `subSteps: 3`, measured on the same 108 worlds
+(`frames108-substeps.json`) - raster 2.58 / 7.57 worst, agreement 0.884, births 0.150; frames
+2.43 / 4.20, agreement 0.908, births 0.115, land step 0.85. Its cost is the Wilson cycle (penalty
+0.90, largest landmass 86%), plateau share 18.6 and three times the tectonics time, so it is not
+the default yet. Next: why one step of boundary relief flips 700 tiles where three thirds do not,
+and a rift rate that keeps the cycle turning at three sub-steps.
+
+Also noted, not fixed (each changes the baseline and wants its own measurement): welds, rifts and
+`compactPlates` renumber `sx/sy/vx/vy` but not `px/py/spin`, so poles drift onto the wrong plates
+and a rifted child has none; and plates with a pole ignore `wilsonDrive`, which only steers `vx/vy`.
+
 Also fixed on the way: `variants` in a simlab config was being expanded as a swept list as well as
 merged, so a six-variant sweep ran 648 worlds for 108.
 
