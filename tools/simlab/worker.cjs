@@ -6,7 +6,7 @@ const ENGINE = workerData.engineDir;
 const { generateWorld } = require(path.join(ENGINE, "pipeline"));
 const { runAge } = require(path.join(ENGINE, "age"));
 const engineMetrics = require(path.join(ENGINE, "metrics"));
-const { measureAge, boundaryPersistence, boundaryStraightness, boundaryClumping, boundaryLongestRun, erosionShape, landHeight, mountainVariety } = require("./metrics.extra.cjs");
+const { measureAge, boundaryPersistence, boundaryStraightness, boundaryClumping, boundaryLongestRun, erosionShape, landHeight, mountainVariety, continuity } = require("./metrics.extra.cjs");
 
 /**
  * One world, run forward for N ages, measured every age.
@@ -21,6 +21,7 @@ function runHistory(cfg) {
   let w = generateWorld(N, cfg.archetype, cfg.climate, cfg.seed);
   let plateSet, plateMap, crust, oceanAge, basinDepthRef, freeboardRef, continentalAreaRef, seaLevelDatum;
   let waterVolume, iceLoad, crustShare;
+  let prevEl = null, prevLandPct = null;
   let spots, provinces, sea = 0;
   let uplift = cfg.upliftStart;
 
@@ -70,6 +71,18 @@ function runHistory(cfg) {
       ...(cfg.iceLoading !== undefined ? { iceLoading: cfg.iceLoading } : {}),
       ...(cfg.landBudget !== undefined ? { landBudget: cfg.landBudget } : {}),
       ...(cfg.channelSlope !== undefined ? { channelSlope: cfg.channelSlope } : {}),
+      ...(cfg.reboundRadius !== undefined ? { reboundRadius: cfg.reboundRadius } : {}),
+      ...(cfg.reboundOnLand !== undefined ? { reboundOnLand: cfg.reboundOnLand } : {}),
+      ...(cfg.shelfCeiling !== undefined ? { shelfCeiling: cfg.shelfCeiling } : {}),
+      ...(cfg.landShiftCap !== undefined ? { landShiftCap: cfg.landShiftCap } : {}),
+      ...(cfg.seaLevelScale !== undefined ? { seaLevelScale: cfg.seaLevelScale } : {}),
+      ...(cfg.seaLevelWalk !== undefined ? { seaLevelWalk: cfg.seaLevelWalk } : {}),
+      ...(cfg.shelfSmoothTop !== undefined ? { shelfSmoothTop: cfg.shelfSmoothTop } : {}),
+      ...(cfg.separateEveryAge !== undefined ? { separateEveryAge: cfg.separateEveryAge } : {}),
+      ...(cfg.shelfSmooth !== undefined ? { shelfSmooth: cfg.shelfSmooth } : {}),
+      ...(cfg.shelfSmoothInBand !== undefined ? { shelfSmoothInBand: cfg.shelfSmoothInBand } : {}),
+      ...(cfg.gradeBand !== undefined ? { gradeBand: cfg.gradeBand } : {}),
+      ...(cfg.coastSmoothBand !== undefined ? { coastSmoothBand: cfg.coastSmoothBand } : {}),
       // heat is an object in the engine; flat in configs so it can be swept
       ...(cfg.heatStart !== undefined || cfg.heatTauMyr !== undefined
         ? { heat: {
@@ -79,6 +92,8 @@ function runHistory(cfg) {
         : {}),
       age,
     });
+    // the film: this age against last age, before the carried state moves on
+    const cont = prevEl && plateMap ? continuity(prevEl, plateMap, r.world.EL, N) : null;
     w = r.world;
     plateSet = r.plateSet;
     const persist = boundaryPersistence(plateMap, r.plateMap, N);
@@ -98,9 +113,14 @@ function runHistory(cfg) {
     sea = r.seaLevelOffset;
 
     const m = measureAge(w, N, engineMetrics);
+    const landStep = prevLandPct === null ? undefined : Math.abs(m.landPct - prevLandPct);
+    prevLandPct = m.landPct;
+    prevEl = Int16Array.from(w.EL);
     rows.push({
       age,
       ...m,
+      ...(cont ? cont : {}),
+      landStep,
       boundaryPersist: persist,
       boundaryStraight: boundaryStraightness(plateMap, N),
       boundaryClump: boundaryClumping(plateMap, N),

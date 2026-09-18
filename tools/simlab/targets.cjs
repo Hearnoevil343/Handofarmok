@@ -110,6 +110,16 @@ const TARGETS = {
   // Land under permanent ice. Earth is about 10% in an interglacial, more in a glacial.
   frozenPct:        { lo: 2, hi: 20, weight: 0.6, note: "Earth ~10% of land, 25% at a glacial maximum" },
 
+  // --- the film, not the snapshot ----------------------------------------------
+  // How much of this age's land is last age's land carried along on its plates.
+  // Earth over ten million years keeps all but a few per cent; the engine was
+  // keeping 65-75%, which is continents teleporting.
+  landAgree:        { lo: 0.88, hi: 1.0, weight: 1.2, note: "Africa stays Africa; Earth ~0.95 per 10 Myr" },
+
+  // How far land share moves between one age and the next, in points. Earth's
+  // whole Phanerozoic swing is ~15 points over 500 Myr.
+  landStep:         { lo: 0, hi: 1.2, weight: 0.8, note: "the coast moves with the sea, not by a sixth of the map" },
+
   // Share of boundary tiles in the busiest tenth of 16x16 blocks. Even spread is about 0.1;
   // everything piled into one corner approaches 1.
   boundaryClump:    { lo: 0, hi: 0.30, weight: 0.6, note: "boundaries should spread over the map" },
@@ -160,6 +170,18 @@ function scoreRun(rows) {
   const cycleMiss = Math.max(0, expected - cycles) * 0.8;
   parts.wilsonCycles = { median: cycles, miss: expected, penalty: +cycleMiss.toFixed(3) };
   total += cycleMiss;
+
+  // Landmasses of a hundred tiles or more (Europe-sized) that appeared from
+  // nothing this age. On Earth that is a rift completing, once in a couple of
+  // hundred million years; the engine was doing it every two or three ages. A
+  // rate, since the median of a 0/1 count is always 0.
+  const births = rows.map((r) => r.massBirths).filter(Number.isFinite);
+  if (births.length) {
+    const rate = births.reduce((a, b) => a + b, 0) / births.length;
+    const miss = Math.max(0, rate - 0.05) / 0.2;
+    parts.massBirths = { median: +rate.toFixed(3), miss: +miss.toFixed(3), penalty: +(miss * 1.0).toFixed(3) };
+    total += miss * 1.0;
+  }
 
   // How far land share travels across the whole history, in points. A world
   // that never moves is a picture rather than a planet; one that swings forty

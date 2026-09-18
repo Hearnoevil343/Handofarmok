@@ -115,15 +115,43 @@ export const MEAN_ICE_METRES = (() => {
 })();
 
 /** Where in the glacial cycle this age lands, -1 to 1. Replays identically per seed. */
-function glacialSample(historySeed: number, age: number): number {
+function glacialDraw(historySeed: number, age: number): number {
   const rng = makeRng((Math.imul(historySeed, 0x9e3779b1) ^ Math.imul(age + 1, 0x85ebca6b)) >>> 0);
   rng();
   return rng() * 2 - 1;
 }
 
-export function climatePhase(age: number, dispersal: number, historySeed = 0): ClimatePhase {
+/**
+ * Walked rather than re-rolled. A fresh draw every age meant the sea could stand
+ * at a glacial low in one age and a high stand in the next, and did: measured,
+ * a single age's sea-level change flipped 2,580 tiles between land and sea, a
+ * sixth of the map. Real sea level wanders; its state ten million years on is
+ * correlated with its state now. First-order autoregression at 0.6 per age
+ * keeps the same spread of values but makes consecutive ages neighbours. The
+ * old behaviour is `walk` false, and it replays identically per seed.
+ */
+function glacialSample(historySeed: number, age: number, walk = true): number {
+  if (!walk) return glacialDraw(historySeed, age);
+  const rho = 0.6, mix = Math.sqrt(1 - rho * rho);
+  let u = glacialDraw(historySeed, 0);
+  for (let a = 1; a <= age; a++) u = Math.max(-1, Math.min(1, rho * u + mix * glacialDraw(historySeed, a)));
+  return u;
+}
+
+export type ClimatePhaseOptions = {
+  /**
+   * Multiplier on the sea-level swing. 1 is Earth: about 140 m withdrawn at a
+   * glacial maximum, 150-250 m of high stand in a hothouse with the continents
+   * dispersed. The engine used to run at roughly three times that.
+   */
+  seaLevelScale?: number;
+  /** walk the glacial state between ages (default) rather than re-roll it */
+  walk?: boolean;
+};
+
+export function climatePhase(age: number, dispersal: number, historySeed = 0, opts: ClimatePhaseOptions = {}): ClimatePhase {
   const era = climateEra(historySeed, age);
-  const u = glacialSample(historySeed, age);
+  const u = glacialSample(historySeed, age, opts.walk !== false);
 
   // warmth: -1 is a glacial maximum, +1 a hothouse. An icehouse ranges from full
   // glaciation to an interglacial like today; a greenhouse has no ice sheets to
@@ -136,7 +164,11 @@ export function climatePhase(age: number, dispersal: number, historySeed = 0): C
   const anomaly = warmth - MEAN_WARMTH;
   // assembled continents (superc < 0) run hot, dispersed ones mild
   const temperature = anomaly * 10 - superc * 4;
-  const seaLevel = -anomaly * 15 - superc * 7;
+  // In elevation units on the land scale (about 29 m each). 15 and 7 gave a
+  // swing of -14 to +25 units, 400 to 700 m, three to four times anything in
+  // the record; Earth runs about -120 m at a glacial maximum to +250 m at a
+  // Cretaceous high stand, and that is what 5 and 3.5 give.
+  const seaLevel = (-anomaly * 5 - superc * 3.5) * (opts.seaLevelScale ?? 1);
 
   // assembled continents are dry; dispersed ones are wet
   const rainfall = 1 + (dispersal - 0.5) * 0.3 + anomaly * 0.08;
@@ -259,6 +291,16 @@ export function separateCrust(
   el: Int16Array, strength = 1,
   slopeLo = 62, slopeHi = 96,
   abyssalFloor = 34, shelfCeiling = 126,
+  /**
+   * Band the shelf smoother works on. It ran 92 to 145 - eight units under the
+   * sea to forty-five above it - so every age it averaged the coastal lowland
+   * with the shelf, three passes, and the shoreline wobbled: measured, 870
+   * tiles an age flipped between land and sea in this one call even with the
+   * shelf held under the sea. The shelf is the part under water.
+   */
+  smoothLo = 92, smoothHi = 145,
+  /** average with in-band neighbours only, never past the band's top */
+  inBand = false,
 ): Int16Array {
   const out = new Int16Array(el.length);
   // Split below the middle of the band: more of the slope belongs to the ocean
@@ -285,7 +327,7 @@ export function separateCrust(
     }
     out[i] = Math.min(400, Math.max(0, Math.round(v + (target - v) * strength)));
   }
-  return smoothShelf(out, Math.round(Math.sqrt(el.length)));
+  return smoothShelf(out, Math.round(Math.sqrt(el.length)), smoothLo, smoothHi, undefined, inBand);
 }
 
 /**
@@ -301,6 +343,14 @@ export function smoothShelf(
   el: Int16Array, size: number, lo = 92, hi = 145,
   /** each pass smooths one tile further out: 3 tiles at 129 */
   passesTiles?: number,
+  /**
+   * Average with in-band neighbours only and never past the band's top. Off by
+   * default: reading across the band is what lets this pass pull coastal land
+   * down as well as shelf up, and that sink is what balances the land the
+   * isostatic blur makes (isostasy.ts). With the band capped under the sea and
+   * in-band only, the coast marched seaward by a net 591 tiles an age.
+   */
+  inBand = false,
 ): Int16Array {
   const passes = passesTiles ?? Math.max(1, Math.round(scaleLength(3, size)));
   let cur = Int16Array.from(el);
@@ -313,9 +363,16 @@ export function smoothShelf(
         // wraps east-west, like everything else that touches the surface
         const w = (xx: number, yy: number) =>
           cur[(yy < 0 ? 0 : yy >= size ? size - 1 : yy) * size + ((xx + size) % size)];
-        next[i] = Math.round(
-          (cur[i] * 2 + w(x - 1, y) + w(x + 1, y) + w(x, y - 1) + w(x, y + 1)) / 6,
-        );
+        // Averaged with neighbours inside the band only, and never past its top.
+        // Reading neighbours outside it let a coastal tile at 105 pull a shelf
+        // tile at 97 over the line: with the band capped under the sea, that
+        // marched the coast seaward by a net 591 tiles an age.
+        let sum = cur[i] * 2, n = 2;
+        for (const v of [w(x - 1, y), w(x + 1, y), w(x, y - 1), w(x, y + 1)]) {
+          if (inBand && (v < lo || v > hi)) continue;
+          sum += v; n++;
+        }
+        next[i] = inBand ? Math.min(hi, Math.round(sum / n)) : Math.round(sum / n);
       }
     }
     cur = next;
@@ -354,6 +411,13 @@ export function conserveCrust(
   /** sea-level offset already baked into `el`, positive when the sea has withdrawn */
   seaOffset = 0,
   rate = 0.6, continentalFloor = 62, fadeTop = 170,
+  /**
+   * Most the coast may be shifted in one age, in elevation units. Correcting
+   * the whole error at once moved the shoreline by up to 1,200 tiles in an age,
+   * a fifth of the land; two units is roughly 60 m of sea level, which is the
+   * order of what ten million years actually moves it.
+   */
+  maxShift = 2,
 ): Int16Array {
   const SEA = 100;
   const n = el.length;
@@ -391,7 +455,7 @@ export function conserveCrust(
     const mid = (lo + hi) / 2;
     if (shareAt(mid) < targetShare) lo = mid; else hi = mid;
   }
-  const shift = ((lo + hi) / 2) * rate;
+  const shift = Math.max(-maxShift, Math.min(maxShift, ((lo + hi) / 2) * rate));
   if (Math.abs(shift) < 0.5) return el;
 
   const out = new Int16Array(n);

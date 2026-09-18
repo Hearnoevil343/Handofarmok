@@ -181,6 +181,15 @@ export function carveRivers(
    * ranges with valleys between them rather than being lowered as one slab.
    */
   slopePower = 0,
+  /**
+   * Height above the sea over which incision fades to nothing, in units. A
+   * river is graded to base level: it cuts hard in the uplands and hardly at
+   * all on the coastal plain, approaching the sea asymptotically. Clamping at
+   * sea level instead stacked coastal land at exactly 100 - measured, a pile of
+   * several hundred tiles at the shoreline that any sea-level nudge flipped all
+   * at once. 0 restores the hard clamp.
+   */
+  gradeBand = 12,
 ): { elevation: Int16Array; river: Uint8Array; lakeDepth: Float64Array } {
   const { accumulation, lakeDepth, river } = hydrology ?? analyse(el, size, rainfall, riverDensity);
   const n = size * size;
@@ -211,6 +220,7 @@ export function carveRivers(
       // capped, because one cliff tile should not be cut to the sea in one age
       bite *= Math.min(4, Math.pow(slope, slopePower));
     }
+    if (gradeBand > 0) bite *= Math.min(1, (el[i] - SEA) / gradeBand);
     out[i] = Math.round(Math.min(400, Math.max(SEA, el[i] - bite)));
   }
   return { elevation: out, river, lakeDepth };

@@ -212,6 +212,54 @@ deposition, and the slope term below were each swept and each traded at about th
 says the model makes relief as broad swells rather than as peaks, and the fix is the shape of
 the uplift profile, not any rate.
 
+## 2c. The film, not the snapshot: shape continuity
+
+**Done 2026-09-18 - simlab scores the film now.** Every target scored one age on its own, so
+a world could pass all of them while its continents teleported between ages - and it did.
+Measured on the Broken Shelf world: 28-35% of the land/sea pattern changed every age (Earth over
+ten million years: a few per cent), a Europe-sized landmass appeared from nothing every two or
+three ages, and land share moved 2.7 points an age with one 16-point jump. Three targets now
+score it: `landAgree` (this age's land explained by last age's carried on its plates, per-plate
+best shift, target >= 0.88), `massBirths` (landmasses of 100+ tiles with no counterpart, target
+<= 0.05 an age), `landStep` (land-share change per age, <= 1.2 points). `tools/simlab/continuity.cjs`
+attributes land/sea flips to each stage inside an age, with the net land each stage adds.
+
+**Who moved the shoreline.** Per age on ~6,300 land tiles: tectonics 1,990 flips (partly real
+motion), separateCrust 1,100, isostatic rebound 780, the climate sea level 400 (max 2,580: one
+age's re-roll flipped a sixth of the map), conserveCrust 290 (max 1,195). Erosion, all five
+stages: 0. Drift 6 to 4 cut tectonics by a quarter and touched nothing else.
+
+**Done, and measured on 108 worlds each:** sea level to Earth's amplitude (+-150 m, was
+400-700 m) and walked between ages (first-order autoregression, 0.6) rather than re-rolled:
+-0.72 on the film-weighted score. conserveCrust capped at two units of shift an age: -1.26. Shelf
+ceiling held under the sea (99, was 126): -0.24. Together, score 5.00 / 8.26 worst -> 3.43 / 5.21;
+age-to-age agreement 0.742 -> 0.807, landmass births 0.58 -> 0.36 an age.
+
+**Measured and not adopted - and why, because it matters for what comes next.** The old engine
+holds its shoreline with a balanced pair of errors: the rebound blur spills uplift across the
+coast and makes a net +789 sea tiles into land an age, and the shelf smoother (band 92-145,
+eight units under the sea to forty-five above) pulls about that much coastal land back down.
+Each is wrong; the pair is stable. Every physically correct replacement was tried and each
+unbalanced it: rebound on land only and collapse on land only (with the old smoother, land runs
+away and worlds go degenerate; with a sea-only smoother the coast speckles - 170 specks culled
+an age, landmasses 7 -> 15); crust separation once at creation instead of every age (bimodality
+1.0 -> 0.75, it is the one pass forcing near-sea tiles apart); erosion graded to base level
+instead of clamped at it (land step 1.3 -> 1.8); rebound radius 1 instead of 6 (fewer flips,
+but per-tile jitter instead of a coherent shift: agreement 0.807 -> 0.785); a symmetric coastal
+ramp smoother (no effect). Best of the eight combinations scored 4.27 against the 3.43 kept. All
+of them remain as options (`reboundOnLand`, `separateEveryAge`, `gradeBand`, `shelfSmoothInBand`,
+`coastSmoothBand`, `reboundRadius`).
+
+The conclusion is not "leave the pair alone". It is that nothing in the engine models what holds
+a coastline - a continuous depositional surface across the shoreline, and marine planation of
+what pokes up through it - and until something does, the pair is the only thing standing in for
+it. That model, and per-plate frames so that a landmass translates instead of being resampled
+(tectonics is still the largest mover at ~2,000 flips an age), are the next two steps; the
+targets are 0.88 agreement and 0.05 births an age, and the engine is at 0.81 and 0.36.
+
+Also fixed on the way: `variants` in a simlab config was being expanded as a swept list as well as
+merged, so a six-variant sweep ran 648 worlds for 108.
+
 ## 3. Surface: erosion and sediment
 
 **Done 2026-09-18 - nothing was ever laid down.** Every erosion step in an age subtracted:

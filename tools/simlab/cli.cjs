@@ -33,8 +33,10 @@ const flag = (k) => process.argv.includes(k);
 
 /** Every combination the config describes. */
 function expand(cfg) {
+  // `variants` is a list of whole configurations, expanded below - not a swept
+  // parameter. Left in here it multiplied the run count by its own length.
   const listKeys = Object.keys(cfg).filter(
-    (k) => Array.isArray(cfg[k]) && !["seeds", "archetypes"].includes(k),
+    (k) => Array.isArray(cfg[k]) && !["seeds", "archetypes", "variants"].includes(k),
   );
   let combos = [{}];
   for (const k of listKeys) {

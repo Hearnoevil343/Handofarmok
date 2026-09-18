@@ -9,7 +9,7 @@ import { compactPlates, frayBoundaries } from "./tectonics";
 import { deStraighten, measureStraightness } from "./artifacts";
 import {
   MEAN_ICE_METRES, climatePhase, conserveCrust, dispersal, drownSpecks,
-  separateCrust, thermalSubsidence, weldCollidedPlates, wilsonDrive,
+  separateCrust, smoothShelf, thermalSubsidence, weldCollidedPlates, wilsonDrive,
 } from "./cycles";
 import { type Provinces, seedProvinces, stampOrogen } from "./provinces";
 import { makeRng } from "./noise";
@@ -175,6 +175,69 @@ export type AgeOptions = {
    * 0 is that old behaviour; 1 is the default and the textbook exponent.
    */
   channelSlope?: number;
+  /**
+   * How far isostatic rebound spreads a load, in tiles (default 6, about
+   * 1,900 km). The crust flexes over 100-300 km, so a radius of one was tried:
+   * it halved the tiles the step flips at the coast, and made the film worse -
+   * age-to-age agreement 0.807 to 0.785, landmass births 0.36 to 0.41 an age -
+   * because the wide blur moves a coast coherently and the narrow one jitters
+   * it tile by tile. Fewer flips is not the same as a steadier shoreline.
+   */
+  reboundRadius?: number;
+  /**
+   * Rebound lifts the crust that was loaded and not the sea floor beside it,
+   * and orogenic collapse spreads onto land only. Physically right, and off by
+   * default: measured on 144 worlds, the coast has nothing else holding it and
+   * the film gets worse (docs/simulation-plan.md, the shoreline).
+   */
+  reboundOnLand?: boolean;
+  /**
+   * Coastal plain and shelf smoothed together as one surface, this many units
+   * either side of sea level, one pass an age (0: off). Both are depositional
+   * surfaces on Earth and grade into each other; here every process had a hard
+   * edge at the shoreline, so tiles hovered around it and flipped with every
+   * jitter - 170 specks culled an age, twice the landmasses. Symmetric, so it
+   * moves no coast on average; in-band neighbours only, so it erases no relief
+   * beyond the band.
+   */
+  coastSmoothBand?: number;
+  /**
+   * Height above the sea over which rivers and denudation fade out, in units
+   * (default 0: the hard clamp). Erosion graded to base level is the physical
+   * form and is measured to help slightly only once the coast is otherwise
+   * stable; on its own it made the shoreline jumpier (land step 1.3 to 1.8).
+   */
+  gradeBand?: number;
+  /**
+   * Where the continental shelf tops out, in elevation units (default 99: just
+   * under the sea). It was 126, which lifted any sea tile that wandered into the
+   * slope band above sea level and manufactured 1,100 tiles of new coast an age.
+   */
+  shelfCeiling?: number;
+  /** most the coast may be shifted in one age to hold the land share, in units (default 2) */
+  landShiftCap?: number;
+  /** top of the band the shelf smoother touches, in units (default 145) */
+  shelfSmoothTop?: number;
+  /** the shelf smoother averages in-band neighbours only (default false) */
+  shelfSmoothInBand?: boolean;
+  /**
+   * Smooth the shelf every age even when the crust separation only ran once
+   * (default true). Left rough, the shelf breaks into islands as the sea moves
+   * across it: measured, specks culled per age doubled and landmasses went
+   * from 7 to 13 the moment the every-age pass stopped.
+   */
+  shelfSmooth?: boolean;
+  /**
+   * Run the crust separation every age (default) rather than only on the
+   * first. Once-only was measured and is worse: hypsometric bimodality falls
+   * from 1.0 to 0.75 and the shoreline speckles, because this pass is the one
+   * thing forcing near-sea tiles apart into land or sea.
+   */
+  separateEveryAge?: boolean;
+  /** multiplier on the climate's sea-level swing (default 1, Earth) */
+  seaLevelScale?: number;
+  /** walk the glacial state between ages rather than re-roll it (default true) */
+  seaLevelWalk?: boolean;
 };
 
 export type AgeReport = {
@@ -425,11 +488,11 @@ export function runAge(w: World, size: number, opts: AgeOptions): AgeReport {
 
   // crust past the limit spreads sideways instead of stacking into a plateau —
   // and hot crust is weak, so a young planet cannot hold as much of one up
-  el = orogenicCollapse(el, size, mountainCeiling(heat));
+  el = orogenicCollapse(el, size, mountainCeiling(heat), undefined, undefined, opts.reboundOnLand === true);
   opts.trace?.("collapse", el);
 
   // and anything no longer being pushed starts wearing down
-  el = denudeInactive(el, size, tect.uplifting, opts.denudation ?? 0.5);
+  el = denudeInactive(el, size, tect.uplifting, opts.denudation ?? 0.5, opts.gradeBand ?? 0);
   opts.trace?.("denude", el);
 
   // --- the long cycles ------------------------------------------------------
@@ -438,7 +501,8 @@ export function runAge(w: World, size: number, opts: AgeOptions): AgeReport {
   // own climate record without new carried state. Worked out before the erosion steps because
   // ice only cuts when the planet is in an icehouse.
   const historySeed = (opts.seed ?? 0) - (opts.age ?? 0);
-  const phase = climatePhase(opts.age ?? 0, dispersal(el, size), historySeed);
+  const phase = climatePhase(opts.age ?? 0, dispersal(el, size), historySeed,
+                             { seaLevelScale: opts.seaLevelScale, walk: opts.seaLevelWalk });
 
   // How much continent there is, and therefore how much land there can be. The
   // crust grows as arcs make it - fast on a hot young planet, barely at all once
@@ -454,7 +518,7 @@ export function runAge(w: World, size: number, opts: AgeOptions): AgeReport {
     }
     crustShare = continentalGrowth(
       crustShare * el.length, el.length, crustProductionFactor(heat),
-      opts.crustProduction ?? 0, opts.crustCeiling ?? 0.42,
+      opts.crustProduction ?? 0.002, opts.crustCeiling ?? 0.42,
     ) / el.length;
     landTarget = landShareFor(crustShare, heat, phase.iceMetres, MEAN_ICE_METRES);
   }
@@ -479,7 +543,7 @@ export function runAge(w: World, size: number, opts: AgeOptions): AgeReport {
   if (opts.riverCarving > 0) {
     // same surface as the analysis just above, so reuse it rather than run it twice
     el = carveRivers(el, size, opts.riverCarving, w.RF, opts.riverDensity, hydro,
-                     opts.channelSlope ?? 1).elevation;
+                     opts.channelSlope ?? 1, opts.gradeBand ?? 0).elevation;
   }
   opts.trace?.("rivers", el);
 
@@ -496,7 +560,8 @@ export function runAge(w: World, size: number, opts: AgeOptions): AgeReport {
 
   // 5. the crust rises again where weight came off it
   if (opts.rebound > 0) {
-    el = isostaticRebound(beforeErosion, el, size, opts.rebound / 100);
+    el = isostaticRebound(beforeErosion, el, size, opts.rebound / 100, opts.reboundRadius ?? 6,
+                          opts.reboundOnLand === true);
   }
   opts.trace?.("rebound", el);
 
@@ -528,8 +593,21 @@ export function runAge(w: World, size: number, opts: AgeOptions): AgeReport {
                          basinShallowingMetres(heat));
     opts.trace?.("bathymetry", el);
   } else {
-    const sep = opts.crustSeparation ?? 0.8;
-    if (sep > 0) el = separateCrust(el, sep);
+    // Once, to give a fresh world its continental slope; not every age, where it
+    // re-decided which shallow tiles were shelf and which were coast.
+    const firstAge = (opts.age ?? 1) <= 1;
+    const sep = opts.crustSeparation ?? ((firstAge || opts.separateEveryAge !== false) ? 0.8 : 0);
+    if (sep > 0) {
+      el = separateCrust(el, sep, 62, 96, 34, opts.shelfCeiling ?? 99, 92, opts.shelfSmoothTop ?? 145,
+                         opts.shelfSmoothInBand === true);
+    } else if (opts.shelfSmooth !== false) {
+      // the shelf stays flat; the slope it sits above was made once
+      el = smoothShelf(el, size, 92, opts.shelfSmoothTop ?? 145, undefined, opts.shelfSmoothInBand === true);
+    }
+    if ((opts.coastSmoothBand ?? 0) > 0) {
+      const b = opts.coastSmoothBand ?? 0;
+      el = smoothShelf(el, size, 100 - b, 100 + b, 1);
+    }
     opts.trace?.("separateCrust", el);
 
     // 5b3. and old sea floor sinks as it cools
@@ -545,7 +623,8 @@ export function runAge(w: World, size: number, opts: AgeOptions): AgeReport {
     opts.trace?.("freeboard", el);
   } else {
     if (opts.conserveLand !== false) {
-      el = conserveCrust(el, landTarget ?? opts.baselineLand ?? 0.3, opts.seaLevelOffset ?? 0);
+      el = conserveCrust(el, landTarget ?? opts.baselineLand ?? 0.3, opts.seaLevelOffset ?? 0,
+                         0.6, 62, 170, opts.landShiftCap ?? 2);
     }
     opts.trace?.("conserveCrust", el);
   }
