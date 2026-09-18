@@ -19,6 +19,7 @@ const { measureAge, boundaryPersistence, boundaryStraightness, boundaryClumping,
 function runHistory(cfg) {
   const N = cfg.size;
   let w = generateWorld(N, cfg.archetype, cfg.climate, cfg.seed);
+  let tracks = [];
   let plateSet, plateMap, frames, crust, oceanAge, basinDepthRef, freeboardRef, continentalAreaRef, seaLevelDatum;
   let waterVolume, iceLoad, crustShare;
   let prevEl = null, prevLandPct = null;
@@ -107,6 +108,30 @@ function runHistory(cfg) {
     const persist = boundaryPersistence(plateMap, r.plateMap, N);
     plateMap = r.plateMap;
     frames = r.frames;
+    // drift straightness: follow each plate from age to age (nearest centre, since welds and
+    // rifts renumber them) and ask how much of the last 20 ages' travel was in one direction
+    {
+      const free = new Set(tracks.keys()), next = [];
+      for (let p = 0; p < plateSet.sx.length; p++) {
+        let best = -1, bestD = 12 * 12;
+        for (const t of free) {
+          let dx = Math.abs(plateSet.sx[p] - tracks[t].x); dx = Math.min(dx, N - dx);
+          const d = dx * dx + (plateSet.sy[p] - tracks[t].y) ** 2;
+          if (d < bestD) { bestD = d; best = t; }
+        }
+        const hist = best >= 0 ? tracks[best].hist : [];
+        if (best >= 0) free.delete(best);
+        hist.push([plateSet.vx[p], plateSet.vy[p]]);
+        next.push({ x: plateSet.sx[p], y: plateSet.sy[p], hist: hist.slice(-20) });
+      }
+      tracks = next;
+    }
+    const straight = tracks.filter((t) => t.hist.length >= 20).map((t) => {
+      let ax = 0, ay = 0, len = 0;
+      for (const [vx, vy] of t.hist) { ax += vx; ay += vy; len += Math.hypot(vx, vy); }
+      return len ? Math.hypot(ax, ay) / len : 1;
+    });
+    const driftStraight = straight.length ? straight.reduce((a, b) => a + b, 0) / straight.length : NaN;
     crust = r.crust;
     oceanAge = r.oceanAge;
     basinDepthRef = r.basinDepthRef;
@@ -131,6 +156,7 @@ function runHistory(cfg) {
       ...(cont ? cont : {}),
       landStep,
       boundaryPersist: persist,
+      driftStraight,
       boundaryStraight: boundaryStraightness(plateMap, N),
       boundaryClump: boundaryClumping(plateMap, N),
       boundaryRun: boundaryLongestRun(plateMap, N),

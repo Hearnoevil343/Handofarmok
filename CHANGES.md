@@ -23,6 +23,9 @@
 - Each plate now carries its own terrain and is placed on the map where it has
   drifted to, instead of the whole map being resampled every age, so coasts and
   ranges stay sharp over a long history.
+- Plates travel in a steady direction instead of circling, so continents part
+  and come back together over a history.
+- Added `docs/engine-glossary.md`: a name for every piece of simulation logic.
 
 ## 0.2.5
 

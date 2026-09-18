@@ -165,27 +165,25 @@ export function ensureFrames(
   return carried;
 }
 
-/** Carry every plate one step along: a turn about its pole, or a slide where it has none. */
+/** Carry every plate one step along: a slide along its heading, and its turn about its own centre. */
 export function moveFrames(
   F: PlateFrames, ps: PlateSet, distance: number, speed?: number[],
 ): void {
-  const size = F.size;
   for (let p = 0; p < F.frames.length; p++) {
     const f = F.frames[p];
     const d = speed ? distance * speed[p] : distance;
-    if (!ps.px || !ps.py || !ps.spin || ps.px[p] === undefined) {
-      f.tx += (ps.vx[p] ?? 0) * d; f.ty += (ps.vy[p] ?? 0) * d;
-      continue;
+    const phi = (ps.spin?.[p] ?? 0) * d;
+    if (phi) {
+      // about the centre of the plate's material, where it stands in the world
+      const c = Math.cos(f.theta), s = Math.sin(f.theta);
+      const wx = c * f.cx - s * f.cy + f.tx, wy = s * f.cx + c * f.cy + f.ty;
+      const pc = Math.cos(phi), psn = Math.sin(phi);
+      const rx = f.tx - wx, ry = f.ty - wy;
+      f.tx = wx + pc * rx - psn * ry;
+      f.ty = wy + psn * rx + pc * ry;
+      f.theta += phi;
     }
-    // the plate's centre in the world, and the image of the pole nearest it round the wrap
-    const c = Math.cos(f.theta), s = Math.sin(f.theta);
-    const wx = c * f.cx - s * f.cy + f.tx;
-    const poleX = wx - wrapDiff(wx - ps.px[p], size), poleY = ps.py[p];
-    const phi = ps.spin[p] * d, pc = Math.cos(phi), psn = Math.sin(phi);
-    const rx = f.tx - poleX, ry = f.ty - poleY;
-    f.tx = poleX + pc * rx - psn * ry;
-    f.ty = poleY + psn * rx + pc * ry;
-    f.theta += phi;
+    f.tx += (ps.vx[p] ?? 0) * d; f.ty += (ps.vy[p] ?? 0) * d;
   }
 }
 

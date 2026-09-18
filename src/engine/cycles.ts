@@ -564,7 +564,7 @@ export function wilsonDrive(
  * unit and stays assembled until a plume splits it somewhere new.
  */
 export function weldCollidedPlates(
-  plates: { sx: number[]; sy: number[]; vx: number[]; vy: number[] },
+  plates: { sx: number[]; sy: number[]; vx: number[]; vy: number[]; spin?: number[] },
   el: Int16Array,
   plateId: Int16Array,
   size: number,
@@ -674,6 +674,8 @@ export function weldCollidedPlates(
   plates.sy = idx.map((p) => plates.sy[p]);
   plates.vx = idx.map((p) => plates.vx[p]);
   plates.vy = idx.map((p) => plates.vy[p]);
+  // the survivor keeps its own turn; every per-plate array has to be renumbered together
+  if (plates.spin) plates.spin = idx.map((p) => plates.spin![p] ?? 0);
   return { welded, merged: true, remap };
 }
 
