@@ -179,7 +179,7 @@ export function moveFrames(
     }
     // the plate's centre in the world, and the image of the pole nearest it round the wrap
     const c = Math.cos(f.theta), s = Math.sin(f.theta);
-    const wx = c * f.cx - s * f.cy + f.tx, wy = s * f.cx + c * f.cy + f.ty;
+    const wx = c * f.cx - s * f.cy + f.tx;
     const poleX = wx - wrapDiff(wx - ps.px[p], size), poleY = ps.py[p];
     const phi = ps.spin[p] * d, pc = Math.cos(phi), psn = Math.sin(phi);
     const rx = f.tx - poleX, ry = f.ty - poleY;
@@ -259,6 +259,8 @@ export type Composite = {
  */
 export function compositeFrames(
   F: PlateFrames, rng: () => number, fallbackProvince?: Int16Array, nearest = false, soft = false,
+  /** plate headings, to tell a suture (closing) from a rift (opening) when a hole is filled */
+  ps?: PlateSet,
 ): Composite {
   const size = F.size, n = size * size, count = F.frames.length;
   const first = F.frames[0];
@@ -345,20 +347,28 @@ export function compositeFrames(
   // A hole inside a continent is not an ocean opening. Where two continents interleave along a
   // suture, the tiles one of them vacates are ringed by land; given sea-floor depth they were
   // pits, which the raster's blur used to heal and a frame keeps for ever. They take the mean of
-  // the ground around them instead.
+  // the ground around them instead - unless the plates either side are parting, because healing
+  // those closed young rifts and kept continents in one piece (largest landmass 76 -> 82%).
   const pit: number[] = [];
+  const opening = (a: number, b: number) => {
+    if (!ps || a === b) return false;
+    const dx = wrapDiff(ps.sx[b] - ps.sx[a], size), dy = ps.sy[b] - ps.sy[a];
+    return (ps.vx[a] - ps.vx[b]) * dx + (ps.vy[a] - ps.vy[b]) * dy <= 0;
+  };
   for (let i = 0; i < n; i++) {
     if (elevation[i] >= 0) continue;
     const x = i % size, y = (i / size) | 0;
-    let land = 0, sum = 0, known = 0;
+    let land = 0, sum = 0, known = 0, first = -1, rift = false;
     for (const j of [
       y * size + ((x + size - 1) % size), y * size + ((x + 1) % size),
       y > 0 ? i - size : -1, y < size - 1 ? i + size : -1,
     ]) {
       if (j < 0 || elevation[j] < 0) continue;
       known++; sum += elevation[j]; if (elevation[j] >= SEA) land++;
+      // between two plates pulling apart the hole is the start of an ocean, and stays one
+      if (first < 0) first = newId[j]; else if (opening(first, newId[j])) rift = true;
     }
-    if (known >= 3 && land >= 3) pit.push(i, Math.round(sum / known));
+    if (known >= 3 && land >= 3 && !rift) pit.push(i, Math.round(sum / known));
   }
   for (let k = 0; k < pit.length; k += 2) elevation[pit[k]] = pit[k + 1];
 

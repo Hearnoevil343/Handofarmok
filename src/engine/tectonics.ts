@@ -828,7 +828,7 @@ export function tectonicAge(
   let base: Float32Array | Int16Array = el;
   if (frames && opts.distance > 0) moveFrames(frames, ps, opts.distance, speed);
   const composite = frames && opts.distance > 0
-    ? compositeFrames(frames, rng, opts.province, opts.frameNearest, opts.frameSoft) : undefined;
+    ? compositeFrames(frames, rng, opts.province, opts.frameNearest, opts.frameSoft, ps) : undefined;
   if (composite) base = composite.base;
   const moved = composite ?? (opts.distance > 0
     ? advect(el, size, plates, opts.distance, rng, opts.province, opts.crust, opts.oceanAge, speed)

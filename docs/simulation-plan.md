@@ -297,6 +297,16 @@ tiles a continent vacates inside a suture were filled as sea floor, pits the ras
 heal and a frame keeps for ever; before they took the mean of the land around them frames scored
 3.48 against 3.21 on the 18 default worlds, after it 3.02.
 
+**Done 2026-09-18 - the clumping came from the pit fill, not from frames.** Before the fill the
+largest landmass was 76.6% with frames against 77.5% on the raster; after it, 82%. Filling a hole
+ringed by land also healed the first cracks of a rift. Requiring all four neighbours to be land
+gave the clumping back only in part (79.2%) and lost the gain (agreement 0.810, score 3.35). Kept:
+fill unless the plates either side of the hole are parting (the weld's own closing test). 108
+worlds: score 3.15 / 4.52 worst (raster 3.53 / 5.66), agreement 0.819, births 0.33, largest
+landmass 79.9%, Wilson penalty 0.14 against 0.10 - about six more worlds in 108 missing a cycle,
+which is near the noise. Plateau share (16.6 against 15.8, both over the 12 target) is left: it is
+the open uplift-profile problem from 2b, and nothing here blurs plateau edges down any more.
+
 **The diagnosis above was half wrong, and the tool says so now.** `continuity.cjs` prints the
 agreement with last age's land after every stage, with the move (`advect`) split from boundary
 relief. On either engine the move alone leaves agreement at 0.93-0.94 - sub-tile motion a whole-tile
