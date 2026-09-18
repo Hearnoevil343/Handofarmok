@@ -26,6 +26,8 @@
 - Plates travel in a steady direction instead of circling, so continents part
   and come back together over a history.
 - Added `docs/engine-glossary.md`: a name for every piece of simulation logic.
+- Added `docs/science-gaps.md`: the simulation compared with real Earth science and
+  published simulators, with a ranked list of what is missing.
 
 ## 0.2.5
 
