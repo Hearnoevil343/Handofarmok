@@ -5,7 +5,7 @@ import type { PlateSet } from "./tectonics";
 import { denudeInactive, isostaticRebound, orogenicCollapse } from "./isostasy";
 import { tectonicAge } from "./tectonics";
 import { type Hotspot, applyHotspots, riftAtPlumes, seedHotspots } from "./hotspots";
-import { compactPlates } from "./tectonics";
+import { compactPlates, frayBoundaries } from "./tectonics";
 import { deStraighten, measureStraightness } from "./artifacts";
 import {
   MEAN_ICE_METRES, climatePhase, conserveCrust, dispersal, drownSpecks,
@@ -114,6 +114,7 @@ export type AgeReport = {
   landTiles: number;
   mountainPct: number;
   riverTiles: number;
+  riverMask: Uint8Array;
   lakeTiles: number;
   volcanoes: number;
   boundaries: Record<string, number>;
@@ -289,8 +290,10 @@ export function runAge(w: World, size: number, opts: AgeOptions): AgeReport {
   // the return is snapshotted before this point, so mutating the input here
   // threw the new seeds away every age.
   if (spots.some((s) => s.plume) && tect.plateSet.sx.length < 24) {
-    riftAtPlumes(tect.plateSet, spots, plateId, size);
+    riftAtPlumes(tect.plateSet, spots, plateId, size, 0.08, rng);
   }
+  // plate edges fret every age, so no cut stays a ruled line
+  frayBoundaries(plateId, size, makeRng(opts.seed ^ 0x3a17));
   compactPlates(tect.plateSet, plateId);
 
   // Welds only ever reduce the plate count, and with the map carried a plume
@@ -308,7 +311,7 @@ export function runAge(w: World, size: number, opts: AgeOptions): AgeReport {
     let k = Math.floor(pick() * area[big]);
     for (let i = 0; i < plateId.length; i++) {
       if (plateId[i] !== big || k-- > 0) continue;
-      riftAtPlumes(tect.plateSet, [{ x: i % size, y: (i / size) | 0, life: 1, plume: true }], plateId, size);
+      riftAtPlumes(tect.plateSet, [{ x: i % size, y: (i / size) | 0, life: 1, plume: true }], plateId, size, 0.08, pick);
       break;
     }
   }
@@ -457,6 +460,8 @@ export function runAge(w: World, size: number, opts: AgeOptions): AgeReport {
     landTiles: land,
     mountainPct: land ? (100 * mtn) / land : 0,
     riverTiles: rivers,
+    /** which tiles carry a river, for measuring how dissected the land is */
+    riverMask: hydro.river,
     lakeTiles: lakes,
     volcanoes: volc,
     boundaries: tect.counts,

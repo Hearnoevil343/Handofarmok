@@ -213,6 +213,116 @@ function boundaryPersistence(prevMap, map, N, r = 2) {
   return total ? (100 * kept) / total : NaN;
 }
 
+/**
+ * How much of a plate boundary lies on ruled straight lines. A plume rift used to
+ * cut its plate along a half-plane, which leaves a dead-straight edge that the
+ * carried plate map then keeps for the rest of the history, collecting uplift.
+ * Real boundaries wander; Earth has no 20-tile straight plate edges.
+ * Returns the share (0-1) of boundary tiles inside a straight run of len or more,
+ * counting horizontal, vertical and both diagonal directions.
+ */
+function boundaryStraightness(map, N, len = 16) {
+  if (!map) return NaN;
+  const b = boundaryMask(map, N);
+  const onLine = new Uint8Array(b.length);
+  let total = 0;
+  for (let i = 0; i < b.length; i++) if (b[i]) total++;
+  if (!total) return NaN;
+  const at = (x, y) => (y < 0 || y >= N ? 0 : b[y * N + (((x % N) + N) % N)]);
+  const mark = (x, y) => { if (y >= 0 && y < N) onLine[y * N + (((x % N) + N) % N)] = 1; };
+  for (const [dx, dy] of [[1, 0], [0, 1], [1, 1], [1, -1]]) {
+    for (let y = 0; y < N; y++) {
+      for (let x = 0; x < N; x++) {
+        if (!at(x, y)) continue;
+        // only start a run where the previous tile in this direction is not a boundary
+        if (at(x - dx, y - dy)) continue;
+        let run = 0;
+        while (at(x + run * dx, y + run * dy)) run++;
+        if (run >= len) for (let k = 0; k < run; k++) mark(x + k * dx, y + k * dy);
+      }
+    }
+  }
+  let straight = 0;
+  for (let i = 0; i < onLine.length; i++) if (onLine[i]) straight++;
+  return straight / total;
+}
+
+/** The longest ruled run anywhere on a plate boundary, in tiles. Earth has none over ~10. */
+function boundaryLongestRun(map, N) {
+  if (!map) return NaN;
+  const b = boundaryMask(map, N);
+  const at = (x, y) => (y < 0 || y >= N ? 0 : b[y * N + (((x % N) + N) % N)]);
+  let longest = 0;
+  for (const [dx, dy] of [[1, 0], [0, 1], [1, 1], [1, -1]]) {
+    for (let y = 0; y < N; y++) {
+      for (let x = 0; x < N; x++) {
+        if (!at(x, y) || at(x - dx, y - dy)) continue;
+        let run = 0;
+        while (at(x + run * dx, y + run * dy) && run <= N) run++;
+        if (run > longest) longest = run;
+      }
+    }
+  }
+  return longest;
+}
+
+/**
+ * How evenly the boundaries are spread over the map. A ragged edge is not clumping, so this
+ * counts by area rather than by neighbour: the share of all boundary tiles that falls in the
+ * busiest tenth of 16x16 blocks. Spread over the whole map that is about 0.1; every boundary
+ * piled into one corner approaches 1.
+ */
+function boundaryClumping(map, N) {
+  if (!map) return NaN;
+  const b = boundaryMask(map, N);
+  const B = 16, blocks = Math.ceil(N / B);
+  const count = new Float64Array(blocks * blocks);
+  let total = 0;
+  for (let y = 0; y < N; y++) for (let x = 0; x < N; x++) {
+    if (!b[y * N + x]) continue;
+    count[((y / B) | 0) * blocks + ((x / B) | 0)]++;
+    total++;
+  }
+  if (!total) return NaN;
+  const sorted = [...count].sort((p, q) => q - p);
+  const top = Math.max(1, Math.round(sorted.length * 0.1));
+  let sum = 0;
+  for (let i = 0; i < top; i++) sum += sorted[i];
+  return sum / total;
+}
+
+/**
+ * Is erosion doing its job? Three numbers, all on land:
+ * - drainage density: share of land tiles carrying a river (Earth's dissected uplands are webbed)
+ * - relief: mean height above the local 9-tile minimum, in METRES (1 land unit = 8800/300 m)
+ * - flatShare: share of land tiles whose 3x3 neighbourhood is entirely one height (undissected slab)
+ */
+function erosionShape(el, riverMask, N) {
+  let land = 0, rivers = 0, relief = 0, flat = 0;
+  for (let y = 1; y < N - 1; y++) {
+    for (let x = 1; x < N - 1; x++) {
+      const i = y * N + x;
+      if (el[i] < 100) continue;
+      land++;
+      if (riverMask && riverMask[i]) rivers++;
+      let lo = Infinity, same = true;
+      for (let dy = -1; dy <= 1; dy++) {
+        for (let dx = -1; dx <= 1; dx++) {
+          const v = el[(y + dy) * N + x + dx];
+          if (v < lo) lo = v;
+          if (v !== el[i]) same = false;
+        }
+      }
+      relief += el[i] - lo;
+      if (same) flat++;
+    }
+  }
+  return land
+    ? { drainageDensity: rivers / land, localRelief: (relief / land) * (8800 / 300), flatShare: flat / land }
+    : { drainageDensity: NaN, localRelief: NaN, flatShare: NaN };
+}
+
+
 /** Everything, for one age. */
 function measureAge(w, N, engineMetrics) {
   const el = w.EL;
@@ -245,4 +355,4 @@ function measureAge(w, N, engineMetrics) {
   };
 }
 
-module.exports = { masses, boxFill, edgeBias, zonality, plateauShare, longestFlatRun, columnStriping, boundaryPersistence, measureAge };
+module.exports = { masses, boxFill, edgeBias, zonality, plateauShare, longestFlatRun, columnStriping, boundaryPersistence, boundaryStraightness, boundaryClumping, boundaryLongestRun, erosionShape, measureAge };

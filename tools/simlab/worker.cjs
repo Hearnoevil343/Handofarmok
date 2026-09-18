@@ -6,7 +6,7 @@ const ENGINE = workerData.engineDir;
 const { generateWorld } = require(path.join(ENGINE, "pipeline"));
 const { runAge } = require(path.join(ENGINE, "age"));
 const engineMetrics = require(path.join(ENGINE, "metrics"));
-const { measureAge, boundaryPersistence } = require("./metrics.extra.cjs");
+const { measureAge, boundaryPersistence, boundaryStraightness, boundaryClumping, boundaryLongestRun, erosionShape } = require("./metrics.extra.cjs");
 
 /**
  * One world, run forward for N ages, measured every age.
@@ -77,6 +77,10 @@ function runHistory(cfg) {
       age,
       ...m,
       boundaryPersist: persist,
+      boundaryStraight: boundaryStraightness(plateMap, N),
+      boundaryClump: boundaryClumping(plateMap, N),
+      boundaryRun: boundaryLongestRun(plateMap, N),
+      ...erosionShape(w.EL, r.riverMask, N),
       seaRiseM: r.seaLevelMetres ?? 0,
       seaDatumM: r.seaLevelDatum ?? 0,
       plates: plateSet.sx.length,

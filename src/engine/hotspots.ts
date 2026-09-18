@@ -165,6 +165,8 @@ export function riftAtPlumes(
   size: number,
   /** smallest share of the map a plate must cover to be split */
   minShare = 0.08,
+  /** draws the wander of the rift line; without it the cut is a ruled line */
+  rng?: () => number,
 ): number {
   let made = 0;
   for (const spot of spots) {
@@ -189,6 +191,24 @@ export function riftAtPlumes(
     for (let i = 0; i < plateId.length; i++) if (plateId[i] === host) area++;
     if (area < plateId.length * minShare) continue;
 
+    // A straight cut is the wrong shape and it does not fade: the plate map is carried
+    // between ages, so the ruled edge stays and collects uplift age after age (the
+    // "straight diagonal scars"). Real rifts follow weaknesses in the crust and wander.
+    // Two sine waves along the rift give a line that still separates the plate in two -
+    // it stays monotone across the axis - without being straight.
+    const draw = rng ?? Math.random;
+    const wave = [1, 2, 3].map((k) => ({
+      amp: ((k === 1 ? 10 : 4) + draw() * 10) * (size / 129),
+      len: ((k === 1 ? 30 : 12) + draw() * 30) * (size / 129),
+      phase: draw() * Math.PI * 2,
+    }));
+    // unit vector along the rift line, perpendicular to the opening direction
+    const bx = ay / m, by = -ax / m;
+    const wanderAt = (dx: number, dy: number) => {
+      const along = dx * bx + dy * by;
+      return wave.reduce((sum, w) => sum + w.amp * Math.sin(along / w.len + w.phase), 0);
+    };
+
     const child = plates.sx.length;
     let sinA = 0, cosA = 0, yA = 0, nA = 0, sinB = 0, cosB = 0, yB = 0, nB = 0;
     for (let i = 0; i < plateId.length; i++) {
@@ -198,7 +218,7 @@ export function riftAtPlumes(
       if (dx > size / 2) dx -= size;
       if (dx < -size / 2) dx += size;
       const ang = (tx / size) * Math.PI * 2;
-      if (dx * ax + (ty - y) * ay > 0) {
+      if (dx * ax + (ty - y) * ay + wanderAt(dx, ty - y) * m > 0) {
         plateId[i] = child;
         sinA += Math.sin(ang); cosA += Math.cos(ang); yA += ty; nA++;
       } else {
@@ -215,6 +235,10 @@ export function riftAtPlumes(
     plates.vx.push(ax / m); plates.vy.push(ay / m);
     plates.sx[host] = cx(sinB, cosB); plates.sy[host] = yB / nB;
     plates.vx[host] = -ax / m; plates.vy[host] = -ay / m;
+    // A plume opens one rift. It used to cut again every age it lived, and because every
+    // cut runs through the plume, the boundaries came out as a fan of straight lines meeting
+    // at that one point - the pie-slice plate maps. The spot stays as an ordinary hotspot.
+    spot.plume = false;
     made++;
   }
   return made;

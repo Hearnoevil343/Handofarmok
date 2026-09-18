@@ -46,6 +46,29 @@ const TARGETS = {
 
   // Longest run of identical temperature along a row.
   flatRunTP:     { lo: 0,  hi: 24, weight: 0.5, note: "a ruled line across the sea" },
+
+  // Share of plate boundary on ruled straight runs of 8 tiles or more. A rift that
+  // cuts its plate along a half-plane leaves one, and the carried plate map keeps it.
+  boundaryStraight: { lo: 0, hi: 0.10, weight: 0.9, note: "Earth has no ruled plate edges (runs of 16+)" },
+
+  // The single longest ruled run on any boundary. One 40-tile line ruins a map even when
+  // the share is small, so it is scored on its own.
+  boundaryRun:      { lo: 0, hi: 14, weight: 0.8, note: "a ruled line is visible at any share" },
+
+  // --- is erosion doing its job ---------------------------------------------
+  // Share of land carrying a river. Earth's humid uplands are webbed with them.
+  drainageDensity:  { lo: 0.04, hi: 0.18, weight: 0.7, note: "dissected land is webbed with valleys" },
+
+  // Mean height above the local 9-tile low, in metres. One tile is ~310 km at 129, so the
+  // window is ~900 km across: Earth is roughly 1-4 km of relief over that distance.
+  localRelief:      { lo: 900, hi: 4000, weight: 0.7, note: "Earth: ~1-4 km of relief per 900 km" },
+
+  // Share of land sitting in a completely flat 3x3 patch: an undissected slab.
+  flatShare:        { lo: 0, hi: 0.25, weight: 0.6, note: "erosion should leave few flat slabs" },
+
+  // Share of boundary tiles in the busiest tenth of 16x16 blocks. Even spread is about 0.1;
+  // everything piled into one corner approaches 1.
+  boundaryClump:    { lo: 0, hi: 0.30, weight: 0.6, note: "boundaries should spread over the map" },
 };
 
 /**
