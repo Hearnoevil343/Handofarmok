@@ -1,0 +1,12 @@
+{
+  "_comment": "calibrate the new dials: how fast arcs build crust, how hard ice presses",
+  "size": 129, "ages": 100, "seeds": [11, 22, 33, 44],
+  "archetypes": ["ARCHIPELAGO", "CONTINENTS"], "climate": "TEMPERATE",
+  "plates": 10, "drift": 6, "mountainTarget": 0.12, "upliftStart": 45,
+  "hotspots": 3, "weathering": 35, "riverCarving": 50, "riverDensity": 5,
+  "rebound": 55, "frayChance": 0.25, "beltWidth": 11, "beltFalloff": 2,
+  "deposition": 80, "denudation": 0.65, "glaciation": 40,
+  "landBudget": true, "heatStart": 1,
+  "crustProduction": [0.001, 0.002, 0.004],
+  "iceLoading": [0, 60, 100]
+}

@@ -1,0 +1,70 @@
+{
+  "_comment": "the shoreline fixes, each turned back off alone so its share is measured",
+  "size": 129,
+  "ages": 100,
+  "seeds": [
+    11,
+    22,
+    33,
+    44,
+    55,
+    66
+  ],
+  "archetypes": [
+    "ARCHIPELAGO",
+    "PANGAEA",
+    "CONTINENTS"
+  ],
+  "climate": "TEMPERATE",
+  "plates": 10,
+  "drift": 6,
+  "mountainTarget": 0.12,
+  "upliftStart": 45,
+  "hotspots": 3,
+  "weathering": 35,
+  "riverCarving": 50,
+  "riverDensity": 5,
+  "rebound": 55,
+  "deposition": 80,
+  "denudation": 0.5,
+  "beltWidth": 11,
+  "beltFalloff": 3,
+  "frayChance": 0.25,
+  "upliftScale": 700,
+  "channelSlope": 1,
+  "glaciation": 40,
+  "landBudget": true,
+  "heatStart": 1,
+  "crustProduction": 0.002,
+  "iceLoading": 100,
+  "variants": [
+    {
+      "_name": "before",
+      "reboundRadius": 6,
+      "shelfCeiling": 126,
+      "landShiftCap": 120,
+      "seaLevelScale": 3,
+      "seaLevelWalk": false
+    },
+    {
+      "_name": "after"
+    },
+    {
+      "_name": "no-rebound-fix",
+      "reboundRadius": 6
+    },
+    {
+      "_name": "no-shelf-fix",
+      "shelfCeiling": 126
+    },
+    {
+      "_name": "no-cap-fix",
+      "landShiftCap": 120
+    },
+    {
+      "_name": "no-sea-fix",
+      "seaLevelScale": 3,
+      "seaLevelWalk": false
+    }
+  ]
+}

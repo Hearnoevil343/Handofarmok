@@ -1,0 +1,81 @@
+{
+  "_comment": "the shoreline, decided by score: old handling against split shelf, rebound on land, graded erosion, and a symmetric coastal ramp",
+  "size": 129,
+  "ages": 100,
+  "seeds": [
+    11,
+    22,
+    33,
+    44,
+    55,
+    66
+  ],
+  "archetypes": [
+    "ARCHIPELAGO",
+    "PANGAEA",
+    "CONTINENTS"
+  ],
+  "climate": "TEMPERATE",
+  "plates": 10,
+  "drift": 6,
+  "mountainTarget": 0.12,
+  "upliftStart": 45,
+  "hotspots": 3,
+  "weathering": 35,
+  "riverCarving": 50,
+  "riverDensity": 5,
+  "rebound": 55,
+  "deposition": 80,
+  "denudation": 0.5,
+  "beltWidth": 11,
+  "beltFalloff": 3,
+  "frayChance": 0.25,
+  "upliftScale": 700,
+  "channelSlope": 1,
+  "glaciation": 40,
+  "landBudget": true,
+  "heatStart": 1,
+  "crustProduction": 0.002,
+  "iceLoading": 100,
+  "variants": [
+    {
+      "_name": "A old-shelf old-rebound hard-clamp",
+      "separateEveryAge": true,
+      "shelfSmoothTop": 145,
+      "reboundOnLand": false,
+      "gradeBand": 0
+    },
+    {
+      "_name": "B old-shelf new-rebound graded",
+      "separateEveryAge": true,
+      "shelfSmoothTop": 145
+    },
+    {
+      "_name": "C once sea-smooth"
+    },
+    {
+      "_name": "D once no-smooth",
+      "shelfSmooth": false
+    },
+    {
+      "_name": "E once coast10",
+      "shelfSmooth": false,
+      "coastSmoothBand": 10
+    },
+    {
+      "_name": "F once coast10 hard-clamp",
+      "shelfSmooth": false,
+      "coastSmoothBand": 10,
+      "gradeBand": 0
+    },
+    {
+      "_name": "G every-age sea-smooth",
+      "separateEveryAge": true
+    },
+    {
+      "_name": "H once coast6",
+      "shelfSmooth": false,
+      "coastSmoothBand": 6
+    }
+  ]
+}
