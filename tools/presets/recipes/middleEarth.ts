@@ -56,8 +56,8 @@ export const middleEarth: Recipe = {
     { name: "Dunland", shape: oval(387, 478, 30, 40), set: { drainage: 58, savagery: 60 } },
 
     // Rhovanion
-    { name: "Mirkwood", shape: oval(655, 370, 90, 125), set: { savagery: 85 } },
-    { name: "Woodland Realm", shape: oval(694, 317, 40, 25), set: { savagery: 60 } },
+    { name: "Mirkwood", shape: oval(655, 370, 90, 125), set: { savagery: 45 } },
+    { name: "Woodland Realm", shape: oval(694, 317, 40, 25), set: { savagery: 30 } },
     { name: "Dol Guldur", shape: oval(601, 461, 30, 25), set: { savagery: 95 } },
     { name: "Dale and Esgaroth", shape: oval(716, 315, 30, 22), set: { savagery: 20 } },
     { name: "Lothlórien", shape: oval(519, 462, 20, 16), set: { savagery: 5 }, feather: 5 },
@@ -78,9 +78,9 @@ export const middleEarth: Recipe = {
     { name: "Harondor", shape: oval(600, 790, 70, 40), set: { rainfall: 12, drainage: 40, savagery: 45 } },
 
     // Mordor
-    { name: "Lithlad", shape: oval(790, 640, 60, 20), set: { rainfall: 8, drainage: 45, savagery: 85 } },
-    { name: "Nurn", shape: oval(800, 725, 70, 25), set: { rainfall: 26, savagery: 80 } },
-    { name: "Gorgoroth", shape: oval(715, 650, 70, 38), set: { rainfall: 0, drainage: 30, savagery: 95 }, add: { temperature: 12 }, feather: 10 },
+    { name: "Lithlad", shape: oval(790, 640, 60, 20), set: { rainfall: 8, drainage: 45, savagery: 45 } },
+    { name: "Nurn", shape: oval(800, 725, 70, 25), set: { rainfall: 26, savagery: 40 } },
+    { name: "Gorgoroth", shape: oval(715, 650, 70, 38), set: { rainfall: 0, drainage: 30, savagery: 40 }, add: { temperature: 12 }, feather: 10 },
 
     // the south
     { name: "Harad", shape: [[420, 830], [1050, 830], [1050, 1050], [420, 1050]], set: { rainfall: 4, drainage: 20, temperature: 98, savagery: 50 }, feather: 40 },
