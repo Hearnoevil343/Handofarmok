@@ -1,9 +1,11 @@
 # Changes to Hand of Armok
 
-## Unreleased
+## 0.3.0
 
 - Middle-earth preset, built from measured elevation and the real outlines of its
-  forests, marshes and lakes.
+  forests, marshes and lakes; civ, beast and cave counts scaled from its measured
+  land instead of pocket defaults, and savagery lowered in Mordor and Mirkwood so
+  civs can settle there.
 - Game view draws rivers and lakes with DF's own sprites.
 - New tool: Sculpt River Valleys, which reshapes low ground so DF puts its rivers
   where the map shows them.
