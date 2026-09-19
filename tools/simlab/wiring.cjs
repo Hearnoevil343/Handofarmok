@@ -28,7 +28,7 @@ const TESTS = [
   ["weathering 35 -> 0", { weathering: 0 }], ["glaciation 40 -> 0", { glaciation: 0 }],
   ["riverCarving 50 -> 0", { riverCarving: 0 }], ["riverDensity 5 -> 10", { riverDensity: 10 }],
   ["channelSlope 1 -> 2", { channelSlope: 2 }], ["deposition 80 -> 0", { deposition: 0 }],
-  ["denudation 0.3 -> 0", { denudation: 0 }], ["dissection 10 -> 0", { dissection: 0 }], ["rebound 55 -> 0", { rebound: 0 }],
+  ["denudation 0.2 -> 0", { denudation: 0 }], ["dissection 15 -> 0", { dissection: 0 }], ["arcRate 0.1 -> 1", { arcRate: 1 }], ["transformRelief 0 -> 1", { transformRelief: 1 }], ["rebound 55 -> 0", { rebound: 0 }],
   ["iceLoading 100 -> 0", { iceLoading: 0 }], ["deArtifact off (anti-seam warp)", { deArtifact: false }],
   ["crustSeparation -> 0", { crustSeparation: 0, shelfSmooth: false }],
   ["conserveLand off", { conserveLand: false }], ["landBudget off", { landBudget: false }],

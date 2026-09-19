@@ -20,6 +20,10 @@ Machine time is wall clock on 12 cores. "Worth it" is judged afterwards, honestl
 | 11 | Dissection on top, 108 x 4 then 108 x 3 | 25 min | every strength worse | **no** - two sweeps to learn what the budget table showed in one minute |
 | 12 | Budget per step, 1 world x 4 | 3 min | erosion ledger already full; denudation the largest, least physical entry | **yes - do this first next time** |
 | 13 | Dissection swapped for denudation, 108 x 3 | 12 min | 10 / 0.3 adopted: 2.94, agreement 0.831, births 0.337 | yes |
+| 14 | Shoreline moves per boundary kind, 1 world | 1 min | island arcs make 320 land tiles an age; transforms drown 98 with pure noise | **yes - the day's second instrument that redirected everything** |
+| 15 | Arc rate / transform relief, 1 world x 6 | 3 min | 0.3 does nothing, 0.1 halves births | yes - picked the sweep's values for it |
+| 16 | Relief settings, 108 x 3 | 14 min | 2.94 -> 1.28 | **yes - largest gain of the day, from one sweep** |
+| 17 | Re-test of the dissection swap under the new relief, 108 x 2 | 10 min | 15 / 0.2 adopted: 1.18, agreement 0.860, births 0.131 | yes - a dependency found earlier, re-checked once its blocker was gone |
 
 ## What paid, what did not
 
@@ -29,5 +33,7 @@ Machine time is wall clock on 12 cores. "Worth it" is judged afterwards, honestl
   not in any score.
 - **Did not pay:** sweeping a new factor across strengths before knowing what it competes with (11).
 - **Did not pay:** 18-world sweeps for decisions. They are for smoke tests; decide on 108.
+- **Paid:** re-testing a rejected setting when the thing that blocked it is fixed (17). Keep a note of
+  *why* each rejection happened, so it can be retried for the right reason.
 - **Rule:** a whole-world score says *that* something is worse, never *why*. Ask the budget table
   and the per-step agreement why, then sweep once to confirm.

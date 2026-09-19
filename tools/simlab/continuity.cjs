@@ -83,6 +83,7 @@ let plateSet, plateMap, frames, spots, provinces, crustShare, iceLoad, sea = 0, 
 let land0 = 0; for (let i = 0; i < NN; i++) if (w.EL[i] >= 100) land0++;
 const baselineLand = Math.min(0.6, Math.max(0.08, land0 / NN));
 
+const kindMoves = {};
 const stageFlips = {}, stageNet = {}, stageAgree = {}, stageOrder = [], budget = {};
 let prev = mask(w.EL);
 const rows = [];
@@ -120,6 +121,7 @@ for (let age = 1; age <= AGES; age++) {
     let a = 0, b = 0; for (let i = 0; i < NN; i++) { a += trace[k - 1][1][i]; b += m[i]; }
     stageNet[name].push(b - a);
   }
+  for (const [k, v] of Object.entries(r.shoreMoves || {})) { const t = (kindMoves[k] ??= [0, 0, 0]); t[0] += v[0]; t[1] += v[1]; t[2] += r.boundaries[k] || 0; }
   w = r.world; plateSet = r.plateSet; plateMap = r.plateMap; frames = r.frames; spots = r.spots; provinces = r.provinces;
   crustShare = r.crustShare; iceLoad = r.iceLoad; uplift = r.nextUpliftStrength; sea = r.seaLevelOffset;
   const cur = mask(w.EL);
@@ -153,3 +155,6 @@ console.log("\nBudget per step, per age (elevation units averaged over land, 1 u
 console.log("  " + "step".padEnd(14) + "raises".padStart(9) + "lowers".padStart(9) + "net".padStart(9) + "mountain tiles".padStart(16));
 for (const s of stageOrder) { const b = budget[s]; if (!b) continue;
   console.log("  " + s.padEnd(14) + (b.up / b.n).toFixed(2).padStart(9) + (b.down / b.n).toFixed(2).padStart(9) + ((b.up - b.down) / b.n).toFixed(2).padStart(9) + ((b.mtn / b.n >= 0 ? "+" : "") + (b.mtn / b.n).toFixed(1)).padStart(16)); }
+console.log("\nBoundary relief, shoreline tiles moved per age by kind of boundary:");
+console.log("  " + "kind".padEnd(18) + "made land".padStart(10) + "made sea".padStart(10) + "boundary tiles".padStart(16));
+for (const [k, t] of Object.entries(kindMoves)) console.log("  " + k.padEnd(18) + (t[0] / AGES).toFixed(1).padStart(10) + (t[1] / AGES).toFixed(1).padStart(10) + (t[2] / AGES).toFixed(0).padStart(16));

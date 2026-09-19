@@ -144,7 +144,7 @@ engine is repeatable (same input, identical output).
 | # | Gap | What you would see | Effort | Risk |
 |---|---|---|---|---|
 | 1 | ~~Landscape dissection~~ **done 2026-09-18** (plan 3b): in at strength 10, swapped against denudation | land cut into valleys and ridges every age, as Forge leaves it | small | coast balance, run time |
-| 2 | **Boundary relief that persists** - build belts where the boundary has been, stop re-rolling transform noise | coasts and ranges stop redrawing each age; the largest remaining loss of continuity | medium | mountain share needs retuning |
+| 2 | **Boundary relief that persists** (part done 2026-09-18, plan 2e: island arcs slowed, transform noise off; score 2.94 -> 1.18) - build belts where the boundary has been, stop re-rolling transform noise | coasts and ranges stop redrawing each age; the largest remaining loss of continuity | medium | mountain share needs retuning |
 | 3 | **Collision resistance + real slab pull** - speed from trench length, slow on collision | fast ocean plates, slow continents, India-style slow-down; plates with a reason for their speed | medium | the proxy already scored worse; needs the real rule |
 | 5 | **Crust thickness layer** (Airy isostasy) | plateaus behind collisions, basins where crust is thinned, rebound that is physical instead of balanced by a smoother | large - touches frames, relief, rebound, the coast pair | high; would replace the rebound/smoother balance |
 | 6 | **Rock type controls erosion** - provinces set K | old shields wear flat, young belts stay sharp | small | low |
