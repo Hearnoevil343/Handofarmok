@@ -1,4 +1,5 @@
-import { fromMetres, toMetres } from "./scale";
+import { METRES_PER_UNIT_OCEAN, fromMetres, toMetres } from "./scale";
+import { MYR_PER_AGE } from "./timescale";
 
 /**
  * The ocean floor and the sea over it (docs/simulation-plan.md, step 4).
@@ -98,6 +99,8 @@ export function updateCrust(
 export function conserveContinentalArea(
   el: Int16Array, crust: Uint8Array, oceanAge: Float32Array, size: number,
   targetTiles: number, rate = 0.2,
+  /** volcanic arc tiles, preferred when new continent is being made (heat.ts) */
+  arc?: Int16Array,
 ): number {
   let count = 0;
   for (let i = 0; i < crust.length; i++) count += crust[i];
@@ -119,8 +122,14 @@ export function conserveContinentalArea(
       }
     }
   }
-  // shallowest sea floor first when adding, deepest continent first when removing
-  candidates.sort((a, b) => (adding ? el[b] - el[a] : el[a] - el[b]) || a - b);
+  // Arcs first when adding, because that is where continental crust is actually
+  // made: a slab dehydrates, the wedge above it melts, and the melt is too light
+  // to go back down. Otherwise the shallowest sea floor - an accreted margin or a
+  // sediment wedge. Removing takes the deepest continental margin first.
+  const arcRank = (i: number) => (arc && arc[i] === 100 ? 1 : 0);
+  candidates.sort((a, b) => (adding
+    ? arcRank(b) - arcRank(a) || el[b] - el[a]
+    : el[a] - el[b]) || a - b);
   const n = Math.min(k, candidates.length);
   for (let c = 0; c < n; c++) {
     const i = candidates[c];
@@ -149,14 +158,63 @@ export function conserveContinentalArea(
  */
 export function relaxBathymetry(
   el: Int16Array, crust: Uint8Array, oceanAge: Float32Array, datumMetres = 0, rate = 0.5, shelfRate = 0.3,
+  /** map width, needed to read a tile's neighbours */
+  size = Math.round(Math.sqrt(el.length)),
+  /** how much shallower the basins sit, metres: the mantle-heat term (heat.ts) */
+  shallowMetres = 0,
+  /**
+   * Relief given to sea floor the moment it is made at a ridge, metres.
+   * Off by default: abyssal hills are real at 100-300 m, but measured over 144
+   * worlds they broadened the abyssal peak enough to cost 0.11 of hypsometric
+   * bimodality (0.85 to 0.74, against a 0.75 floor) and bought nothing that was
+   * being measured.
+   */
+  ridgeRelief = 0,
 ): Int16Array {
   const out = Int16Array.from(el);
   const shelf = fromMetres(-100 - datumMetres);
-  for (let i = 0; i < el.length; i++) {
-    if (el[i] >= SEA) continue;
-    const target = crust[i] ? shelf : fromMetres(-oceanDepthMetres(oceanAge[i]) - datumMetres);
-    const k = crust[i] ? shelfRate : rate;
-    out[i] = Math.max(0, Math.min(SEA - 1, Math.round(el[i] + (target - el[i]) * k)));
+  const wrap = (x: number) => (x + size) % size;
+  for (let y = 0; y < size; y++) {
+    for (let x = 0; x < size; x++) {
+      const i = y * size + x;
+      if (el[i] >= SEA) continue;
+      const age = oceanAge[i];
+      let target = crust[i]
+        ? shelf
+        : fromMetres(-oceanDepthMetres(age) + shallowMetres - datumMetres);
+
+      // Relief is measured against the ground around it and handed back, so the
+      // neighbourhood settles toward the depth its age implies while the bumps on
+      // it survive. Setting each tile straight to depth-for-age instead planed the
+      // whole sea floor to one value: measured, 89% of the map sat in a flat 2x2
+      // patch against 8% without the ocean model, which reads as a sheet of glass.
+      let sum = 0, n = 0;
+      for (let dy = -1; dy <= 1; dy++) {
+        const yy = y + dy;
+        if (yy < 0 || yy >= size) continue;
+        for (let dx = -1; dx <= 1; dx++) {
+          const j = yy * size + wrap(x + dx);
+          if (el[j] >= SEA) continue;
+          sum += el[j]; n++;
+        }
+      }
+      if (n > 1) {
+        // sediment buries the roughness as the floor ages, so it is handed back
+        // a little short each age: about a 400 Myr half-life
+        target += (el[i] - sum / n) * 0.97;
+      }
+      // Floor made at a ridge this age is born with abyssal-hill relief - faulted
+      // blocks 100-300 m high, formed as the crust is pulled apart. It is random
+      // where it is made and then travels with the plate like everything else,
+      // because from here on it is only ever carried as relief against neighbours.
+      if (!crust[i] && age <= MYR_PER_AGE && ridgeRelief > 0) {
+        let h = Math.imul(i ^ 0x9e3779b9, 0x85ebca6b);
+        h = Math.imul(h ^ (h >>> 13), 0xc2b2ae35);
+        target += (((h >>> 8) / 16777215 - 0.5) * 2 * ridgeRelief) / METRES_PER_UNIT_OCEAN;
+      }
+      const k = crust[i] ? shelfRate : rate;
+      out[i] = Math.max(0, Math.min(SEA - 1, Math.round(el[i] + (target - el[i]) * k)));
+    }
   }
   return out;
 }
@@ -196,6 +254,26 @@ export const basinReferenceRate = (age: number, myrPerAge: number) =>
   Math.min(1, myrPerAge / Math.min(400, myrPerAge * Math.max(1, age)));
 
 const baseElevation = (v: number, datumMetres: number) => fromMetres(toMetres(v) + datumMetres);
+
+/**
+ * Rounding that does not flatten the land.
+ *
+ * Sea level and freeboard both shift every elevation by the same amount and
+ * round the result back to an integer. Two neighbours a fraction of a unit
+ * apart land on the same integer and stay there, and after a hundred ages of it
+ * the land is visibly stair-stepped: measured, land in flat 2x2 blocks went from
+ * 0.08% without the ocean model to 0.92% with it, against a 0.5% limit.
+ *
+ * Each tile keeps its own fixed offset inside the rounding interval, so a shift
+ * moves neighbours onto different integers instead of the same one. It is fixed
+ * per tile, so applying the same shift twice gives the same answer - this adds
+ * no noise and nothing drifts.
+ */
+export function ditheredRound(value: number, index: number): number {
+  let h = Math.imul(index ^ 0x27d4eb2d, 0x165667b1);
+  h = Math.imul(h ^ (h >>> 15), 0x2545f491);
+  return Math.round(value + ((h >>> 8) / 16777216 - 0.5));
+}
 
 /** Share of continental crust standing above the sea as it was at the start. */
 export function continentalExposure(el: Int16Array, crust: Uint8Array, datumMetres = 0): number {
@@ -245,7 +323,7 @@ export function restoreFreeboard(
   const out = Int16Array.from(el);
   for (let k = 0; k < idx.length; k++) {
     const i = idx[k];
-    out[i] = Math.max(0, Math.min(400, Math.round(el[i] + shift * weight(base[k]))));
+    out[i] = Math.max(0, Math.min(400, ditheredRound(el[i] + shift * weight(base[k]), i)));
   }
   return out;
 }
@@ -254,7 +332,73 @@ export function restoreFreeboard(
 export function applySeaLevelRise(el: Int16Array, rise: number): Int16Array {
   const out = new Int16Array(el.length);
   for (let i = 0; i < el.length; i++) {
-    out[i] = Math.max(0, Math.min(400, Math.round(fromMetres(toMetres(el[i]) - rise))));
+    out[i] = Math.max(0, Math.min(400, ditheredRound(fromMetres(toMetres(el[i]) - rise), i)));
   }
   return out;
+}
+
+/**
+ * How much continental crust there should be next age.
+ *
+ * The area was conserved because on Earth today it very nearly is: arcs make
+ * new crust at one to three cubic kilometres a year and subduction erosion
+ * destroys about as much. That balance is a late-life condition. Over the
+ * planet's history the continents grew - most models put 60 to 80 per cent of
+ * the present volume in place by 2.5 Ga - because a hotter mantle melts more
+ * over a slab and there was less continent standing in the way.
+ *
+ * Growth saturates rather than running away: the fuller the planet's surface is
+ * of continent, the less ocean floor is left to subduct and the more of what is
+ * made is simply recycled. `ceilingShare` is where it levels off - 0.42 of the
+ * surface for Earth, counting the drowned margins, of which about 29% is dry.
+ *
+ * `rate` is the share of the whole map added per age at present-day heat with
+ * an empty planet: 0.002 is about a million square kilometres per ten million
+ * years, or four cubic kilometres a year at 40 km thick, which is the right
+ * order for arc production.
+ */
+export function continentalGrowth(
+  targetTiles: number, totalTiles: number, heatFactor: number,
+  rate = 0.002, ceilingShare = 0.42,
+): number {
+  if (rate <= 0) return targetTiles;
+  const room = Math.max(0, 1 - targetTiles / (ceilingShare * totalTiles));
+  return targetTiles + rate * heatFactor * room * totalTiles;
+}
+
+/**
+ * Sea level from a fixed volume of water, rather than from how deep the basins
+ * are on average.
+ *
+ * The basin-reference model asks where the sea would stand if this world's
+ * basins were normal for it. This asks the blunter question: the planet has a
+ * certain amount of water, the basins are shaped as they are, so where does the
+ * surface end up? It is the honest version, and the one that lets a world be
+ * genuinely dry or genuinely drowned instead of drifting toward Earth - but it
+ * is unforgiving, because every square kilometre of basin deepening has to be
+ * paid for by the sea falling somewhere.
+ *
+ * Volume is in metre-tiles: metres of water depth summed over tiles, which is
+ * all that is needed since every tile is the same area. Ice is subtracted as
+ * its sea-level equivalent over the whole map, the same convention `cycles.ts`
+ * uses. Solved by bisection on the surface height, because the hypsometry is
+ * arbitrary.
+ */
+export function waterVolume(el: Int16Array, surfaceMetres: number): number {
+  let v = 0;
+  for (let i = 0; i < el.length; i++) {
+    const bed = toMetres(el[i]);
+    if (bed < surfaceMetres) v += surfaceMetres - bed;
+  }
+  return v;
+}
+
+/** Where the sea stands, in metres against the current map datum, for this much water. */
+export function seaLevelForVolume(el: Int16Array, volume: number): number {
+  let lo = -8000, hi = 8000;
+  for (let k = 0; k < 40; k++) {
+    const mid = (lo + hi) / 2;
+    if (waterVolume(el, mid) < volume) lo = mid; else hi = mid;
+  }
+  return (lo + hi) / 2;
 }

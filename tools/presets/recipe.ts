@@ -100,6 +100,8 @@ export interface Recipe {
   regions: Region[];
   /** labelled spots to check after building, with the biome family expected */
   checks: { name: string; at: Point; expect: string }[];
+  /** world_gen tokens with no scaling formula, written as-is over the scaled settings */
+  worldGenOverrides?: Record<string, string[]>;
 }
 
 const PLAN = 1000;

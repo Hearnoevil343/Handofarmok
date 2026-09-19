@@ -1,0 +1,14 @@
+{
+  "_comment": "mountains: how many, how tall, how plateau-free, how elongated",
+  "size": 129, "ages": 100, "seeds": [11, 22, 33, 44],
+  "archetypes": ["ARCHIPELAGO", "CONTINENTS"], "climate": "TEMPERATE",
+  "plates": 10, "drift": 6, "upliftStart": 45,
+  "hotspots": 3, "weathering": 35, "riverCarving": 50, "riverDensity": 5,
+  "rebound": 55, "frayChance": 0.25, "beltWidth": 11,
+  "deposition": 80, "glaciation": 40,
+  "landBudget": true, "heatStart": 1, "crustProduction": 0.002, "iceLoading": 100,
+  "mountainTarget": [0.12, 0.16],
+  "denudation": [0.5, 0.65, 0.8],
+  "beltFalloff": [2, 3],
+  "upliftScale": [420, 540]
+}

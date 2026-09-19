@@ -9,7 +9,10 @@
  * elevation of 262 against an interior of 84 — the grey band down the side of
  * the world.
  */
-import { scaleLength } from "./scale";
+import { METRES_PER_UNIT_LAND, scaleLength } from "./scale";
+import { ditheredRound } from "./ocean";
+
+const SEA = 100;
 
 const wrapX = (x: number, size: number) => (x + size) % size;
 const clampY = (y: number, size: number) => (y < 0 ? 0 : y >= size ? size - 1 : y);
@@ -35,11 +38,25 @@ export function isostaticRebound(
   strength = 0.55,
   /** how far the load spreads, in tiles; ~1,900 km (6 tiles at 129) by default */
   radiusTiles?: number,
+  /**
+   * Apply only to tiles that are or were land. Off by default, and this is
+   * measured, not a preference: the blur spills uplift across the coast and
+   * turns a net 789 sea tiles into land an age, but the coastal smoother in
+   * separateCrust takes about as many back, and the pair together hold the
+   * shoreline steadier than either alone. Switching this on without a coastal
+   * model to replace the pair scored 4.27 against 3.43 on 108 worlds.
+   */
+  landOnly = false,
 ): Int16Array {
   const radius = radiusTiles ?? Math.round(scaleLength(6, size));
   const n = size * size;
-  const removed = new Float64Array(n);
-  for (let i = 0; i < n; i++) removed[i] = Math.max(0, before[i] - after[i]);
+  // Signed, because a crust responds to load both ways. This only counted material taken
+  // off, so the ground rose where erosion cut it and nothing sank where the sediment landed:
+  // with deposition added, the land share climbed past anything Earth has held. A delta or a
+  // filling basin presses its floor down, which is why they go on accepting sediment.
+  const load = new Float64Array(n);
+  for (let i = 0; i < n; i++) load[i] = before[i] - after[i];
+  const removed = load;
 
   // separable box blur, twice, to approximate the flexural response
   const tmp = new Float64Array(n);
@@ -62,9 +79,18 @@ export function isostaticRebound(
   blur(removed, tmp, true);
   blur(tmp, removed, false);
 
+  // Applied to the crust that was loaded - tiles that are or were land - and not
+  // to the sea floor beside it. The blur is wide enough to reach across a coast,
+  // and it did: measured, this step turned a net 789 sea tiles into land every
+  // age, and conserveCrust took 603 of them back, an oscillation between two
+  // stages that moved the shoreline more than the plates did. Rounding is
+  // dithered for the same reason a sea-level shift is (ocean.ts): a plain round
+  // tips every 99.5 up to 100, which is a coastline made of rounding error.
   const out = new Int16Array(n);
   for (let i = 0; i < n; i++) {
-    out[i] = Math.min(400, Math.max(0, Math.round(after[i] + removed[i] * strength)));
+    if (landOnly && before[i] < SEA && after[i] < SEA) { out[i] = after[i]; continue; }
+    const v = after[i] + removed[i] * strength;
+    out[i] = Math.min(400, Math.max(0, landOnly ? ditheredRound(v, i) : Math.round(v)));
   }
   return out;
 }
@@ -92,6 +118,8 @@ export function orogenicCollapse(
   passesTiles?: number,
   /** share of the excess lost downward into the mantle root each pass */
   subsidence = 0.12,
+  /** spread onto land only; off by default, for the same reason as isostaticRebound's landOnly */
+  landOnly = false,
 ): Int16Array {
   const passes = passesTiles ?? Math.max(1, Math.round(scaleLength(6, size)));
   const cur = Int16Array.from(el);
@@ -106,10 +134,12 @@ export function orogenicCollapse(
         const excess = cur[i] - ceiling;
         if (excess <= 0) continue;
 
-        // spread toward whichever neighbours are lower, most to the lowest
+        // spread toward whichever neighbours are lower, most to the lowest -
+        // on land only: a collapsing range thickens the crust beside it, it does
+        // not pour into the sea (measured, +164 tiles of new land an age when it did)
         const n = [at(x - 1, y, size), at(x + 1, y, size),
                    at(x, y - 1, size), at(x, y + 1, size)];
-        const drops = n.map((j) => Math.max(0, cur[i] - cur[j]));
+        const drops = n.map((j) => (landOnly && cur[j] < SEA ? 0 : Math.max(0, cur[i] - cur[j])));
         const total = drops.reduce((a, b) => a + b, 0);
         if (total <= 0) continue;
 
@@ -158,9 +188,14 @@ export function denudeInactive(
   // 0.3 lost to uplift over long histories: across 200 ages the mountain
   // controller climbed to ~90 of 100 and mountains still slid from 11% to 8%.
   // At 0.2, with boundary uplift 420, it settles at 60-65 and holds ~11%.
-  rate = 0.2,
+  // 0.5 after the 2026-09-18 sweeps: at 0.2 the ground beside every range stayed high and
+  // 26% of land sat just under the mountain line, which reads as a plateau rather than as
+  // ranges. With the squared belt profile, 0.5 brings that band to 13% and holds mountains
+  // near 9% of land.
+  rate = 0.65,
+  /** height above the sea over which denudation fades out, in units (0: hard clamp at the sea) */
+  gradeBand = 12,
 ): Int16Array {
-  const SEA = 100;
   const out = Int16Array.from(el);
   // the surrounding ground: ~930 km either way (3 tiles at 129)
   const w = Math.max(1, Math.round(scaleLength(3, size)));
@@ -184,9 +219,65 @@ export function denudeInactive(
       if (relief <= 0) continue;
 
       // high ground denudes faster, which is why old belts flatten and stay flat
-      const speed = rate * Math.min(2.0, 0.5 + relief / 70) * (active ? 0.25 : 1);
+      let speed = rate * Math.min(2.0, 0.5 + relief / 70) * (active ? 0.25 : 1);
+      // graded to base level, like the rivers: the coastal plain wears down
+      // slowly and never stacks up at exactly sea level
+      if (gradeBand > 0) speed *= Math.min(1, (el[i] - SEA) / gradeBand);
       out[i] = Math.max(SEA, Math.round(el[i] - relief * speed));
     }
   }
   return out;
+}
+
+/**
+ * Ice-sheet loading.
+ *
+ * An ice sheet is heavy. Three kilometres of ice presses the crust down by
+ * nearly a kilometre — ice is about 917 kg/m³ against a mantle near 3,300, so
+ * the ground settles by a bit over a quarter of the ice's thickness — and when
+ * the ice goes the ground comes back up. Scandinavia is still rising eight
+ * millimetres a year from ice that finished melting ten thousand years ago, and
+ * Hudson Bay is a basin mostly because it was under the thickest part of the
+ * Laurentide.
+ *
+ * Nothing in the model did this. Ice cut mountains down (`glacialErosion`) but
+ * never weighed anything down, so glaciated continents kept their height while
+ * being planed, and no basin was ever left behind by a departed ice sheet.
+ *
+ * Mantle relaxation takes about ten thousand years, which at ten million years
+ * an age is instant: the depression here is the equilibrium one, and the caller
+ * applies the difference from last age, so a retreating sheet rebounds.
+ *
+ * `iceMetres` is the sea-level equivalent of the water locked up, as
+ * `cycles.ts` reports it; it is spread over the coldest ground, thickest where
+ * it is coldest, so that the total matches.
+ */
+export function iceSheetLoad(
+  el: Int16Array, temperature: Int16Array, iceMetres: number,
+  /** ice starts to hold below this temperature */
+  freezingAt = -4,
+  /** share of the ice's thickness the crust settles by */
+  ratio = 917 / 3300,
+): Float32Array {
+  const load = new Float32Array(el.length);
+  if (iceMetres <= 0) return load;
+  // where ice sits, and how heavily, before it is scaled to the water available
+  let weightSum = 0;
+  for (let i = 0; i < el.length; i++) {
+    if (el[i] < SEA) continue;
+    const cold = freezingAt - temperature[i];
+    if (cold <= 0) continue;
+    // colder ground holds a thicker sheet, levelling off: a sheet is limited by
+    // how fast ice can flow out of it, not only by how cold it is
+    load[i] = Math.min(1, cold / 20);
+    weightSum += load[i];
+  }
+  if (weightSum <= 0) return new Float32Array(el.length);
+  // iceMetres is over the whole map; share it out by weight, then convert the
+  // ice thickness to how far the crust sinks under it, in elevation units
+  const metresPerWeight = (iceMetres * el.length) / weightSum;
+  for (let i = 0; i < load.length; i++) {
+    if (load[i] > 0) load[i] = (load[i] * metresPerWeight * ratio) / METRES_PER_UNIT_LAND;
+  }
+  return load;
 }

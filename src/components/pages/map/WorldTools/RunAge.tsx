@@ -18,7 +18,7 @@ import { realmStore } from "@world/realmStore";
  * a row play out on the map one at a time, and each is its own undo step.
  */
 export function RunAge() {
-  const [plates, setPlates] = useState(6);
+  const [plates, setPlates] = useState(10);
   const [drift, setDrift] = useState(4);
   const [mountains, setMountains] = useState(14);
   const [weathering, setWeathering] = useState(35);
@@ -50,11 +50,14 @@ export function RunAge() {
       plateSet: session.plates ?? undefined,
       // boundaries persist: the plate map is carried state, not redrawn each age
       plateMap: session.plateGridSize === size ? session.plateMap ?? undefined : undefined,
+      frames: session.frames ?? undefined,
       spots: session.spots,
       provinces: session.provinces ?? undefined,
       upliftStrength: session.upliftStrength,
       seaLevelOffset: session.seaLevelOffset,
       baselineLand: session.baselineLand,
+      crustShare: session.crustShare ?? undefined,
+      iceLoad: session.iceLoad ?? undefined,
       plates,
       drift,
       mountainTarget: mountains / 100,
@@ -69,11 +72,14 @@ export function RunAge() {
     });
     session.plates = r.plateSet;
     session.plateMap = r.plateMap;
+    session.frames = r.frames ?? null;
     session.plateGridSize = size;
     session.spots = r.spots;
     session.provinces = r.provinces;
     session.upliftStrength = r.nextUpliftStrength;
     session.seaLevelOffset = r.seaLevelOffset;
+    session.crustShare = r.crustShare ?? null;
+    session.iceLoad = r.iceLoad ?? null;
     session.age += 1;
     write(r.world);
     const kinds = Object.entries(r.boundaries)
@@ -86,7 +92,10 @@ export function RunAge() {
       `Age ${session.age} (${(session.age * MYR_PER_AGE).toLocaleString()} million years): ` +
       `${r.mountainPct.toFixed(0)}% mountain, ${r.plateSet.sx.length} plates, ` +
       `${r.riverTiles} river tiles, ${r.lakeTiles} standing water, ${r.volcanoes} volcanoes, ` +
-      `${r.spots.length} active plumes. Mostly ${kinds}. ${r.phase}.`
+      `${r.spots.length} active plumes. Mostly ${kinds}. ${r.phase}.` +
+      (r.crustShare !== undefined
+        ? ` Continental crust ${(100 * r.crustShare).toFixed(0)}% of the world.`
+        : "")
     );
   };
 
@@ -119,6 +128,7 @@ export function RunAge() {
     s.plates = null;
     s.age = 0;
     s.plateMap = null;
+    s.frames = null;
     s.spots = [];
     s.provinces = null;
     s.upliftStrength = 45;

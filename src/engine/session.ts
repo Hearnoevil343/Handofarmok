@@ -1,5 +1,6 @@
 import type { Hotspot } from "./hotspots";
 import type { PlateSet } from "./tectonics";
+import type { PlateFrames } from "./frames";
 import type { Provinces } from "./provinces";
 
 /**
@@ -19,6 +20,8 @@ export type Session = {
   /** last computed plate map, so the editor can draw the boundaries */
   plateMap: Int16Array | null;
   plateGridSize: number;
+  /** each plate's own raster and transform (frames.ts); rebuilt from the map when absent */
+  frames: PlateFrames | null;
   /** boundary relief carried between ages, adjusted toward the target */
   upliftStrength: number;
   /** mantle plumes, so a chain continues instead of restarting */
@@ -29,6 +32,10 @@ export type Session = {
   seaLevelOffset: number;
   /** land share this world settles toward, sampled when the history begins */
   baselineLand: number | null;
+  /** share of the map that is continental crust, which arcs slowly add to */
+  crustShare: number | null;
+  /** how far the crust is currently pressed down by ice, so it rebounds when it melts */
+  iceLoad: Float32Array | null;
 };
 
 const sessions = new Map<string, Session>();
@@ -36,8 +43,9 @@ const sessions = new Map<string, Session>();
 export function getSession(key: string): Session {
   let s = sessions.get(key);
   if (!s) {
-    s = { plates: null, age: 0, plateMap: null, plateGridSize: 0, upliftStrength: 45,
-      spots: [], provinces: null, seaLevelOffset: 0, baselineLand: null };
+    s = { plates: null, age: 0, plateMap: null, plateGridSize: 0, frames: null, upliftStrength: 45,
+      spots: [], provinces: null, seaLevelOffset: 0, baselineLand: null,
+      crustShare: null, iceLoad: null };
     sessions.set(key, s);
   }
   return s;
