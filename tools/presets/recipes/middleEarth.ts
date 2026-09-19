@@ -121,4 +121,6 @@ export const middleEarth: Recipe = {
     { name: "Harad", at: [700, 950], expect: "Desert" },
     { name: "Forodwaith", at: [454, 150], expect: "Tundra|Glacier" },
   ],
+  // civtest-tuned; no scaling formula produces this in worldGuide.ts
+  worldGenOverrides: { BEAST_END_YEAR: ["200", "80"] },
 };

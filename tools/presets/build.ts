@@ -16,8 +16,10 @@ import { modulateByLayers, oceanMultiplier, reliefMultiplier, scaleColor } from 
 import { applyPaintSafe } from "@df/paintSafe";
 import { planWater } from "@helpers/rivers";
 import { middleEarth } from "./recipes/middleEarth";
-import { newRealmSettings } from "@df/settings";
+import { newRealmSettings, type TokenSettings } from "@df/settings";
 import { writeWorldGen } from "@formats/worldgen/write";
+import { measureWorld } from "@helpers/worldMeasure";
+import { groupValues } from "@helpers/worldGuide";
 
 const RECIPES: Record<string, { recipe: Recipe; file: string }> = {
   "middle-earth": { recipe: middleEarth, file: "middle_earth.txt" },
@@ -76,6 +78,22 @@ const recipe = {
   ...(valleysAt >= 0 ? { riverValleys: { minFlow, wall, rise, detail, ease, blend } } : {}),
 };
 const layers = build(recipe, SIZE, terrain, report);
+
+// SECRET_NUMBER and MYTHICAL_SITE_NUM stay at the pocket defaults: civtest never tuned them,
+// and scaling them (69, 414) would diverge from the gist's tested, already-correct values.
+const SCALED_TOKENS = new Set(["TOTAL_CIV_NUMBER", "SITE_CAP", "TOTAL_CIV_POPULATION", "MEGABEAST_CAP", "SEMIMEGABEAST_CAP", "TITAN_NUMBER", "DEMON_NUMBER", "MOUNTAIN_CAVE_MIN", "NON_MOUNTAIN_CAVE_MIN"]);
+
+/** A realm's settings scaled to the world's actual land, at Medium level, with the recipe's own overrides on top. */
+function realmSettings(): TokenSettings {
+  const settings = newRealmSettings(SIZE);
+  applyPaintSafe(settings);
+  const land = measureWorld(layers, SIZE).land;
+  for (const groupId of ["civs", "beasts", "caves", "secrets"]) {
+    for (const { token, value } of groupValues(groupId, 2, SIZE, land)) if (SCALED_TOKENS.has(token)) settings[token] = [[String(value)]];
+  }
+  for (const [token, row] of Object.entries(recipe.worldGenOverrides ?? {})) settings[token] = [[...row]];
+  return settings;
+}
 const channel = report.channel;
 const valuesAt = (i: number) => Object.fromEntries(Object.values(LayerType).map((l) => [l, layers[l][i]])) as TileValues;
 const coastal = (i: number) => {
@@ -150,8 +168,7 @@ if (previewAt >= 0) {
 const outAt = flags.indexOf("--out");
 if (outAt >= 0) {
   // a world_gen.txt somewhere else, for testing in Dwarf Fortress; public/presets is left alone
-  const settings = newRealmSettings(SIZE);
-  applyPaintSafe(settings);
+  const settings = realmSettings();
   writeWorldGen([{ title: flags[outAt + 2] ?? entry.recipe.title, size: SIZE, settings, layers }]).then((text) => {
     fs.writeFileSync(flags[outAt + 1], text);
     console.log(`wrote ${flags[outAt + 1]}`);
@@ -159,8 +176,7 @@ if (outAt >= 0) {
 }
 
 if (flags.includes("--write")) {
-  const settings = newRealmSettings(SIZE);
-  applyPaintSafe(settings);
+  const settings = realmSettings();
   writeWorldGen([{ title: entry.recipe.title, size: SIZE, settings, layers }]).then((text) => {
     fs.writeFileSync(`public/presets/${entry.file}`, text);
     const index: string[] = JSON.parse(fs.readFileSync("public/presets/index.json", "utf8"));
