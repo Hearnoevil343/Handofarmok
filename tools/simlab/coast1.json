@@ -1,0 +1,74 @@
+{
+  "_comment": "the coast model against the engine it replaces, and each part of it turned back off alone",
+  "size": 129,
+  "ages": 100,
+  "seeds": [
+    11,
+    22,
+    33,
+    44,
+    55,
+    66
+  ],
+  "archetypes": [
+    "ARCHIPELAGO",
+    "PANGAEA",
+    "CONTINENTS"
+  ],
+  "climate": "TEMPERATE",
+  "plates": 10,
+  "drift": 6,
+  "mountainTarget": 0.12,
+  "upliftStart": 45,
+  "hotspots": 3,
+  "weathering": 35,
+  "riverCarving": 50,
+  "riverDensity": 5,
+  "rebound": 55,
+  "deposition": 80,
+  "denudation": 0.5,
+  "beltWidth": 11,
+  "beltFalloff": 3,
+  "frayChance": 0.25,
+  "upliftScale": 700,
+  "channelSlope": 1,
+  "glaciation": 40,
+  "landBudget": true,
+  "heatStart": 1,
+  "crustProduction": 0.002,
+  "iceLoading": 100,
+  "variants": [
+    {
+      "_name": "before",
+      "coastModel": false
+    },
+    {
+      "_name": "coast"
+    },
+    {
+      "_name": "coast no-profile",
+      "shelfSmooth": true
+    },
+    {
+      "_name": "coast old-rebound",
+      "reboundOnLand": false
+    },
+    {
+      "_name": "coast hard-clamp",
+      "gradeBand": 0
+    },
+    {
+      "_name": "coast warp-per-age",
+      "warpPerAge": true
+    },
+    {
+      "_name": "coast specks10",
+      "speckFloor": 10
+    },
+    {
+      "_name": "before stable-warp",
+      "coastModel": false,
+      "warpPerAge": false
+    }
+  ]
+}

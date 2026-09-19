@@ -1,0 +1,71 @@
+{
+  "_comment": "how steep the shelf is, against the stable-warp baseline",
+  "size": 129,
+  "ages": 100,
+  "seeds": [
+    11,
+    22,
+    33,
+    44,
+    55,
+    66
+  ],
+  "archetypes": [
+    "ARCHIPELAGO",
+    "PANGAEA",
+    "CONTINENTS"
+  ],
+  "climate": "TEMPERATE",
+  "plates": 10,
+  "drift": 6,
+  "mountainTarget": 0.12,
+  "upliftStart": 45,
+  "hotspots": 3,
+  "weathering": 35,
+  "riverCarving": 50,
+  "riverDensity": 5,
+  "rebound": 55,
+  "deposition": 80,
+  "denudation": 0.5,
+  "beltWidth": 11,
+  "beltFalloff": 3,
+  "frayChance": 0.25,
+  "upliftScale": 700,
+  "channelSlope": 1,
+  "glaciation": 40,
+  "landBudget": true,
+  "heatStart": 1,
+  "crustProduction": 0.002,
+  "iceLoading": 100,
+  "variants": [
+    {
+      "_name": "before stable-warp",
+      "coastModel": false,
+      "warpPerAge": false
+    },
+    {
+      "_name": "coast g1 f95",
+      "shelfGradient": 1,
+      "shelfFloor": 95
+    },
+    {
+      "_name": "coast g2 f86",
+      "shelfGradient": 2
+    },
+    {
+      "_name": "coast g4 f86"
+    },
+    {
+      "_name": "coast g8 f86",
+      "shelfGradient": 8
+    },
+    {
+      "_name": "coast g4 smoother",
+      "shelfSmooth": true
+    },
+    {
+      "_name": "coast g4 specks10",
+      "speckFloor": 10
+    }
+  ]
+}

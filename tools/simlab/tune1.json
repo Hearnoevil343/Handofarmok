@@ -1,0 +1,36 @@
+{
+  "_comment": "tuning after the boundary fixes: fraying rate, river density and weathering",
+  "size": 129,
+  "ages": 100,
+  "seeds": [
+    11,
+    22,
+    33
+  ],
+  "archetypes": [
+    "PANGAEA",
+    "CONTINENTS"
+  ],
+  "climate": "TEMPERATE",
+  "plates": 6,
+  "drift": 6,
+  "mountainTarget": 0.12,
+  "upliftStart": 45,
+  "hotspots": 3,
+  "weathering": [
+    25,
+    35,
+    50
+  ],
+  "riverCarving": 50,
+  "riverDensity": [
+    5,
+    9
+  ],
+  "rebound": 55,
+  "frayChance": [
+    0.15,
+    0.25,
+    0.4
+  ]
+}

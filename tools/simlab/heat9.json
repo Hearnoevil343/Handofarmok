@@ -1,0 +1,11 @@
+{
+  "_comment": "the slope half of stream power: does dissecting the uplands break the plateau band",
+  "size": 129, "ages": 100, "seeds": [11, 22, 33, 44],
+  "archetypes": ["ARCHIPELAGO", "CONTINENTS"], "climate": "TEMPERATE",
+  "plates": 10, "drift": 6, "upliftStart": 45, "mountainTarget": 0.12,
+  "hotspots": 3, "weathering": 35, "riverCarving": 50, "riverDensity": 5,
+  "rebound": 55, "frayChance": 0.25, "beltWidth": 11, "beltFalloff": 3,
+  "deposition": 80, "glaciation": 40, "upliftScale": 540, "denudation": 0.5,
+  "landBudget": true, "heatStart": 1, "crustProduction": 0.002, "iceLoading": 100,
+  "channelSlope": [0, 0.5, 1, 1.5]
+}

@@ -1,0 +1,38 @@
+{
+  "_comment": "can the land be brought down to Earth height? uplift, weathering, rebound, mountain target",
+  "size": 129,
+  "ages": 100,
+  "seeds": [
+    11,
+    22,
+    33
+  ],
+  "archetypes": [
+    "PANGAEA",
+    "CONTINENTS"
+  ],
+  "climate": "TEMPERATE",
+  "plates": 6,
+  "drift": 6,
+  "mountainTarget": [
+    0.04,
+    0.08,
+    0.12
+  ],
+  "upliftStart": 45,
+  "hotspots": 3,
+  "weathering": [
+    35,
+    70
+  ],
+  "riverCarving": [
+    50,
+    80
+  ],
+  "riverDensity": 5,
+  "rebound": [
+    20,
+    55
+  ],
+  "frayChance": 0.25
+}

@@ -1,4 +1,5 @@
 import { fbm, makeRng } from "./noise";
+import { type PlateFrames, compositeFrames, ensureFrames, moveFrames, syncFrames } from "./frames";
 
 /**
  * Plate tectonics with plates that break where crust is weak, and mountains
@@ -76,13 +77,17 @@ class Heap {
 export type PlateSet = {
   sx: number[];
   sy: number[];
+  /** the plate's heading: the way it travels, which the named drives (wilsonDrive) steer */
   vx: number[];
   vy: number[];
+  /** plate turn: radians turned about the plate's own centre per tile travelled */
+  spin?: number[];
 };
 
 export function newPlateSet(size: number, count: number, rng: () => number): PlateSet {
   const n = size * size;
   const sx: number[] = [], sy: number[] = [], vx: number[] = [], vy: number[] = [];
+  const spin: number[] = [];
   for (let p = 0; p < count; p++) {
     let best = -1, bestD = -1;
     for (let attempt = 0; attempt < 12; attempt++) {
@@ -102,18 +107,55 @@ export function newPlateSet(size: number, count: number, rng: () => number): Pla
     sy.push((best / size) | 0);
     const a = rng() * Math.PI * 2;
     vx.push(Math.cos(a)); vy.push(Math.sin(a));
+    spin.push(newPlateTurn(size, rng));
   }
-  return { sx, sy, vx, vy };
+  return { sx, sy, vx, vy, spin };
+}
+
+/**
+ * Plate turn for a new plate. With one velocity for the whole plate, two plates meeting head-on
+ * make a mathematically straight contact - the ruled vertical lines that ran the height of the
+ * map - so every plate also turns a little as it goes, which gives each tile its own heading and
+ * curves the contacts.
+ *
+ * The turn is about the plate's own centre and the travel is the heading. It used to be one
+ * rotation about a distant pole, but the map wraps, so the pole that counted was never more than
+ * half a map away: plates circled it (35-75 degrees of turn in 60 ages) instead of travelling,
+ * and because the heading was read back off the pole every age, nothing that steered the heading
+ * (wilsonDrive, a rift's opening direction) had any effect on a plate that had a pole.
+ */
+export function newPlateTurn(size: number, rng: () => number): number {
+  const reach = size * (0.7 + rng() * 1.6);
+  return (rng() < 0.5 ? -1 : 1) / reach;
+}
+
+/**
+ * How fast and which way plate `p` carries the tile at (x, y): its heading, plus the plate turn
+ * about its own centre.
+ */
+export function plateVelocityAt(
+  ps: PlateSet, p: number, x: number, y: number, size: number,
+): [number, number] {
+  const w = ps.spin?.[p] ?? 0;
+  if (!w) return [ps.vx[p], ps.vy[p]];
+  let rx = x - ps.sx[p];
+  if (rx > size / 2) rx -= size;
+  if (rx < -size / 2) rx += size;
+  const ry = y - ps.sy[p];
+  return [ps.vx[p] - ry * w, ps.vy[p] + rx * w];
 }
 
 /** Move the seeds with their plates. East-west wraps; north-south clamps. */
 export function advancePlateSet(ps: PlateSet, size: number, distance: number): PlateSet {
-  return {
-    sx: ps.sx.map((v, i) => ((v + ps.vx[i] * distance) % size + size) % size),
-    sy: ps.sy.map((v, i) => Math.min(size - 1, Math.max(0, v + ps.vy[i] * distance))),
-    vx: [...ps.vx],
-    vy: [...ps.vy],
+  const out: PlateSet = {
+    sx: [...ps.sx], sy: [...ps.sy], vx: [...ps.vx], vy: [...ps.vy],
+    spin: ps.spin ? [...ps.spin] : undefined,
   };
+  for (let i = 0; i < ps.sx.length; i++) {
+    out.sx[i] = (((ps.sx[i] + ps.vx[i] * distance) % size) + size) % size;
+    out.sy[i] = Math.min(size - 1, Math.max(0, ps.sy[i] + ps.vy[i] * distance));
+  }
+  return out;
 }
 
 /**
@@ -159,6 +201,7 @@ export function compactPlates(ps: PlateSet, plateId: Int16Array): void {
   const keep = (_: number, p: number) => area[p] > 0;
   ps.sx = ps.sx.filter(keep); ps.sy = ps.sy.filter(keep);
   ps.vx = ps.vx.filter(keep); ps.vy = ps.vy.filter(keep);
+  if (ps.spin) ps.spin = ps.spin.filter(keep);
 }
 
 /**
@@ -186,8 +229,32 @@ function tidyPlateIds(plateId: Int16Array, size: number): Int16Array {
   return out;
 }
 
+/** Majority-tidy only where the plate changed hands this age (a gap or an override). */
+function tidyGaps(plateId: Int16Array, before: Int16Array, size: number): Int16Array {
+  const out = Int16Array.from(plateId);
+  for (let y = 0; y < size; y++) {
+    for (let x = 0; x < size; x++) {
+      const i = y * size + x, own = plateId[i];
+      if (own === before[i]) continue;
+      const nb = [
+        plateId[y * size + ((x + size - 1) % size)], plateId[y * size + ((x + 1) % size)],
+        y > 0 ? plateId[i - size] : own, y < size - 1 ? plateId[i + size] : own,
+      ];
+      for (const c of nb) {
+        if (c === own) continue;
+        let same = 0;
+        for (const d of nb) if (d === c) same++;
+        if (same >= 3) { out[i] = c; break; }
+      }
+    }
+  }
+  return out;
+}
+
 export type Plates = {
   plateId: Int16Array;
+  /** the plate set these came from, so advection can ask for a tile-level velocity */
+  set?: PlateSet;
   vx: number[];
   vy: number[];
   /** true where the plate is mostly sea floor */
@@ -205,7 +272,12 @@ export function assignPlates(
 ): Plates {
   const n = size * size;
   const count = ps.sx.length;
+  // Two scales of noise, because they do different jobs. The fine field frays the
+  // edge tile by tile; the broad one is what bends the whole line. Without the broad
+  // field a boundary in open ocean is the perpendicular bisector between two seeds -
+  // dead straight, which is what the plate maps showed from the first age on.
   const noise = fbm(size, rng, 6, 11);
+  const broad = fbm(size, rng, 3, 2.5);
   const seeds = ps.sx.map((x, i) => Math.round(ps.sy[i]) * size + Math.round(x));
 
   // Boundaries form where the cost-distance from two seeds is equal, so to put
@@ -216,7 +288,7 @@ export function assignPlates(
   const cost = new Float64Array(n);
   for (let i = 0; i < n; i++) {
     const depth = Math.max(0, (SEA - el[i]) / SEA);
-    cost[i] = 0.35 + depth * 3.4 + noise[i] * 3.2;
+    cost[i] = 0.35 + depth * 3.4 + noise[i] * 3.2 + broad[i] * 9;
   }
 
   const plateId = new Int16Array(n).fill(-1);
@@ -234,7 +306,11 @@ export function assignPlates(
       y > 0 ? i - size : -1, y < size - 1 ? i + size : -1,
     ]) {
       if (j < 0) continue;
-      const nd = d + cost[j];
+      // Plain cost-distance makes every boundary the perpendicular bisector between two
+      // seeds: the fresh maps came out as polygons with ruled edges, and the carried map
+      // then kept them for the whole history. Jittering each step turns the growth into
+      // an Eden-style front, which is what gives real plate edges their ragged shape.
+      const nd = d + cost[j] * (0.35 + 1.5 * rng());
       if (nd < dist[j]) { dist[j] = nd; plateId[j] = plateId[i]; heap.push(nd, j); }
     }
   }
@@ -249,7 +325,19 @@ export function assignPlates(
   }
   const oceanic = total.map((t, p) => (t ? sea[p] / t > 0.6 : true));
 
-  return { plateId, vx, vy, oceanic, count };
+  return { plateId, vx, vy, oceanic, count, set: ps };
+}
+
+/**
+ * How vigorous the collision between two particular plates is: a steady multiplier around 1,
+ * the same every age for as long as both plates exist, from the pair alone.
+ */
+function pairVigour(a: number, b: number): number {
+  const lo = Math.min(a, b), hi = Math.max(a, b);
+  let h = (lo * 73856093) ^ (hi * 19349663);
+  h = Math.imul(h ^ (h >>> 13), 1274126177);
+  const u = ((h ^ (h >>> 16)) >>> 0) / 4294967295;
+  return 0.55 + 1.0 * u;
 }
 
 /**
@@ -281,6 +369,8 @@ export type TectonicResult = {
   plateId: Int16Array;
   /** how many boundary tiles of each kind were found */
   counts: Record<BoundaryKind, number>;
+  /** shoreline tiles each kind of boundary moved this step: [became land, became sea] */
+  shoreMoves: Record<BoundaryKind, [number, number]>;
 };
 
 /**
@@ -290,6 +380,14 @@ export function applyBoundaries(
   el: Int16Array, size: number, plates: Plates, strength: number, rng: () => number,
   /** share of an age this step covers, so volcano spawning keeps its rate per Myr */
   chance = 1,
+  /** how far inland a belt reaches, in tiles at this map size (default size/16) */
+  beltWidth?: number,
+  /** relief a boundary makes at full strength (default 420) */
+  upliftScale?: number,
+  /** how sharply belt relief falls off inland: 1 linear, 2 (default) keeps it in the core */
+  beltFalloff?: number,
+  /** island-arc build rate and transform relief, as multiples of the original (both 1) */
+  arcRate = 1, transformRelief = 1,
 ): TectonicResult {
   const n = size * size;
   const { plateId, vx, vy } = plates;
@@ -301,6 +399,10 @@ export function applyBoundaries(
   const counts: Record<BoundaryKind, number> = {
     COLLISION: 0, SUBDUCTION: 0, ISLAND_ARC: 0,
     CONTINENTAL_RIFT: 0, OCEAN_RIDGE: 0, TRANSFORM: 0,
+  };
+  const shoreMoves: Record<BoundaryKind, [number, number]> = {
+    COLLISION: [0, 0], SUBDUCTION: [0, 0], ISLAND_ARC: [0, 0],
+    CONTINENTAL_RIFT: [0, 0], OCEAN_RIDGE: [0, 0], TRANSFORM: [0, 0],
   };
   /** on a subduction pair, which side is the overriding (continental) plate */
   const overriding = new Uint8Array(n);
@@ -336,7 +438,13 @@ export function applyBoundaries(
       kindAt[i] = kind;
       counts[kind]++;
       dist[i] = 0;
-      power[i] = Math.max(Math.abs(closing), shear);
+      // Not every collision is the Himalaya. Left to itself the model gave every boundary the
+      // same vigour, so once the uplift controller settled, every range came out the same
+      // height and a world was either all high ground or all worn stumps. Each pair of plates
+      // gets its own steady multiplier instead, so some sutures throw up high country and
+      // others little more than hills - and because it depends only on the pair, a belt keeps
+      // its character for as long as those two plates are pushing.
+      power[i] = Math.max(Math.abs(closing), shear) * pairVigour(a, b);
       // the continental side is the one that rides over
       overriding[i] = el[i] >= SEA ? 1 : 0;
       queue.push(i);
@@ -344,7 +452,7 @@ export function applyBoundaries(
   }
 
   // spread influence inland so belts have width
-  const reach = Math.max(4, Math.round(size / 16));
+  const reach = Math.max(2, Math.round(beltWidth ?? size / 12));
   for (let head = 0; head < queue.length; head++) {
     const i = queue[head];
     const d = dist[i];
@@ -369,7 +477,11 @@ export function applyBoundaries(
   // than a single boundary can raise them.
   // 420 with denudeInactive at 0.2: at 340 / 0.3 the controller pinned near
   // its ceiling over long histories and mountain cover still decayed.
-  const k = (strength / 100) * 420;
+  // 700 rather than 420: with the slope half of stream power carving the uplands
+  // (hydrology.ts) a belt is dissected as fast as it is raised, so it takes more
+  // push to hold a range up. Measured over 108 worlds, the pair together score
+  // 0.709 against 0.994, and belt elongation goes from 1.84 to 2.01.
+  const k = (strength / 100) * (upliftScale ?? 700);
   const elevation = Int16Array.from(el);
   const volcanism = new Int16Array(n);
   const uplifting = new Uint8Array(n);
@@ -378,7 +490,12 @@ export function applyBoundaries(
     const kind = kindAt[i];
     if (!kind || dist[i] < 0) continue;
     const d = dist[i];
-    const fade = 1 - d / (reach + 1);
+    // A linear fade spreads belt relief across the whole band, which lifts the ground beside
+    // a range as well as the range: 26% of land ended up just under the mountain line. A
+    // steeper profile keeps the high ground in the core, where a real range has it.
+    // cubed rather than squared: relief stays in the core of the belt instead of
+    // spreading out over the ground beside it as a plateau
+    const fade = Math.pow(1 - d / (reach + 1), beltFalloff ?? 3);
     const p = power[i] * fade;
     let delta = 0;
     // some boundary kinds must not lift sea floor into new continents
@@ -404,7 +521,7 @@ export function applyBoundaries(
       case "ISLAND_ARC": {
         // only the crest of the arc breaks the surface
         const arc = Math.exp(-Math.pow(d / (reach * 0.3), 2));
-        delta = p * k * 0.8 * arc;
+        delta = p * k * 0.8 * arc * arcRate;
         capBelowSea = arc < 0.88;   // only the very crest breaks the surface
         if (arc > 0.5 && rng() < 0.055 * chance) volcanism[i] = 100;
         break;
@@ -428,7 +545,7 @@ export function applyBoundaries(
         break;
       }
       case "TRANSFORM":
-        delta = (rng() - 0.5) * p * k * 0.3 * fade;
+        delta = (rng() - 0.5) * p * k * 0.3 * fade * transformRelief;
         break;
     }
     let next = elevation[i] + delta;
@@ -440,9 +557,10 @@ export function applyBoundaries(
     if (el[i] < SEA && kind !== "ISLAND_ARC") capBelowSea = true;
     if (capBelowSea && el[i] < SEA) next = Math.min(next, SEA - 5);
     elevation[i] = Math.round(Math.min(400, Math.max(0, next)));
+    if ((elevation[i] >= SEA) !== (el[i] >= SEA)) shoreMoves[kind][elevation[i] >= SEA ? 0 : 1]++;
   }
 
-  return { elevation, volcanism, plateId, counts, uplifting };
+  return { elevation, volcanism, plateId, counts, uplifting, shoreMoves };
 }
 
 /** Catmull-Rom weight of tap k (-1..2) at fraction t between taps 0 and 1. */
@@ -492,7 +610,9 @@ function advect(
         // off the side of the map and every run is a net loss. North-south
         // clamps instead, since a sphere has poles rather than a seam.
         const dist = speed ? distance * speed[p] : distance;
-        const fx = x - vx[p] * dist, fy = y - vy[p] * dist;
+        // velocity where this tile sits, not one heading for the whole plate
+        const [ux, uy] = plates.set ? plateVelocityAt(plates.set, p, x, y, size) : [vx[p], vy[p]];
+        const fx = x - ux * dist, fy = y - uy * dist;
         // Sub-tile motion: the source point falls between four tiles, so blend
         // the ones this plate owns by distance (bilinear). Rounding to the
         // nearest tile moved every plate in whole-tile jumps. Against that, on
@@ -543,7 +663,12 @@ function advect(
         const rank = crust && oceanAge && si >= 0
           ? (crust[si] ? 20000 + value : 10000 - oceanAge[si])
           : value;
-        if (rank > bestRank) { bestRank = rank; highest = value; owner = p; srcIdx = si; }
+        // Every tile of a plate moves with the same velocity, so where two plates converge
+        // the contact is decided by a smooth comparison and comes out ruled - the vertical
+        // lines that sat at one column for tens of ages. A little jitter on the comparison
+        // makes the contact ragged; it decides ownership only where the two are close.
+        const jittered = rank * (1 + (rng() - 0.5) * 0.04);
+        if (jittered > bestRank) { bestRank = jittered; highest = value; owner = p; srcIdx = si; }
       }
       if (claims === 0) {
         gaps++;
@@ -583,10 +708,16 @@ function advect(
   // little noise. The source is only ever accepted if it is ocean: copying
   // from a land tile is exactly the duplication bug that once made departing
   // continents leave a copy of themselves behind.
+  // The flood that hands out the vacated strip used to run in queue order, which is a
+  // uniform front: where two plates fill the same gap they meet along a straight line, and
+  // the trailing edge of a moving plate came out ruled (54-tile vertical runs by age 10).
+  // Taking a random tile from the frontier instead makes the front ragged, like the growth.
   const q: number[] = [];
   const fillFrom = new Int32Array(n).fill(-1);
   for (let i = 0; i < n; i++) if (newId[i] >= 0) q.push(i);
   for (let h = 0; h < q.length; h++) {
+    const pick = h + Math.floor(rng() * (q.length - h));
+    const t = q[h]; q[h] = q[pick]; q[pick] = t;
     const i = q[h], x = i % size, y = (i / size) | 0;
     for (const j of [
       y * size + ((x + size - 1) % size), y * size + ((x + 1) % size),
@@ -630,6 +761,12 @@ export type TectonicAgeOptions = {
   distance: number;
   /** relief produced at boundaries, 0-100 */
   strength: number;
+  /** how far inland a mountain belt reaches, in tiles (default size/16) */
+  beltWidth?: number;
+  /** relief a boundary makes at full strength (default 420) */
+  upliftScale?: number;
+  /** how sharply belt relief falls off inland: 1 linear, 2-3 keeps it in the core */
+  beltFalloff?: number;
   /** share of an age this step covers (sub-steps), scaling volcano spawning */
   volcanoChance?: number;
   seed: number;
@@ -644,6 +781,27 @@ export type TectonicAgeOptions = {
    * Off: every plate moves at the drift setting.
    */
   plateSpeeds?: boolean;
+  /**
+   * Per-plate frames (frames.ts): the world is composited from each plate's own raster at its
+   * accumulated transform instead of resampling last age's grid. `frames` is the carried state;
+   * absent, frames are cut from the grid as it stands.
+   */
+  plateFrames?: boolean;
+  frames?: PlateFrames;
+  /**
+   * Island-arc build rate and transform relief, as multiples of the original. Defaults 0.1 and
+   * 0: an arc lifted sea floor clear of the sea in one age, 320 new land tiles an age on a typical
+   * world and the main source of landmasses appearing from nothing; at 0.1 it takes several ages
+   * of sustained subduction to surface. Transform relief was per-tile noise re-rolled every age.
+   */
+  arcRate?: number;
+  transformRelief?: number;
+  /** called with the surface after the plates have moved and before boundary relief */
+  trace?: (stage: string, el: Int16Array) => void;
+  /** sample frames at the nearest tile instead of interpolating (for measurement) */
+  frameNearest?: boolean;
+  /** bilinear everywhere, no Catmull-Rom inside the plate (for measurement) */
+  frameSoft?: boolean;
 };
 
 /** Drift the plates, then lay down the geology their boundaries imply. */
@@ -652,6 +810,7 @@ export function tectonicAge(
 ): TectonicResult & {
   plateSet: PlateSet; province?: Int16Array; crust?: Uint8Array; oceanAge?: Float32Array;
   motion: { gaps: number; overlaps: number; lostContinental: number };
+  frames?: PlateFrames;
 } {
   const rng = makeRng(opts.seed);
   const ps = opts.plateSet
@@ -665,6 +824,10 @@ export function tectonicAge(
   const carried = opts.plateMap && opts.plateMap.length === el.length && opts.plateSet
     && opts.plateMap.every((p) => p >= 0 && p < ps.sx.length)
     ? opts.plateMap : undefined;
+  if (!carried && opts.plateMap) {
+    const bad = opts.plateMap.length !== el.length ? "size" : !opts.plateSet ? "no plate set" : "ids out of range";
+    (globalThis as { __plateRegrow?: string[] }).__plateRegrow?.push(bad);
+  }
   const plates = carried ? platesFromMap(el, carried, ps) : assignPlates(el, size, ps, rng);
 
   let speed: number[] | undefined;
@@ -679,13 +842,26 @@ export function tectonicAge(
     speed = tot.map((t, p) => (t ? 0.55 + 0.9 * (sea[p] / t) : 1));
   }
 
-  const moved = opts.distance > 0
+  const layers = { province: opts.province, crust: opts.crust, oceanAge: opts.oceanAge };
+  const frames = opts.plateFrames
+    ? ensureFrames(opts.frames, el, plates.plateId, plates.count, size, layers) : undefined;
+  let base: Float32Array | Int16Array = el;
+  if (frames && opts.distance > 0) moveFrames(frames, ps, opts.distance, speed);
+  const composite = frames && opts.distance > 0
+    ? compositeFrames(frames, rng, opts.province, opts.frameNearest, opts.frameSoft, ps) : undefined;
+  if (composite) base = composite.base;
+  const moved = composite ?? (opts.distance > 0
     ? advect(el, size, plates, opts.distance, rng, opts.province, opts.crust, opts.oceanAge, speed)
     : {
       elevation: Int16Array.from(el), plateId: Int16Array.from(plates.plateId), province: opts.province,
       crust: opts.crust?.slice(), oceanAge: opts.oceanAge?.slice(), gaps: 0, overlaps: 0, lostContinental: 0,
-    };
-  moved.plateId = tidyPlateIds(moved.plateId, size);
+    });
+  opts.trace?.("advect", moved.elevation);
+  const composedId = frames ? Int16Array.from(moved.plateId) : undefined;
+  // Only tidy tiles the move actually left ragged. Running the majority filter over the
+  // whole map every age is curvature flow: a hundred passes iron every wiggle out of a
+  // boundary and leave it straight, which is what the plate maps showed late in a history.
+  moved.plateId = opts.plateMap ? tidyGaps(moved.plateId, plates.plateId, size) : tidyPlateIds(moved.plateId, size);
 
   // re-derive which plates are oceanic after the move
   const sea = new Array(plates.count).fill(0), total = new Array(plates.count).fill(0);
@@ -699,10 +875,21 @@ export function tectonicAge(
   const result = applyBoundaries(
     moved.elevation, size,
     { ...plates, plateId: moved.plateId, oceanic },
-    opts.strength, rng, opts.volcanoChance ?? 1,
+    opts.strength, rng, opts.volcanoChance ?? 1, opts.beltWidth, opts.upliftScale, opts.beltFalloff,
+    opts.arcRate ?? 0.1, opts.transformRelief ?? 0,
   );
+  if (frames && composedId) {
+    // boundary relief goes back to the frames now, so a further sub-step composites it; a tile
+    // the tidy handed to another plate has no history in its new frame
+    if (base instanceof Float32Array) {
+      for (let i = 0; i < composedId.length; i++) if (composedId[i] !== moved.plateId[i]) base[i] = NaN;
+    }
+    const after = { province: moved.province, crust: moved.crust, oceanAge: moved.oceanAge };
+    syncFrames(frames, base, result.elevation, moved.plateId, moved.plateId, plates.count, after, after);
+  }
   // the seeds travel with their plates so the next age continues this one
   return {
+    frames,
     ...result, plateSet: followPlates(ps, moved.plateId, size, opts.distance), province: moved.province,
     crust: moved.crust, oceanAge: moved.oceanAge,
     motion: { gaps: moved.gaps, overlaps: moved.overlaps, lostContinental: moved.lostContinental },
@@ -715,7 +902,7 @@ function platesFromMap(el: Int16Array, plateId: Int16Array, ps: PlateSet): Plate
   const sea = new Array(count).fill(0), total = new Array(count).fill(0);
   for (let i = 0; i < el.length; i++) { total[plateId[i]]++; if (el[i] < SEA) sea[plateId[i]]++; }
   const oceanic = total.map((t, p) => (t ? sea[p] / t > 0.6 : true));
-  return { plateId, vx: ps.vx, vy: ps.vy, oceanic, count };
+  return { plateId, vx: ps.vx, vy: ps.vy, oceanic, count, set: ps };
 }
 
 /**
@@ -751,4 +938,77 @@ export function tectonicAgeToTarget(
     if (got < opts.mountainTarget) lo = mid; else hi = mid;
   }
   return { ...best, strength: bestStrength };
+}
+
+/**
+ * Fray the plate edges a little each age.
+ *
+ * A rift cuts its plate along a line and nothing afterwards disturbs that line, so the cut
+ * stayed ruler-straight for the rest of the history and collected uplift along it. Real
+ * boundaries fret: transforms offset them, slivers break off, subduction eats bites. Each
+ * boundary tile has a small chance of joining whichever neighbouring plate is best
+ * represented around it, which wears a straight edge into a ragged one within a few ages
+ * and leaves the plate shapes themselves alone.
+ */
+export function frayBoundaries(plateId: Int16Array, size: number, rng: () => number, chance = 0.25): void {
+  breakStraightRuns(plateId, size, rng);
+  const before = Int16Array.from(plateId);
+  for (let y = 0; y < size; y++) {
+    for (let x = 0; x < size; x++) {
+      const i = y * size + x, own = before[i];
+      const nb = [
+        before[y * size + ((x + size - 1) % size)], before[y * size + ((x + 1) % size)],
+        y > 0 ? before[i - size] : own, y < size - 1 ? before[i + size] : own,
+      ];
+      let foreign = 0;
+      for (const c of nb) if (c !== own) foreign++;
+      if (!foreign || rng() > chance) continue;
+      // the straighter the edge here, the more likely it gives: a tile with one foreign
+      // neighbour sits on a smooth line, one with three is already ragged
+      const pick = nb[Math.floor(rng() * 4)];
+      if (pick !== own && rng() < 1 / foreign) plateId[i] = pick;
+    }
+  }
+}
+
+/**
+ * Break any stretch of boundary that has gone ruler-straight.
+ *
+ * General fraying wears edges down everywhere, but a long straight run is exactly the
+ * artifact that reads as wrong, and it survives light fraying because only its ends move.
+ * This looks for runs of eight tiles or more in any of the four directions and pushes a
+ * few tiles across, which puts a kink in the line where there was none.
+ */
+function breakStraightRuns(plateId: Int16Array, size: number, rng: () => number, minRun = 8): void {
+  const at = (x: number, y: number) => {
+    if (y < 0 || y >= size) return -1;
+    return plateId[y * size + (((x % size) + size) % size)];
+  };
+  const isEdge = (x: number, y: number) => {
+    const own = at(x, y);
+    if (own < 0) return false;
+    return at(x + 1, y) !== own || at(x - 1, y) !== own || at(x, y + 1) !== own || at(x, y - 1) !== own;
+  };
+  for (const [dx, dy] of [[1, 0], [0, 1], [1, 1], [1, -1]]) {
+    for (let y = 0; y < size; y++) {
+      for (let x = 0; x < size; x++) {
+        if (!isEdge(x, y) || isEdge(x - dx, y - dy)) continue;
+        let run = 0;
+        while (isEdge(x + run * dx, y + run * dy) && run < size) run++;
+        if (run < minRun) continue;
+        // push a couple of tiles across the line, chosen along the run
+        for (let k = 1; k < run - 1; k++) {
+          if (rng() > 0.35) continue;
+          const tx = x + k * dx, ty = y + k * dy;
+          if (ty < 1 || ty >= size - 1) continue;
+          const i = ty * size + (((tx % size) + size) % size);
+          const own = plateId[i];
+          const nb = [
+            at(tx + 1, ty), at(tx - 1, ty), at(tx, ty + 1), at(tx, ty - 1),
+          ].filter((p) => p >= 0 && p !== own);
+          if (nb.length) plateId[i] = nb[Math.floor(rng() * nb.length)];
+        }
+      }
+    }
+  }
 }
