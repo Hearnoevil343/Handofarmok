@@ -34,7 +34,7 @@ Scale: elevation 0-400, sea level 100, mountains 300+. One age is 10 Myr.
 
 | Name | What it does | Code | Driven by | Status |
 |---|---|---|---|---|
-| **Boundary relief** | Classifies every contact (collision, subduction, island arc, rift, ridge, transform) and raises or lowers the belt beside it. | `applyBoundaries` | headings, which side is oceanic, uplift strength | On. **The largest single loss of age-to-age agreement (0.93 -> 0.86).** |
+| **Boundary relief** | Classifies every contact (collision, subduction, island arc, rift, ridge, transform) and raises or lowers the belt beside it. | `applyBoundaries` | headings, which side is oceanic, uplift strength | On. Island arcs build at 0.1 of the old rate and transform relief is off (plan 2e); was the largest loss of agreement. |
 | **Uplift governor** | Boundary relief strength is nudged each age toward the mountain-cover target. | `nextUpliftStrength` in `runAge` | mountain share | On. |
 | **Weld** | Two plates in long continental contact and closing become one plate. One per age. | `weldCollidedPlates` | contact length, headings | On. |
 | **Plume rift** | A superplume under a big plate cuts it in two along a wandering line; the halves head apart. | `riftAtPlumes`, `hotspots.ts` | plumes | On. **Rift push** (the halves' opposite headings) only took effect from 2026-09-18. |
@@ -54,11 +54,11 @@ Scale: elevation 0-400, sea level 100, mountains 300+. One age is 10 Myr.
 | Name | What it does | Code | Driven by | Status |
 |---|---|---|---|---|
 | **Orogenic collapse** | Crust above the mountain ceiling spreads sideways; hot crust holds less. | `orogenicCollapse` | mantle heat | On. |
-| **Denudation** | Ranges no longer being pushed wear down. Also, in practice, what stops land growing. | `denudeInactive` | uplift map | On (0.3). Two jobs in one: see plan 3b. |
+| **Denudation** | Ranges no longer being pushed wear down. Also, in practice, what stops land growing. | `denudeInactive` | uplift map | On (0.2). Two jobs in one: see plan 3b. |
 | **Weathering** | Slopes relax (thermal erosion). | `thermalErosion` | slope | On. |
 | **Ice bite** | Glaciers cut above the snowline, hard in an icehouse, barely in a hothouse. | `glacialErosion` | temperature, climate phase | On. |
 | **Stream power** | Rivers cut by drainage area and slope. | `carveRivers` | rainfall, slope | On. |
-| **Dissection** | Droplet erosion over all land, so every slope drains, not just trunk rivers. Shares one erosion budget with Denudation. | `dissectLand`, `erosion.ts` | slope | On (10), paired with denudation 0.3. |
+| **Dissection** | Droplet erosion over all land, so every slope drains, not just trunk rivers. Shares one erosion budget with Denudation. | `dissectLand`, `erosion.ts` | slope | On (15), paired with denudation 0.2. |
 | **Deposition** | What was eroded is carried downstream and laid down where water slows. | `depositSediment` | stream power | On. |
 | **Rebound** | Crust rises where weight came off it. | `isostaticRebound` | erosion | On. Spills land across the coast (+700 tiles an age); balanced by the shelf smoother. Costs 0.03 of agreement. |
 | **Ice load** | Crust sinks under ice sheets and rises when they melt. | `iceSheetLoad` | climate phase | On. |
