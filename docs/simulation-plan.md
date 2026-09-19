@@ -374,6 +374,46 @@ Still open here: boundary relief remains the largest loss of agreement (0.93 -> 
 step), and headings are re-aimed by the Wilson drive every age with a strong blend (0.34-0.62),
 which is what holds driftStraight at 0.80 rather than higher.
 
+## 2e. Boundary relief: which kind of boundary moves the coast
+
+**Done 2026-09-18.** Boundary relief was the largest single loss of age-to-age agreement and
+nothing said which part of it. `continuity.cjs` now counts shoreline tiles moved per kind of
+boundary. One world (CONTINENTS 44), per age:
+
+| kind | made land | made sea | boundary tiles |
+|---|---|---|---|
+| island arc | 320 | 0 | 230 |
+| continental rift | 0 | 156 | 161 |
+| transform | 0 | 98 | 844 |
+| subduction (trench) | 0 | 29 | 204 |
+| collision, ocean ridge | 0 | 0 | 653 |
+
+**Island arcs** lifted sea floor clear of the sea in a single age, along every ocean-ocean
+convergence, every age - at ~300 km a tile that is a Japan appearing every ten million years. It
+was the main source of landmasses born from nothing *and* of the land share running away. At a
+build rate of 0.3 nothing changed (one age still cleared sea level); at 0.1 an arc needs several
+ages of sustained subduction to surface. **Transform relief** was per-tile random noise re-rolled
+every age; real transforms make little relief. It is off.
+
+108 worlds, same seeds (`relief108.json`, `relief108b.json`), each row adding to the last:
+
+| | score mean / worst | agreement | births/age | land step | land drift | largest landmass % |
+|---|---|---|---|---|---|---|
+| before (dissection 10 / denudation 0.3) | 2.94 / 4.76 | 0.831 | 0.337 | 1.32 | 8.3 | 75 |
+| transform relief 0 | 2.81 / 4.81 | 0.844 | 0.284 | 1.39 | 11.4 | 80 |
+| + arc rate 0.15 | 1.41 / 3.00 | 0.850 | 0.169 | 0.90 | 0.9 | 67 |
+| + arc rate 0.1 | 1.28 / 3.56 | 0.858 | 0.152 | 0.85 | 0.2 | 66 |
+| + dissection 15 / denudation 0.2 (**now**) | **1.18 / 3.15** | **0.860** | **0.131** | 0.87 | 1.5 | 71 |
+| (dissection 20 / denudation 0.1) | 1.20 / 2.72 | 0.867 | 0.109 | 0.91 | 3.9 | 76 |
+
+The last two rows are the dependency from 3b paying off: the stronger dissection swap failed
+before only because land ran away, and the thing making land run away was the arcs. With arcs
+fixed the swap could go a step further. 20 / 0.1 is better on continuity but clumps (Wilson penalty
+0.30 against 0.18), so 15 / 0.2 is kept.
+
+Still open: rifts drown ~156 tiles an age; relief is still placed by distance to *this age's*
+boundary; agreement 0.860 against 0.88 and births 0.131 against 0.05.
+
 ## 3. Surface: erosion and sediment
 
 **Done 2026-09-18 - nothing was ever laid down.** Every erosion step in an age subtracted:
@@ -434,7 +474,7 @@ blanket lowering of every range not being pushed.
 | dissection / denudation | score mean / worst | agreement | births/age | plateau % | largest landmass % | land drift |
 |---|---|---|---|---|---|---|
 | 0 / 0.5 (was) | 2.96 / 4.98 | 0.823 | 0.375 | 15.6 | 61 | 4.0 |
-| **10 / 0.3 (now)** | **2.94 / 4.76** | **0.831** | **0.337** | **14.5** | 75 | 8.3 |
+| 10 / 0.3 (adopted here, superseded in 2e by 15 / 0.2) | **2.94 / 4.76** | **0.831** | **0.337** | **14.5** | 75 | 8.3 |
 | 15 / 0.2 | 2.87 / 5.22 | 0.848 | 0.27 | 14.6 | 85 | 13.2 |
 | 25 / 0 | 7.59 / 22.1 | 0.882 | 0.16 | 15.0 | 94 | 24.3 |
 

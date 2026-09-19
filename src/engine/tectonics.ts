@@ -369,6 +369,8 @@ export type TectonicResult = {
   plateId: Int16Array;
   /** how many boundary tiles of each kind were found */
   counts: Record<BoundaryKind, number>;
+  /** shoreline tiles each kind of boundary moved this step: [became land, became sea] */
+  shoreMoves: Record<BoundaryKind, [number, number]>;
 };
 
 /**
@@ -384,6 +386,8 @@ export function applyBoundaries(
   upliftScale?: number,
   /** how sharply belt relief falls off inland: 1 linear, 2 (default) keeps it in the core */
   beltFalloff?: number,
+  /** island-arc build rate and transform relief, as multiples of the original (both 1) */
+  arcRate = 1, transformRelief = 1,
 ): TectonicResult {
   const n = size * size;
   const { plateId, vx, vy } = plates;
@@ -395,6 +399,10 @@ export function applyBoundaries(
   const counts: Record<BoundaryKind, number> = {
     COLLISION: 0, SUBDUCTION: 0, ISLAND_ARC: 0,
     CONTINENTAL_RIFT: 0, OCEAN_RIDGE: 0, TRANSFORM: 0,
+  };
+  const shoreMoves: Record<BoundaryKind, [number, number]> = {
+    COLLISION: [0, 0], SUBDUCTION: [0, 0], ISLAND_ARC: [0, 0],
+    CONTINENTAL_RIFT: [0, 0], OCEAN_RIDGE: [0, 0], TRANSFORM: [0, 0],
   };
   /** on a subduction pair, which side is the overriding (continental) plate */
   const overriding = new Uint8Array(n);
@@ -513,7 +521,7 @@ export function applyBoundaries(
       case "ISLAND_ARC": {
         // only the crest of the arc breaks the surface
         const arc = Math.exp(-Math.pow(d / (reach * 0.3), 2));
-        delta = p * k * 0.8 * arc;
+        delta = p * k * 0.8 * arc * arcRate;
         capBelowSea = arc < 0.88;   // only the very crest breaks the surface
         if (arc > 0.5 && rng() < 0.055 * chance) volcanism[i] = 100;
         break;
@@ -537,7 +545,7 @@ export function applyBoundaries(
         break;
       }
       case "TRANSFORM":
-        delta = (rng() - 0.5) * p * k * 0.3 * fade;
+        delta = (rng() - 0.5) * p * k * 0.3 * fade * transformRelief;
         break;
     }
     let next = elevation[i] + delta;
@@ -549,9 +557,10 @@ export function applyBoundaries(
     if (el[i] < SEA && kind !== "ISLAND_ARC") capBelowSea = true;
     if (capBelowSea && el[i] < SEA) next = Math.min(next, SEA - 5);
     elevation[i] = Math.round(Math.min(400, Math.max(0, next)));
+    if ((elevation[i] >= SEA) !== (el[i] >= SEA)) shoreMoves[kind][elevation[i] >= SEA ? 0 : 1]++;
   }
 
-  return { elevation, volcanism, plateId, counts, uplifting };
+  return { elevation, volcanism, plateId, counts, uplifting, shoreMoves };
 }
 
 /** Catmull-Rom weight of tap k (-1..2) at fraction t between taps 0 and 1. */
@@ -779,6 +788,14 @@ export type TectonicAgeOptions = {
    */
   plateFrames?: boolean;
   frames?: PlateFrames;
+  /**
+   * Island-arc build rate and transform relief, as multiples of the original. Defaults 0.1 and
+   * 0: an arc lifted sea floor clear of the sea in one age, 320 new land tiles an age on a typical
+   * world and the main source of landmasses appearing from nothing; at 0.1 it takes several ages
+   * of sustained subduction to surface. Transform relief was per-tile noise re-rolled every age.
+   */
+  arcRate?: number;
+  transformRelief?: number;
   /** called with the surface after the plates have moved and before boundary relief */
   trace?: (stage: string, el: Int16Array) => void;
   /** sample frames at the nearest tile instead of interpolating (for measurement) */
@@ -859,6 +876,7 @@ export function tectonicAge(
     moved.elevation, size,
     { ...plates, plateId: moved.plateId, oceanic },
     opts.strength, rng, opts.volcanoChance ?? 1, opts.beltWidth, opts.upliftScale, opts.beltFalloff,
+    opts.arcRate ?? 0.1, opts.transformRelief ?? 0,
   );
   if (frames && composedId) {
     // boundary relief goes back to the frames now, so a further sub-step composites it; a tile

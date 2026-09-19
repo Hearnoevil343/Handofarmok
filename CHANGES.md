@@ -27,6 +27,9 @@
   and come back together over a history.
 - Run Age now cuts valleys across all the land each age (the look World Forge's
   hydraulic erosion gives), not only along the main rivers.
+- Island chains take several ages of subduction to rise instead of appearing in
+  one, and fault lines no longer speckle the coast; new landmasses appearing
+  from nothing are down by more than half.
 - Added `docs/engine-glossary.md`: a name for every piece of simulation logic.
 - Added `docs/science-gaps.md`: the simulation compared with real Earth science and
   published simulators, with a ranked list of what is missing.

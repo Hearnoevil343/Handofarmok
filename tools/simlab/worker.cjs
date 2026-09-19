@@ -57,6 +57,8 @@ function runHistory(cfg) {
       ...(cfg.deArtifact !== undefined ? { deArtifact: cfg.deArtifact } : {}),
       ...(cfg.subSteps !== undefined ? { subSteps: cfg.subSteps } : {}),
       ...(cfg.dissection !== undefined ? { dissection: cfg.dissection } : {}),
+      ...(cfg.arcRate !== undefined ? { arcRate: cfg.arcRate } : {}),
+      ...(cfg.transformRelief !== undefined ? { transformRelief: cfg.transformRelief } : {}),
       ...(cfg.plateFrames !== undefined ? { plateFrames: cfg.plateFrames } : {}),
       ...(cfg.frameNearest !== undefined ? { frameNearest: cfg.frameNearest } : {}),
       ...(cfg.frameSoft !== undefined ? { frameSoft: cfg.frameSoft } : {}),

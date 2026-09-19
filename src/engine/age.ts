@@ -58,10 +58,13 @@ export type AgeOptions = {
   plateFrames?: boolean;
   frames?: PlateFrames;
   /**
-   * Droplet erosion over the land each age, 0-100 (erosion.ts dissectLand). Default 10, and it
-   * is paired with denudation 0.3: the two share one erosion budget (simulation-plan 3b).
+   * Droplet erosion over the land each age, 0-100 (erosion.ts dissectLand). Default 15, and it
+   * is paired with denudation 0.2: the two share one erosion budget (simulation-plan 3b).
    */
   dissection?: number;
+  /** island-arc build rate and transform-fault relief, multiples of the original */
+  arcRate?: number;
+  transformRelief?: number;
   frameNearest?: boolean;
   frameSoft?: boolean;
   /**
@@ -292,6 +295,8 @@ export type AgeReport = {
   lakeTiles: number;
   volcanoes: number;
   boundaries: Record<string, number>;
+  /** shoreline tiles each boundary kind moved this age: [became land, became sea] */
+  shoreMoves: Record<string, [number, number]>;
   /** plate ownership per tile, for drawing the boundaries */
   plateMap: Int16Array;
   /** per-plate frames to pass back in next age, when `plateFrames` is on */
@@ -420,7 +425,7 @@ export function runAge(w: World, size: number, opts: AgeOptions): AgeReport {
     oceanAge: oceanState?.oceanAge,
     plateSpeeds: opts.plateSpeeds,
     plateFrames: opts.plateFrames !== false, frames: opts.frames, frameNearest: opts.frameNearest, frameSoft: opts.frameSoft,
-    trace: opts.trace,
+    trace: opts.trace, arcRate: opts.arcRate, transformRelief: opts.transformRelief,
   });
   const motion = { ...tect.motion, accreted: 0, foundered: 0, areaRestored: 0 };
   for (let s = 1; s < steps; s++) {
@@ -441,7 +446,7 @@ export function runAge(w: World, size: number, opts: AgeOptions): AgeReport {
       oceanAge: prev.oceanAge,
       plateSpeeds: opts.plateSpeeds,
       plateFrames: opts.plateFrames !== false, frames: prev.frames, frameNearest: opts.frameNearest, frameSoft: opts.frameSoft,
-      trace: opts.trace,
+      trace: opts.trace, arcRate: opts.arcRate, transformRelief: opts.transformRelief,
     });
     motion.gaps += tect.motion.gaps;
     motion.overlaps += tect.motion.overlaps;
@@ -554,7 +559,7 @@ export function runAge(w: World, size: number, opts: AgeOptions): AgeReport {
   opts.trace?.("collapse", el);
 
   // and anything no longer being pushed starts wearing down
-  el = denudeInactive(el, size, tect.uplifting, opts.denudation ?? 0.3, gradeBand);
+  el = denudeInactive(el, size, tect.uplifting, opts.denudation ?? 0.2, gradeBand);
   opts.trace?.("denude", el);
 
   // --- the long cycles ------------------------------------------------------
@@ -609,7 +614,7 @@ export function runAge(w: World, size: number, opts: AgeOptions): AgeReport {
   opts.trace?.("rivers", el);
 
   // 4a. dissection: every slope drains, not only the ones with a trunk river on them
-  el = dissectLand(el, size, opts.dissection ?? 10, opts.seed + 11);
+  el = dissectLand(el, size, opts.dissection ?? 15, opts.seed + 11);
   opts.trace?.("dissect", el);
 
   // 4b. what came off has to go somewhere: carry it down the rivers and lay it down where the
@@ -805,6 +810,7 @@ export function runAge(w: World, size: number, opts: AgeOptions): AgeReport {
     lakeTiles: lakes,
     volcanoes: volc,
     boundaries: tect.counts,
+    shoreMoves: tect.shoreMoves,
     plateMap: plateId,
     frames: tect.frames,
     nextUpliftStrength: (() => {
