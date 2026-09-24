@@ -196,3 +196,46 @@ Bigger pieces of work, each on its own branch.
         back before importing, and check against a real world.
       - Needs DFHack; ship the script with the app plus a "run this" note.
       - Test loop: generate in DF → dump → import → export → regenerate → compare.
+
+---
+
+## Reddit community requests (Middle Earth post, 2026-09-22)
+
+From r/dwarffortress post `1wk6u90` (373 up, 33K views). These are map requests
+from players plus the two real tool problems the thread exposed. Maps ship as
+world_gen gists, not as bundled presets — the "original designs only" rule above
+still holds for preset packs.
+
+### Tool work the thread proved is needed
+- [ ] **Ocean-heavy worlds waste the map.** Two commenters (MagusOfHeart,
+      Nankian) pointed out that pure ocean tiles are dead space: no forts, no
+      adventuring. Azeroth, One Piece and Pern are all mostly water. Needs a
+      decided policy, not an ad-hoc east/west split per map: compress ocean
+      distance between landmasses, or a "split into regional maps" workflow
+      in the app.
+- [ ] **Install instructions are being misread.** LocalProfessional969 dropped
+      the gist into `prefs` and never got the world. The export needs to say
+      plainly: replace the contents of `world_gen.txt`. Consider making the
+      app's export write a one-line header comment with the install step, and
+      the gist template lead with it.
+- [ ] **Good/Evil per-tile is still blocking requests.** Pern needs threadfall
+      as evil-biome precipitation. The paint layer is dropped (DF 53 rejects
+      PS_AL). Only GOOD_SQ_COUNTS / EVIL_SQ_COUNTS remain, which cannot place
+      evil where a map wants it. Revisit only if a later DF accepts a per-tile
+      token; until then say no to evil-placement requests.
+
+### Map requests, with where each stands
+- [ ] Westeros — announced as on the list
+- [ ] Ultima 6 / Britannia — "challenge accepted"; requester noted the common
+      map does not show the volcanoes, so source a better reference first
+- [ ] Elder Scrolls regions (Morrowind asked for by name) — announced 5th
+- [ ] Azeroth (Warcraft) — announced 4th; ocean problem applies
+- [ ] One Piece — on the list; ocean problem applies
+- [ ] Runeterra (League of Legends) — promised regardless of upvotes
+- [ ] Isla Nublar (Jurassic Park) — the map that started the project, never
+      made; small island, cheap win, good story for a post
+- [ ] Narnia — never answered
+- [ ] Sword Coast (Forgotten Realms) — never answered
+- [ ] Alagaesia (Eragon) — never answered
+- [ ] Skyrim — never answered
+- [ ] Pern — blocked on Good/Evil above
