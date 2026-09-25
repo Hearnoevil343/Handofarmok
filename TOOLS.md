@@ -16,8 +16,10 @@ Scripts worth knowing about before writing another one.
   the engine is chaotic, so by 12 ages every change looks equally large.
 - **compare.cjs** (`node tools/simlab/compare.cjs runs/results.json [key,key]`) - variants of one
   sweep side by side: score, mean penalty per target (largest first), and every metric.
-- **presets** (`tools/presets/`) - builds hand-made presets such as Middle-earth from measured
-  terrain and vectors; `build.ts --out`.
+- **presets** (`tools/presets/`) - builds hand-made presets such as Middle-earth and Westeros from
+  measured terrain and vectors; `build.ts --out`. Westeros has no elevation model, so
+  `data/westeros.py` builds heights from the fan map's coast and mountain outlines. Westeros' map
+  data is CC BY-NC-SA 3.0, non-commercial, credited in `data/WESTEROS-CREDITS.md`.
 - **dftest** (`tools/dftest/`) - generates a world in Dwarf Fortress from an export and compares
   the result layer by layer with the prediction.
 - **grab.ps1 / sweep.ps1 / stitch.py** (`tools/dftest/`) - full-map screenshot of a generated world

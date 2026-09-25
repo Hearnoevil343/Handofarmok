@@ -16,6 +16,7 @@ import { modulateByLayers, oceanMultiplier, reliefMultiplier, scaleColor } from 
 import { applyPaintSafe } from "@df/paintSafe";
 import { planWater } from "@helpers/rivers";
 import { middleEarth } from "./recipes/middleEarth";
+import { westeros } from "./recipes/westeros";
 import { newRealmSettings, type TokenSettings } from "@df/settings";
 import { writeWorldGen } from "@formats/worldgen/write";
 import { measureWorld } from "@helpers/worldMeasure";
@@ -23,6 +24,7 @@ import { groupValues } from "@helpers/worldGuide";
 
 const RECIPES: Record<string, { recipe: Recipe; file: string }> = {
   "middle-earth": { recipe: middleEarth, file: "middle_earth.txt" },
+  westeros: { recipe: westeros, file: "westeros.txt" },
 };
 const SIZE = 257;
 

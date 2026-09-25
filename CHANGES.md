@@ -1,5 +1,13 @@
 # Changes to Hand of Armok
 
+## Unreleased
+
+- Westeros preset, from the fan GIS map of A Song of Ice and Fire by cadaei, Tear and
+  theMountainGoat (CC BY-NC-SA 3.0): the coast, rivers, lakes, forests, the Neck and the
+  mountains are the map's own outlines, and the heights are built from them since no
+  elevation model exists. Runs from the Lands of Always Winter to Dorne and the Stepstones,
+  with the Free Cities coast of Essos; climate and savagery are hand-made.
+
 ## 0.3.0
 
 - Middle-earth preset, built from measured elevation and the real outlines of its
