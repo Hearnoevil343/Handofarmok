@@ -17,7 +17,8 @@ def overlap_error(a, b, dx, dy):
     h, w = a.shape
     x0, y0 = max(0, dx), max(0, dy)
     x1, y1 = min(w, dx + w), min(h, dy + h)
-    if x1 - x0 < 200 or y1 - y0 < 200:
+    # A 960 px row step leaves only 180 px of overlap in the 1140 px clean area.
+    if x1 - x0 < 100 or y1 - y0 < 100:
         return None
     return np.abs(a[y0:y1, x0:x1] - b[y0 - dy:y1 - dy, x0 - dx:x1 - dx]).mean()
 
