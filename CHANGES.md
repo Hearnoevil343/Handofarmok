@@ -1,6 +1,6 @@
 # Changes to Hand of Armok
 
-## 0.3.0
+## 0.3.1
 
 - Westeros preset, from the fan GIS map of A Song of Ice and Fire by cadaei, Tear and
   theMountainGoat (CC BY-NC-SA 3.0): the coast, rivers, lakes, forests, the Neck and the
