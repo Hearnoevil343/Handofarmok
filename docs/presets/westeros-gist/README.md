@@ -6,7 +6,7 @@ Built with **[Hand of Armok](https://github.com/Hearnoevil343/Handofarmok)**, my
 
 **Needs the normal races.** Keep the vanilla entities (dwarves, elves, humans, goblins, kobolds) turned on. A mod set that replaces them can leave civs with nowhere to settle, and DF will keep rejecting the world.
 
-Tested: 250 years of history, no rejections, 42 civs placed (about 350 human towns, 300 elf retreats, 290 dwarf halls, 260 goblin fortresses).
+Tested on two random seeds: 250 years of history, no rejections, 42 civs placed (about 350 human towns, 300 elf retreats, 290 dwarf halls, 260 goblin fortresses).
 
 ## Credit
 
