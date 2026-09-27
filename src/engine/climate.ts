@@ -58,7 +58,7 @@ export function temperature(
   // large and slow rather than the fine texture the land noise supplies
   const gyre = fbm(size, rng, 3, 3);
   // and a fine field for the fronts themselves. The ocean biomes DF offers are
-  // discrete — tropical, temperate, arctic — so a threshold crossing in a
+  // discrete (tropical, temperate, arctic), so a threshold crossing in a
   // smooth zonal field draws one long horizontal contour, which renders as a
   // staircase of rectangles right across the sea. Real fronts meander: the
   // Gulf Stream sheds eddies a hundred kilometres across, and its boundary on
@@ -101,8 +101,8 @@ export function temperature(
  * supplies variation; the ocean has no elevation to speak of.
  *
  * Real sea surface temperature is not zonal, and the reason is circulation.
- * Gyres drive warm water poleward along the *western* side of a basin — the
- * Gulf Stream off eastern North America, the Kuroshio off Japan — and cold
+ * Gyres drive warm water poleward along the *western* side of a basin (the
+ * Gulf Stream off eastern North America, the Kuroshio off Japan) and cold
  * water equatorward along the eastern side, reinforced by upwelling that brings
  * deep water to the surface. The Benguela off Namibia and the Humboldt off Peru
  * are cold enough to put deserts on tropical coasts.
@@ -136,8 +136,8 @@ export function boundaryCurrents(el: Int16Array, size: number, reach = 14): Grid
   // crossing the continent had a current, the row just past its northern tip
   // had none, and since the effect reaches a fixed distance sideways the result
   // was a hard-edged rectangle of warm water sitting in the sea. A current does
-  // not stop where the coast runs out — the Gulf Stream carries on as the North
-  // Atlantic Drift, thousands of kilometres past Newfoundland — so the field is
+  // not stop where the coast runs out: the Gulf Stream carries on as the North
+  // Atlantic Drift, thousands of kilometres past Newfoundland. So the field is
   // smeared along the flow to match.
   let cur = out;
   const passes = Math.max(1, Math.round(scaleLength(4, size)));
@@ -161,11 +161,12 @@ export function boundaryCurrents(el: Int16Array, size: number, reach = 14): Grid
 /**
  * Rainfall.
  *
- * The subtropical desert term used to depend on latitude alone. Rainfall is
- * ranked into bands afterwards, so the driest tiles on the whole map all sat
- * on the same two rows, and Dwarf Fortress drew them as ruler-straight
- * east-west desert bars across every continent (rows 43 and 85 on a 129 map,
- * on all eight procedural presets).
+ * The subtropical desert term depends on more than latitude alone. Rainfall is
+ * ranked into bands afterwards, so if it depended on latitude alone the driest
+ * tiles on the whole map would all sit on the same two rows, and Dwarf Fortress
+ * would draw them as ruler-straight east-west desert bars across every
+ * continent (as seen at rows 43 and 85 on a 129 map, on all eight procedural
+ * presets).
  *
  * Real subtropical deserts are not bands. They sit on the west side of
  * continents, where cold currents and sinking air keep the coast dry (Namib,

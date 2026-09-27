@@ -5,8 +5,7 @@ export function GameViewPage() {
   return (
     <div className={styles.page}>
       <header className={styles.intro}>
-        <h1>Game View</h1>
-        <p>Your world drawn with Dwarf Fortress&apos;s own world-map sprites, to judge it before generating.</p>
+        <h1>Game view</h1>
       </header>
       <GameView />
     </div>

@@ -17,7 +17,7 @@ export function DeriveClimate() {
 
   return (
     <ToolPanel
-      title="Derive Climate"
+      title="Derive climate"
       blurb="Keeps your terrain and solves rainfall, temperature and drainage from latitude, altitude, distance to sea and rain shadow. Run it after editing elevation."
     >
       <span className={styles.field}>Climate</span>
@@ -48,7 +48,7 @@ export function DeriveClimate() {
           )
         }
       >
-        {busy ? "Working\u2026" : "Derive Climate From Terrain"}
+        {busy ? "Working\u2026" : "Derive climate"}
       </button>
     </ToolPanel>
   );

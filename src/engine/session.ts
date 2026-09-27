@@ -9,7 +9,7 @@ import type { Provinces } from "./provinces";
  * The six painted layers are all Dwarf Fortress understands, but a world that
  * evolves needs more than that: which plates exist, where they are heading, and
  * how many ages have passed. Without it every press re-rolled the plates, so a
- * rift could never widen — you just got a different unrelated one each time.
+ * rift could never widen: you just got a different unrelated one each time.
  *
  * This is editor-only state. It cannot travel in world_gen.txt, so exporting
  * and reimporting loses the tectonic history; the terrain itself survives.

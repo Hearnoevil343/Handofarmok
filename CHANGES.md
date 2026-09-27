@@ -1,5 +1,10 @@
 # Changes to Hand of Armok
 
+## 0.3.2
+
+- Reworded the interface: sentence-case labels, "world" and "preset" in place of
+  "realm", shorter hints and descriptions, and a rewritten About page and README.
+
 ## 0.3.1
 
 - Westeros preset, from the fan GIS map of A Song of Ice and Fire by cadaei, Tear and

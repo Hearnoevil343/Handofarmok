@@ -23,7 +23,7 @@ export function OpenFileCard() {
     }
   };
 
-  const error = readError ?? (failed ? "The realms could not be loaded." : null);
+  const error = readError ?? (failed ? "The presets could not be loaded." : null);
   const loading = progress > 0 && progress < 100;
 
   const dragProps = {
@@ -56,7 +56,7 @@ export function OpenFileCard() {
       ) : dragging ? (
         <div className={styles.cardText}>
           <h3>Drop world_gen.txt here</h3>
-          <p>Release to load every realm in it.</p>
+          <p>Release to load every preset in it.</p>
         </div>
       ) : error ? (
         <div className={styles.cardText}>
@@ -68,7 +68,6 @@ export function OpenFileCard() {
         <>
           <div className={styles.cardText}>
             <h3>Open a file</h3>
-            <p>Load a world_gen.txt to keep editing every realm in it. You can also drop the file here.</p>
           </div>
           <label className={styles.action}>
             Open world_gen.txt

@@ -7,7 +7,7 @@ import { type PlateFrames, compositeFrames, ensureFrames, moveFrames, syncFrames
  *
  * Two things were wrong with the first version. Plates came from a Voronoi
  * partition of random points, and the boundary between two Voronoi cells is a
- * perpendicular bisector — a mathematically straight line, which sliced through
+ * perpendicular bisector, a mathematically straight line, which sliced through
  * continents on paths no geology would take. And every mountain was the same
  * mountain: crust piling up on overlap.
  *
@@ -114,15 +114,14 @@ export function newPlateSet(size: number, count: number, rng: () => number): Pla
 
 /**
  * Plate turn for a new plate. With one velocity for the whole plate, two plates meeting head-on
- * make a mathematically straight contact - the ruled vertical lines that ran the height of the
- * map - so every plate also turns a little as it goes, which gives each tile its own heading and
+ * make a mathematically straight contact (the ruled vertical lines that ran the height of the
+ * map), so every plate also turns a little as it goes, which gives each tile its own heading and
  * curves the contacts.
  *
- * The turn is about the plate's own centre and the travel is the heading. It used to be one
- * rotation about a distant pole, but the map wraps, so the pole that counted was never more than
- * half a map away: plates circled it (35-75 degrees of turn in 60 ages) instead of travelling,
- * and because the heading was read back off the pole every age, nothing that steered the heading
- * (wilsonDrive, a rift's opening direction) had any effect on a plate that had a pole.
+ * The turn is about the plate's own centre and the travel is the heading: turning about the
+ * centre keeps the heading under the control of whatever set it (wilsonDrive, a rift's opening
+ * direction), rather than circling a fixed pole, which the map wrap would in any case put no
+ * more than half a map away.
  */
 export function newPlateTurn(size: number, rng: () => number): number {
   const reach = size * (0.7 + rng() * 1.6);
@@ -186,8 +185,8 @@ function followPlates(ps: PlateSet, plateId: Int16Array, size: number, distance:
 }
 
 /**
- * Drop plates that own no tiles any more — consumed by subduction, or emptied
- * by a weld — and renumber the map to match. Mutates both.
+ * Drop plates that own no tiles any more (consumed by subduction, or emptied
+ * by a weld) and renumber the map to match. Mutates both.
  */
 export function compactPlates(ps: PlateSet, plateId: Int16Array): void {
   const count = ps.sx.length;
@@ -207,7 +206,7 @@ export function compactPlates(ps: PlateSet, plateId: Int16Array): void {
 /**
  * A tile whose neighbours mostly belong to one other plate joins it. Advection
  * picks an owner per tile, so without this, single stray tiles of one plate
- * are left inside another and, now that the map is carried, never go away.
+ * are left inside another and, because the map is carried, never go away.
  */
 function tidyPlateIds(plateId: Int16Array, size: number): Int16Array {
   const out = Int16Array.from(plateId);
@@ -701,17 +700,17 @@ function advect(
   // opening real ocean is left to the rift and ridge boundary effects.
   // Gaps are new sea floor, and they should be continuous with the floor
   // beside them. The previous fill was 46 plus eighteen of per-tile noise,
-  // which left a fresh vertical strip of speckle behind every plate every age
-  // — the stripe itself is right (young floor near a spreading centre is
+  // which left a fresh vertical strip of speckle behind every plate every age:
+  // the stripe itself is right (young floor near a spreading centre is
   // shallower; that is magnetic striping), the speckle was not. Each gap tile
   // now takes the depth of the ocean tile the flood reached it from, plus a
   // little noise. The source is only ever accepted if it is ocean: copying
   // from a land tile is exactly the duplication bug that once made departing
   // continents leave a copy of themselves behind.
-  // The flood that hands out the vacated strip used to run in queue order, which is a
-  // uniform front: where two plates fill the same gap they meet along a straight line, and
-  // the trailing edge of a moving plate came out ruled (54-tile vertical runs by age 10).
-  // Taking a random tile from the frontier instead makes the front ragged, like the growth.
+  // The flood that hands out the vacated strip takes a random tile from the frontier, which
+  // makes the front ragged like the growth. A uniform front (the next tile in queue order)
+  // makes two plates filling the same gap meet along a straight line, and leaves the trailing
+  // edge of a moving plate ruled (54-tile vertical runs by age 10).
   const q: number[] = [];
   const fillFrom = new Int32Array(n).fill(-1);
   for (let i = 0; i < n; i++) if (newId[i] >= 0) q.push(i);
@@ -776,8 +775,8 @@ export type TectonicAgeOptions = {
   crust?: Uint8Array;
   oceanAge?: Float32Array;
   /**
-   * Oceanic plates move faster than continental ones — the Pacific plate
-   * 8-10 cm/yr, Eurasia about 2 — with the mean kept near the drift setting.
+   * Oceanic plates move faster than continental ones: the Pacific plate
+   * 8-10 cm/yr, Eurasia about 2, with the mean kept near the drift setting.
    * Off: every plate moves at the drift setting.
    */
   plateSpeeds?: boolean;
@@ -816,11 +815,11 @@ export function tectonicAge(
   const ps = opts.plateSet
     ?? newPlateSet(size, Math.max(2, Math.min(24, opts.plates)), rng);
 
-  // Plate ownership is carried state. It used to be regrown from the seeds
-  // every age with freshly rolled noise, so boundaries re-routed each age and a
-  // collision belt was lifted along a different line every time. Now the map
-  // moves with the crust, gaps take a neighbour's plate, and boundaries change
-  // only through events: welding, rifting, one plate overriding another.
+  // Plate ownership is carried state, not regrown from the seeds every age: the
+  // map moves with the crust, gaps take a neighbour's plate, and boundaries
+  // change only through events (welding, rifting, one plate overriding
+  // another), so a collision belt stays on the same line instead of being
+  // re-routed by freshly rolled noise every age.
   const carried = opts.plateMap && opts.plateMap.length === el.length && opts.plateSet
     && opts.plateMap.every((p) => p >= 0 && p < ps.sx.length)
     ? opts.plateMap : undefined;
@@ -907,7 +906,7 @@ function platesFromMap(el: Int16Array, plateId: Int16Array, ps: PlateSet): Plate
 
 /**
  * Same, but the boundary relief is solved for a target mountain cover instead
- * of set by hand — uplift is not linear in drift, so a fixed number does not
+ * of set by hand: uplift is not linear in drift, so a fixed number does not
  * behave across the range.
  */
 export function tectonicAgeToTarget(

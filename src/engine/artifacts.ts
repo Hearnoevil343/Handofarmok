@@ -5,7 +5,7 @@ import { fbm, makeRng } from "./noise";
  *
  * The giveaway is straightness. Real coastlines and mountain fronts are ragged
  * at every scale; a simulation leaves long collinear runs wherever a rigid
- * operation touched the map — a plate translated as a block, a Voronoi seam, a
+ * operation touched the map: a plate translated as a block, a Voronoi seam, a
  * clamp against a rectangular edge. Those runs are measurable, so they can be
  * found rather than guessed at, and warped out where they occur.
  */

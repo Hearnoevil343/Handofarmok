@@ -39,8 +39,7 @@ export function GalleryPage() {
   return (
     <div className={styles.page}>
       <header className={styles.intro}>
-        <h2>Choose realms to shape</h2>
-        <p>Pick any number of blank regions or generated worlds, then load them to start.</p>
+        <h2>Choose worlds</h2>
       </header>
 
       <div className={styles.grid}>
@@ -62,7 +61,7 @@ export function GalleryPage() {
         disabled={selected.length === 0}
         onClick={loadSelected}
         labels={{
-          ready: selected.length === 1 ? "Load 1 realm" : `Load ${selected.length} realms`,
+          ready: selected.length === 1 ? "Load 1 preset" : `Load ${selected.length} presets`,
           working: "Loading maps",
           done: "Loaded",
           failed: "Loading failed, check your connection",

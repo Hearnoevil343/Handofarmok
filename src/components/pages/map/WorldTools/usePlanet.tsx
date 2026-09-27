@@ -40,7 +40,7 @@ export function usePlanet(seed: number): { planet: Planet; fields: ReactNode } {
 
   const fields = (
     <>
-      <span className={styles.field}>Pole Layout</span>
+      <span className={styles.field}>Pole layout</span>
       <Dropdown
         value={layoutChoice}
         options={[
@@ -60,9 +60,9 @@ export function usePlanet(seed: number): { planet: Planet; fields: ReactNode } {
         ]}
         onChange={(v) => setSpin(v === "-1" ? -1 : 1)}
       />
-      <RangeField min={0} max={90} value={tilt} onChange={setTilt} label="Axial Tilt"
+      <RangeField min={0} max={90} value={tilt} onChange={setTilt} label="Axial tilt"
         markers={[{ at: Math.round(EARTH_TILT_DEG), label: "earth" }]}
-        hint="How the year's sunlight is spread over latitude. Near 54 degrees the equator and the poles get about the same; beyond that the poles are warmer than the equator. Reversing the spin swaps which coasts are wet and which are dry." />
+        hint="Past 54 degrees the poles run warmer than the equator." />
     </>
   );
   return { planet, fields };

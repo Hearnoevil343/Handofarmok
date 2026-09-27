@@ -22,9 +22,8 @@ export function WorldAdvisor() {
   const [chosen, setChosen] = useState<Record<string, boolean>>({});
   const [summary, setSummary] = useState<string>("");
 
-  // Findings belong to the realm they were read from. They used to survive
-  // switching in the sidebar, and Apply Selected then wrote one world's
-  // proposals into another.
+  // Findings belong to the preset they were read from: clear them on a
+  // sidebar switch so Apply never writes one world's proposals into another.
   const [readFor, setReadFor] = useState(activePresetTitle);
   if (readFor !== activePresetTitle) {
     setReadFor(activePresetTitle);
@@ -85,24 +84,15 @@ export function WorldAdvisor() {
   return (
     <section className={styles.base}>
       <div className={styles.head}>
-        <h2 className={styles.title}>Read This World</h2>
-        <p className={styles.lead}>
-          Measures what you have actually built and proposes settings to match.
-          A pocket world of solid land supports far more than a large world of
-          open sea, so counts are judged against the ground that exists rather
-          than the size of the map.
-        </p>
+        <h2 className={styles.title}>Check world</h2>
         <button type="button" className={styles.primary} onClick={read}>
-          Read This World
+          Check world
         </button>
         {summary && <p className={styles.summary}>{summary}</p>}
       </div>
 
       {findings && findings.length === 0 && (
-        <p className={styles.clean}>
-          Nothing to change. No parameter demands a feature this world lacks,
-          and the counts already suit the terrain.
-        </p>
+        <p className={styles.clean}>Nothing to change.</p>
       )}
 
       {findings && findings.length > 0 && (
@@ -136,7 +126,7 @@ export function WorldAdvisor() {
             ))}
           </ul>
           <button type="button" className={styles.primary} onClick={apply}>
-            Apply Selected
+            Apply
           </button>
         </>
       )}

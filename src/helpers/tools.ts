@@ -4,12 +4,11 @@ import { BrushOp } from "@helpers/brushEngine";
 /**
  * The painter is organised as tools, not as one brush with settings.
  *
- * The previous panel was a single vertical stack of ten controls with
- * visibility flags per mode, which meant biome painting still showed opacity
- * and falloff sliders — neither of which means anything for a category. You
- * cannot be forty per cent taiga. Meanwhile elevation painting buried raise and
- * lower under a "Paint" op, when they are the primary verbs of any terrain
- * editor.
+ * A single stack of controls with visibility flags per mode would still show
+ * biome painting opacity and falloff sliders, neither of which means anything
+ * for a category: you cannot be forty per cent taiga. It would also bury
+ * elevation painting's raise and lower under a generic "Paint" op, when they
+ * are the primary verbs of any terrain editor.
  *
  * Each tool below owns exactly the settings that apply to it, and the settings
  * bar shows nothing else. This is the model every map and image editor
@@ -46,8 +45,8 @@ export const TOOLS: ToolMeta[] = [
     shows: ["biome", "size", "fray", "shape", "line"],
   },
   {
-    // Was "s": WASD/arrows pan the map (MainScene.ts), so pressing S to pan
-    // south also swapped the active tool to Sculpt mid-pan.
+    // Not "s": WASD/arrows pan the map (MainScene.ts), so pressing S to pan
+    // south would also swap the active tool to Sculpt mid-pan.
     id: "sculpt", label: "Sculpt", key: "r",
     hint: "Raise, lower, smooth or flatten the ground.",
     shows: ["sculptMode", "size", "strength", "falloff", "shape", "line"],
@@ -64,7 +63,7 @@ export const TOOLS: ToolMeta[] = [
     shows: ["size", "line"],
   },
   {
-    // Was "w": same conflict with panning north as Sculpt had with "s".
+    // Not "w": same conflict with panning north as Sculpt has with "s".
     id: "savagery", label: "Savagery", key: "x",
     hint: "Calm, wild or untamed.",
     shows: ["savageryLevel", "size", "line"],

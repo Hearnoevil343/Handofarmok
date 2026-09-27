@@ -140,19 +140,17 @@
   white-space: nowrap;
 }
 
+.notice {
+  margin-top: 2.5rem;
+  color: var(--dim);
+  font-size: 0.85rem;
+}
+
 .footer {
   display: flex;
   justify-content: center;
   gap: 8px;
-  margin-top: 5rem;
+  margin-top: 1.5rem;
   color: var(--dim);
   font-size: 0.85rem;
-
-  em {
-    color: var(--warn);
-  }
-}
-
-.dot {
-  color: var(--line-hi);
 }

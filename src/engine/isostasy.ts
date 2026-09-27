@@ -3,11 +3,11 @@
  * East-west wrapping index. The map is a cylinder: advection and the boundary
  * effects both wrap, so anything that *removes* elevation has to wrap too.
  *
- * Every spreading and erosion pass here used to run `x = 1 .. size-2`, skipping
- * the border ring, while everything that adds crust covered the whole map. Over
- * a hundred ages that asymmetry built a wall: the edge columns reached a mean
- * elevation of 262 against an interior of 84 — the grey band down the side of
- * the world.
+ * Every spreading and erosion pass here must run across the full width,
+ * including the border ring, to match the passes that add crust, which cover
+ * the whole map. Skipping the ring on the removal side builds a wall over a
+ * hundred ages: the edge columns reach a mean elevation of 262 against an
+ * interior of 84, the grey band down the side of the world.
  */
 import { METRES_PER_UNIT_LAND, scaleLength } from "./scale";
 import { ditheredRound } from "./ocean";
@@ -23,9 +23,9 @@ const at = (x: number, y: number, size: number) =>
  *
  * Crust floats on the mantle, so stripping weight off a mountain lets it rise
  * again. Without this, erosion is pure subtraction and every pass flattens the
- * world a little more with nothing to push back — which is why repeated ages
- * used to grind terrain away. It is also why the Appalachians are still there
- * after three hundred million years.
+ * world a little more with nothing to push back, which is why repeated ages
+ * of erosion alone would grind terrain away. It is also why the Appalachians
+ * are still there after three hundred million years.
  *
  * Rebound is regional rather than per-tile, because the crust is rigid enough
  * to spread the load: the removed thickness is blurred over a radius before it
@@ -100,13 +100,13 @@ export function isostaticRebound(
  *
  * Crust thickened past a point cannot support its own weight. The excess
  * spreads sideways under gravity and the root sinks into the mantle, so a
- * range gets *wider* rather than taller. Tibet is the standard example — it sits
+ * range gets *wider* rather than taller. Tibet is the standard example: it sits
  * at about the maximum elevation crust can hold and is actively extending
  * east-west rather than rising.
  *
  * The simulation was instead clipping at 400. Everything a collision pushed
  * past the ceiling simply stopped there, which produced flat-topped blobs of
- * identical height — and once erosion cut into that plateau it broke into
+ * identical height. Once erosion cut into that plateau it broke into
  * islands of leftover summit. Conserving the excess and handing it to lower
  * neighbours turns the same uplift into a broad range with flanks.
  */
@@ -182,7 +182,7 @@ export function denudeInactive(
   size: number,
   uplifting: Uint8Array,
   // 0.55 flattened a belt in three or four ages. The Appalachians took about
-  // two hundred million years — twenty ages here — so the rate is brought down
+  // two hundred million years (twenty ages here), so the rate is brought down
   // to let a range outlive the collision that made it.
   //
   // 0.3 lost to uplift over long histories: across 200 ages the mountain
@@ -233,8 +233,8 @@ export function denudeInactive(
  * Ice-sheet loading.
  *
  * An ice sheet is heavy. Three kilometres of ice presses the crust down by
- * nearly a kilometre — ice is about 917 kg/m³ against a mantle near 3,300, so
- * the ground settles by a bit over a quarter of the ice's thickness — and when
+ * nearly a kilometre: ice is about 917 kg/m³ against a mantle near 3,300, so
+ * the ground settles by a bit over a quarter of the ice's thickness. When
  * the ice goes the ground comes back up. Scandinavia is still rising eight
  * millimetres a year from ice that finished melting ten thousand years ago, and
  * Hudson Bay is a basin mostly because it was under the thickest part of the

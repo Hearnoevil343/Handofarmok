@@ -13,7 +13,7 @@ import { REJECTION_TOKENS } from "@helpers/worldGuide";
  * secrets and demons across three of DF's categories.
  *
  * The rejection tokens get their own section on purpose. They cannot create
- * anything — they only throw worlds away — and they are the usual reason a
+ * anything, they only throw worlds away, and they are the usual reason a
  * world regenerates forever. Isolating them is half of making them safe.
  */
 export type SectionId =
@@ -59,7 +59,7 @@ const tokensIn = (id: SectionId) => DF_TOKEN_ORDER.filter((t) => sectionFor(t) =
 
 export const SECTIONS: Section[] = [
   { id: "overview", label: "Overview", icon: LayoutDashboard, tokens: [],
-    blurb: "The fast path: size-scaled presets, and an advisor that reads the world you built." },
+    blurb: "Size-scaled presets, and an advisor that reads the world you built." },
   { id: "terrain", label: "Terrain", icon: Mountain, tokens: tokensIn("terrain"),
     blurb: "Elevation, drainage and the weighted meshes that shape the land." },
   { id: "climate", label: "Climate", icon: CloudSun, tokens: tokensIn("climate"),
@@ -69,9 +69,9 @@ export const SECTIONS: Section[] = [
   { id: "underground", label: "Underground", icon: Layers, tokens: tokensIn("underground"),
     blurb: "Caverns, magma and the depth of the world." },
   { id: "history", label: "History", icon: Hourglass, tokens: tokensIn("history"),
-    blurb: "How long the world runs before you arrive, and what it is allowed to do." },
+    blurb: "How long the world runs before you arrive." },
   { id: "rejection", label: "Rejection", icon: ShieldAlert, tokens: tokensIn("rejection"),
-    blurb: "These parameters cannot create anything. They only throw worlds away, and they are the usual reason a world regenerates forever." },
+    blurb: "These only throw worlds away. The usual reason a world regenerates forever." },
 ];
 
 export const sectionOf = sectionFor;

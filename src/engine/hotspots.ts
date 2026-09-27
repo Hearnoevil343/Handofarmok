@@ -13,8 +13,8 @@ import { scaleLength } from "./scale";
  * The second behaviour matters more for a world's story. A supercontinent
  * insulates the mantle beneath it; heat builds, a plume rises, and the continent
  * rifts apart above it. Pangaea broke up over a superplume. So when a plate is
- * large, continental and barely moving, a plume is seeded *under* it — the
- * central volcanism you would see on such a world is not decoration, it is the
+ * large, continental and barely moving, a plume is seeded *under* it: the
+ * central volcanism you would see on such a world is not decoration. It is the
  * cause of the breakup that follows.
  */
 
@@ -71,8 +71,8 @@ export function seedHotspots(
       cy[p] += (i / size) | 0;
     }
   }
-  // A plate carrying a supercontinent is still mostly ocean — the African plate
-  // is. The test that matters is what share of the WORLD's land this plate
+  // A plate carrying a supercontinent is still mostly ocean (the African plate
+  // is). The test that matters is what share of the WORLD's land this plate
   // holds, not what share of the plate is land. Asking the wrong one meant the
   // condition never fired: the biggest plate ran 44-55% of the map at 36-51%
   // land, always just under a 55% threshold, so no supercontinent ever grew a
@@ -150,7 +150,7 @@ export function applyHotspots(
 /**
  * EXPERIMENT: plume-seeded rifting.
  *
- * Pangaea did not break along a boundary that already existed — the rift was
+ * Pangaea did not break along a boundary that already existed: the rift was
  * created by the plume that built up beneath it. Here the plume only lifted the
  * crust; the plate stayed whole, so a supercontinent could never actually tear.
  *
@@ -240,9 +240,9 @@ export function riftAtPlumes(
     }
     plates.sx[host] = cx(sinB, cosB); plates.sy[host] = yB / nB;
     plates.vx[host] = -ax / m; plates.vy[host] = -ay / m;
-    // A plume opens one rift. It used to cut again every age it lived, and because every
-    // cut runs through the plume, the boundaries came out as a fan of straight lines meeting
-    // at that one point - the pie-slice plate maps. The spot stays as an ordinary hotspot.
+    // A plume opens one rift and then stops. Cutting through the same plume on every
+    // age it lives would make the boundaries fan out as straight lines meeting at that
+    // one point (pie-slice plate maps), so after this cut the spot stays an ordinary hotspot.
     spot.plume = false;
     made++;
   }

@@ -24,7 +24,7 @@ function RealmPicker() {
 
   return (
     <label className={styles.realmPicker}>
-      <span className={styles.caption}>Realm</span>
+      <span className={styles.caption}>World</span>
       <select value={activeTitle} onChange={(e) => dispatch(realmSelected(e.target.value))}>
         {Object.keys(byTitle).map((title) => (
           <option key={title} value={title}>
@@ -58,10 +58,7 @@ function LayerList() {
   return (
     <div>
       <span className={styles.caption}>Layers</span>
-      <p className={styles.note}>
-        Lock a layer to protect it: no brush writes to a locked layer, including the biome brush when it works out
-        what a biome needs.
-      </p>
+      <p className={styles.note}>Locked layers are not painted.</p>
       <ul className={styles.layers}>
         {LAYERS.map(({ layer, name, swatch }, index) => {
           const locked = !!lockedLayers[layer];
@@ -114,15 +111,15 @@ export function MapSidebar() {
       {/* the biome brush writes several layers, so there is no single layer to tint with */}
       {activeBiome === null && (
         <Toggle
-          label="Tint by layer"
-          note="Shades the world by the selected layer so you can see where it is high. Off shows biomes only."
+          label="Tint"
+          note="Off shows biomes only."
           checked={!compositeView}
           onChange={(on) => dispatch(compositeViewSet(!on))}
         />
       )}
       <Toggle
-        label="Show plate boundaries"
-        note="From the last age that ran. Reroll until the seams sit where you want mountains and rifts."
+        label="Plates"
+        note="From the last age that ran."
         checked={showPlates}
         onChange={(on) => dispatch(brushAdjusted({ showPlates: on }))}
       />

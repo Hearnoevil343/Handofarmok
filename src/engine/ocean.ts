@@ -6,7 +6,7 @@ import { MYR_PER_AGE } from "./timescale";
  *
  * Two kinds of crust, carried with the plates: continental, thick and buoyant,
  * and oceanic, made at spreading ridges and sinking as it cools. Until this,
- * crust type was read off elevation — anything above 62 counted as continent —
+ * crust type was read off elevation (anything above 62 counted as continent),
  * so every process that nudged the sea floor up or down changed how much
  * continent there was. Measured over 60 ages, tectonics lifted 4.6% of the map
  * into the "continental" band every age and `separateCrust` pushed 8% back out,
@@ -62,7 +62,7 @@ export function initOcean(el: Int16Array): { crust: Uint8Array; oceanAge: Float3
 
 /**
  * Crust changes type only at the extremes. Oceanic crust pushed above sea
- * level — an island arc, an accreted plateau — becomes continental, which is
+ * level (an island arc, an accreted plateau) becomes continental, which is
  * how Earth makes new continent; continental crust dragged down to abyssal
  * depth (a foundered rift, a trench wall) becomes new oceanic floor. Between
  * the two it keeps whatever it was, so the type is carried state, not a reading
@@ -86,13 +86,13 @@ export function updateCrust(
  * Continental crust area is close to constant on these timescales: rifting
  * opens ocean inside continents, collision shortens them, arcs and accreted
  * margins add to them, and the total barely moves. Here rifts open as new sea
- * floor at once — on Earth a rift stays thinned continent for tens of Myr — so
+ * floor at once (on Earth a rift stays thinned continent for tens of Myr), so
  * over 100 ages continental crust fell from 66% of the map to 39%.
  *
  * A fifth of any shortfall against the area the world started with is made
  * good each age, by turning the shallowest sea floor along continental margins
  * into continent (a sediment wedge, an accreted margin); a surplus founders the
- * deepest continental margin tiles. Only crust type changes here — elevation is
+ * deepest continental margin tiles. Only crust type changes here; elevation is
  * left to freeboard and erosion. Mutates `crust` and `oceanAge`; returns tiles
  * converted, positive when continent was added.
  */
@@ -144,8 +144,8 @@ export function conserveContinentalArea(
  * so a hotspot swell or a trench survives a while; oceanic crust already above
  * sea level (an island arc, a volcanic island) is left to erosion.
  *
- * Depth-for-age is measured from a fixed datum — the sea level the history
- * started with — not from wherever the sea stands now; `datumMetres` is how
+ * Depth-for-age is measured from a fixed datum (the sea level the history
+ * started with), not from wherever the sea stands now; `datumMetres` is how
  * far the sea currently stands above that start. Measuring from the current
  * sea fed back: a falling sea re-expressed every ocean tile higher, this pulled
  * them down again, and the sea fell further.
@@ -291,7 +291,7 @@ export function continentalExposure(el: Int16Array, crust: Uint8Array, datumMetr
  * remarkably constant through Earth's history (Wise 1974), because eroded and
  * thinned continents sink and thickened ones rise. The engine erodes and uplifts
  * but has no continental isostasy of that kind, so continental crust is moved
- * slowly — a tenth of the way each age, about a 100 Myr time constant — back
+ * slowly (a tenth of the way each age, about a 100 Myr time constant) back
  * toward the exposure it started with. Measured against the sea level the
  * history started with, so ice ages and high stands still flood and expose
  * shelves; only the slow drift is undone. The shift is full at sea level and

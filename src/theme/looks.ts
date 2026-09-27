@@ -4,7 +4,7 @@
  * does.
  *
  * `available: false` looks are listed (so the switcher can show what's coming)
- * but cannot be selected — reserved for Cartographer, built last on purpose.
+ * but cannot be selected: reserved for Cartographer, built last on purpose.
  */
 export type LookId = "fortress" | "glass" | "cartographer";
 

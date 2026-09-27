@@ -14,7 +14,7 @@ export function RealmList() {
 
   return (
     <section className={styles.realms}>
-      <h3 className={styles.realmsHeading}>Realms</h3>
+      <h3 className={styles.realmsHeading}>Presets</h3>
       <ul>
         {titles.map((title) => (
           <li key={title} className={cn(styles.realm, title === activeTitle && styles.realmOn)}>
@@ -25,14 +25,14 @@ export function RealmList() {
               </span>
             </button>
             <span className={styles.realmActions}>
-              <button type="button" title="Copy realm" aria-label={`Copy ${title}`} onClick={() => dispatch(realmCopied({ from: title, to: copyTitle(title, titles) }))}>
+              <button type="button" title="Copy preset" aria-label={`Copy ${title}`} onClick={() => dispatch(realmCopied({ from: title, to: copyTitle(title, titles) }))}>
                 ⎘
               </button>
               <button
                 type="button"
                 className={styles.danger}
                 disabled={onlyOne}
-                title={onlyOne ? "The last realm can't be deleted" : "Delete realm"}
+                title={onlyOne ? "The last preset can't be deleted" : "Delete preset"}
                 aria-label={`Delete ${title}`}
                 onClick={() => {
                   if (window.confirm(`Delete "${title}"? Its map is lost unless you exported it.`)) dispatch(realmDeleted(title));

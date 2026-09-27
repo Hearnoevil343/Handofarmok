@@ -4,7 +4,7 @@
  * "Natural" cannot be optimised against directly, but several properties of
  * real terrain can be, and a generator that satisfies them tends to look right:
  *
- *  - **Hypsometry.** Earth's elevation histogram is bimodal — one peak at
+ *  - **Hypsometry.** Earth's elevation histogram is bimodal: one peak at
  *    continental shelf, one at abyssal plain, scarce in between. A unimodal
  *    world reads as noise no matter what else is correct.
  *  - **Range elongation.** Mountain belts are long and arcuate. Blobs mean the
@@ -33,7 +33,7 @@ export type Metrics = {
  * Measured in metres, in 500 m bins: the deep mode is the fullest bin below
  * -2.5 km, the continental mode the fullest between -1 and +2 km, and the dip
  * the emptiest bin between them. The previous version split the 0-400 scale in
- * half and looked for the upper mode above 200 — among the mountains — so it
+ * half and looked for the upper mode above 200 (among the mountains), so it
  * rewarded the sea floor being piled into one narrow band and read a sea floor
  * spread out by age as not bimodal at all.
  */
@@ -60,7 +60,7 @@ export function hypsometricBimodality(el: Int16Array): number {
  *
  * Principal axes, not the bounding box: a bounding box only sees elongation
  * along the map axes, so a straight belt sixty tiles long scored 20.7 running
- * east-west and 1.00 — the same as a round blob — running diagonally. Belts form
+ * east-west and 1.00 (the same as a round blob) running diagonally. Belts form
  * along plate boundaries at every angle. x is unwrapped across the seam first,
  * so a belt crossing it is measured as one piece.
  */

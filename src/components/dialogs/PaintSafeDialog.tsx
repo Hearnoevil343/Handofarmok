@@ -9,13 +9,13 @@ export function PaintSafeDialog({ onClose }: { onClose: () => void }) {
   return (
     <>
       <header className={styles.header}>
-        <h2>Prepare this realm for painting?</h2>
+        <h2>Apply paint-safe settings?</h2>
         <button type="button" className={styles.close} onClick={onClose} aria-label="Close">
           &times;
         </button>
       </header>
       <div className={styles.body}>
-        <p>Dwarf Fortress reshapes a painted map unless a few settings are changed. This sets them for the active realm:</p>
+        <p>Dwarf Fortress reshapes a painted map unless a few settings are changed. This sets them for this world:</p>
         <ul>
           <li>Turns off DF&apos;s erosion, rain shadows and poles, so land and temperature stay as painted.</li>
           <li>Removes the minimum volcanoes, peaks, rivers, ocean edges and region counts that make DF reject painted worlds.</li>
@@ -34,7 +34,7 @@ export function PaintSafeDialog({ onClose }: { onClose: () => void }) {
             onClose();
           }}
         >
-          Prepare realm
+          Apply
         </button>
       </footer>
     </>

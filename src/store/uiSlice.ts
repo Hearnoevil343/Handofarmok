@@ -1,8 +1,8 @@
 import { createSlice, type PayloadAction } from "@reduxjs/toolkit";
 import { DEFAULT_LOOK, isAvailableLook, type LookId } from "@theme/looks";
 
-/** The dialog over the page, if any. The disclaimer shows on every start. */
-export type Dialog = "none" | "disclaimer" | "paintSafe";
+/** The dialog over the page, if any. */
+export type Dialog = "none" | "paintSafe";
 
 const LOOK_KEY = "hoa.look";
 
@@ -30,7 +30,7 @@ interface UiState {
   look: LookId;
 }
 
-const initialState: UiState = { dialog: "disclaimer", look: savedLook() };
+const initialState: UiState = { dialog: "none", look: savedLook() };
 
 export const uiSlice = createSlice({
   name: "ui",

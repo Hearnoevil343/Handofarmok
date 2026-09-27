@@ -6,65 +6,12 @@ import { useState } from "react";
 
 const REPOSITORY = "https://github.com/Hearnoevil343/Handofarmok";
 
-type Topic = { title: string; intro?: ReactNode; items?: [string, ReactNode][] };
-
-const TOPICS: Topic[] = [
-  {
-    title: "What this is",
-    intro: (
-      <>
-        <p>
-          A world builder for Dwarf Fortress. You paint elevation, rainfall, temperature, drainage, volcanism and
-          savagery, and Dwarf Fortress builds its world on top of what you painted.
-        </p>
-        <p>
-          <strong>Nothing is saved in the browser.</strong> Reloading or closing the tab loses your realms, so export
-          your world_gen.txt before you go.
-        </p>
-      </>
-    ),
-  },
-  {
-    title: "1. Start",
-    items: [
-      ["New world", "Pick blank regions at any size, or generated worlds, and load them together."],
-      ["Open a file", "Load a world_gen.txt to keep working on every realm in it."],
-    ],
-  },
-  {
-    title: "2. World Settings",
-    items: [
-      ["Quick Setup", "Dwarf Fortress's own settings ladders for history, beasts, civilisations and more, scaled to the land your realm has."],
-      ["Read This World", "Measures what you built and suggests settings, including the ones that make DF reject a world forever."],
-      ["Every setting", "Each world_gen token by section, with a search box to find one by name."],
-      ["Prepare for painting", "Turns off what would reshape a painted map and removes counts a painted world can't meet."],
-    ],
-  },
-  {
-    title: "3. Map",
-    items: [
-      ["Brushes", "Biome, Sculpt, Climate, Volcano and Savagery, plus Fill and the eyedropper. Ctrl+Z undoes, Ctrl+Y redoes."],
-      ["Layer locks", "A locked layer is never written, by any brush or world tool."],
-      ["World tools", "Generate a world, or run it through geological ages: plates, mountains, erosion, rivers, ice ages and rising seas. Each run can be undone."],
-      ["Status bar", "Shows the tile under the pointer and every value on it."],
-    ],
-  },
-  {
-    title: "4. Game View",
-    intro: (
-      <p>
-        Point it at the graphics folder of your Dwarf Fortress install to see your world with the game&apos;s own
-        world-map sprites. Files are read in your browser and never uploaded.
-      </p>
-    ),
-  },
-  {
-    title: "5. Export",
-    items: [
-      ["world_gen.txt", "Every realm and its settings, ready for DF's prefs folder."],
-      ["Heightmaps", "A zip of greyscale elevation images for PerfectWorld and other tools."],
-    ],
-  },
+const SHORTCUTS: [string, string][] = [
+  ["W A S D / arrows", "Move the map"],
+  ["1-6", "Pick a layer"],
+  ["F1-F6", "Change page"],
+  ["B R C V X G I", "Biome, Sculpt, Climate, Volcano, Savagery, Fill, Eyedropper"],
+  ["Ctrl+Z", "Undo"],
 ];
 
 function UpdateCheck() {
@@ -108,42 +55,45 @@ export function AboutPage() {
           <span>HAND OF ARMOK</span>
         </h1>
 
-        {TOPICS.map((topic) => (
-          <section key={topic.title} className={styles.topic}>
-            <h3>{topic.title}</h3>
-            {topic.intro}
-            {topic.items && (
-              <ul>
-                {topic.items.map(([name, text]) => (
-                  <li key={name}>
-                    <strong>{name}:</strong> {text}
-                  </li>
-                ))}
-              </ul>
-            )}
-          </section>
-        ))}
-
-        <section className={styles.contribute}>
-          <h3>Found a problem?</h3>
-          <p>
-            Bugs, ideas and fixes are all welcome.{" "}
-            <a href={`${REPOSITORY}/issues`} target="_blank" rel="noopener noreferrer">
-              Open an issue on GitHub
-            </a>
-            , or read the source in the{" "}
-            <a href={REPOSITORY} target="_blank" rel="noopener noreferrer">
-              repository
-            </a>
-            . Screenshots help more than descriptions.
-          </p>
-          <p className={styles.credit}>Dwarf Fortress is by Bay 12 Games. No game assets are included.</p>
-        </section>
-
-        <footer className={styles.footer}>
+        <div className={styles.versionRow}>
           <span className={styles.version}>Version {__APP_VERSION__}</span>
           <UpdateCheck />
-        </footer>
+        </div>
+
+        <p className={styles.intro}>
+          A world builder for Dwarf Fortress. Paint elevation, rainfall, temperature, drainage, volcanism and
+          savagery, run the result through geological ages, and export a <code>world_gen.txt</code> that Dwarf
+          Fortress builds its world on top of.
+        </p>
+
+        <table className={styles.keys}>
+          <tbody>
+            {SHORTCUTS.map(([keys, does]) => (
+              <tr key={keys}>
+                <td>
+                  {keys.split(" ").map((k) => (
+                    <kbd key={k}>{k}</kbd>
+                  ))}
+                </td>
+                <td>{does}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+
+        <p className={styles.links}>
+          <a href={REPOSITORY} target="_blank" rel="noopener noreferrer">
+            Source on GitHub
+          </a>
+          <span className={styles.dot}>·</span>
+          <a href={`${REPOSITORY}/issues`} target="_blank" rel="noopener noreferrer">
+            Report an issue
+          </a>
+        </p>
+
+        <p className={styles.credit}>
+          Hand of Armok is MIT licensed. Dwarf Fortress is by Bay 12 Games; no game assets are included.
+        </p>
       </article>
     </div>
   );

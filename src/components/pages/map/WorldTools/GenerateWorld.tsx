@@ -18,7 +18,7 @@ export function GenerateWorld() {
 
   return (
     <ToolPanel
-      title="Generate World"
+      title="Generate world"
       blurb="Rolls an entirely new world from a seed. Replaces every unlocked layer; Ctrl+Z brings back what was there."
       open
     >
@@ -28,7 +28,7 @@ export function GenerateWorld() {
       <span className={styles.field}>Climate</span>
       <Dropdown value={climate} options={opts(CLIMATE_NAMES)} onChange={setClimate} />
 
-      <SeedField seed={seed} onChange={setSeed} label="World Seed" />
+      <SeedField seed={seed} onChange={setSeed} label="World seed" />
 
       <button
         type="button"
@@ -40,7 +40,7 @@ export function GenerateWorld() {
           )
         }
       >
-        {busy ? "Working\u2026" : "Generate World"}
+        {busy ? "Working\u2026" : "Generate world"}
       </button>
     </ToolPanel>
   );

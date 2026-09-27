@@ -29,51 +29,6 @@
   }
 }
 
-// ---- disclaimer
-
-.notice {
-  padding: 2rem;
-  line-height: 1.6;
-}
-
-.title {
-  margin: 0 0 1.5rem;
-  padding-bottom: 0.5rem;
-  border-bottom: 2px solid var(--raise);
-  color: var(--accent);
-  font-weight: 800;
-  letter-spacing: 2px;
-  text-align: center;
-  text-transform: uppercase;
-}
-
-.notes {
-  margin: 0 0 1.5rem;
-  padding: 0;
-  list-style: none;
-
-  li {
-    margin-bottom: 1.2rem;
-    padding-left: 1.4rem;
-    border-left: 2px solid var(--line-hi);
-  }
-
-  strong {
-    display: block;
-    margin-bottom: 0.2rem;
-    color: var(--active);
-    font-size: 0.85rem;
-    letter-spacing: 0.5px;
-    text-transform: uppercase;
-  }
-}
-
-.primary {
-  @include ui.action-button;
-  display: block;
-  margin: 0 auto;
-}
-
 // ---- paint-safe
 
 .header {

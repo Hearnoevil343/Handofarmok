@@ -362,14 +362,13 @@ export function runAge(w: World, size: number, opts: AgeOptions): AgeReport {
   const historySeed = (opts.seed ?? 0) - (opts.age ?? 0);
 
   // 0. plates are driven by the arrangement of the continents, not by fixed
-  //    random headings — this is what lets the Wilson cycle close
+  //    random headings: this is what lets the Wilson cycle close
   if (opts.plateSet) wilsonDrive(opts.plateSet, w.EL, size, opts.age ?? 0);
 
   // 1. tectonics
-  // One simulation per age. Rather than bisecting inside a single age — which
-  // ran the whole thing seven times for a preference — boundary relief is
-  // carried between ages and nudged toward the target. A world converges over a
-  // few ages instead of paying for it on every press.
+  // One simulation per age: boundary relief is carried between ages and
+  // nudged toward the target, so a world converges over a few ages instead
+  // of paying for it on every press.
   const provinces: Provinces = opts.provinces
     ?? seedProvinces(size, 14, opts.seed);
 
@@ -384,8 +383,8 @@ export function runAge(w: World, size: number, opts: AgeOptions): AgeReport {
         : initOcean(w.EL))
     : null;
   const datum = opts.seaLevelDatum ?? 0;
-  // The share of continent above the sea this world started with — scaled down
-  // when the world starts with more land than its baseline allows. Callers cap
+  // The share of continent above the sea this world started with, scaled down
+  // when the world starts with more land than its baseline allows: callers cap
   // the baseline (60%), and the default path pulls land to it every age; without
   // the same cap the ocean model held generated highland worlds at their
   // starting ~70% land, where simlab counts a world as degenerate.
@@ -487,11 +486,10 @@ export function runAge(w: World, size: number, opts: AgeOptions): AgeReport {
 
   // --- mantle plumes ------------------------------------------------------
   const rng = makeRng(opts.seed ^ 0x1105);
-  // collided continents travel as one from here on — and become one plate, so
-  // the count comes back down after a collision and rifting can continue
-  // The plate map is the one tectonics just moved with the crust. It used to be
-  // regrown from the seeds here, and again after a weld, so boundaries never
-  // lasted; now a weld renumbers it and a rift cuts it, and nothing else does.
+  // Collided continents travel as one from here on and become one plate, so
+  // the count comes back down after a collision and rifting can continue.
+  // The plate map is the one tectonics just moved with the crust: a weld
+  // renumbers it and a rift cuts it, and nothing else does, so boundaries persist.
   const plateId = tect.plateId;
   const weld = weldCollidedPlates(tect.plateSet, el, plateId, size);
   if (weld.merged) for (let i = 0; i < plateId.length; i++) plateId[i] = weld.remap[plateId[i]];
@@ -499,7 +497,7 @@ export function runAge(w: World, size: number, opts: AgeOptions): AgeReport {
   // Plumes were seeded once and never replaced, so by the time a supercontinent
   // had assembled there was no plume left to rift it apart. They are topped up
   // every age instead, which also lets a plume appear *because* a continent has
-  // assembled — the actual mechanism.
+  // assembled, the actual mechanism.
   let spots = opts.spots ?? [];
   // more heat to shed, more plumes to shed it through
   const wantSpots = Math.round((opts.hotspots ?? 3) * volcanismFactor(heat));
@@ -512,9 +510,9 @@ export function runAge(w: World, size: number, opts: AgeOptions): AgeReport {
   }
 
   // EXPERIMENT: a plume under a continent splits the plate it sits on.
-  // Applied to the plate set tectonicAge *returns*, not the one it was given —
+  // Applied to the plate set tectonicAge *returns*, not the one it was given:
   // the return is snapshotted before this point, so mutating the input here
-  // threw the new seeds away every age.
+  // would throw the new seeds away every age.
   if (spots.some((s) => s.plume) && tect.plateSet.sx.length < 24) {
     riftAtPlumes(tect.plateSet, spots, plateId, size, 0.08, rng);
   }
@@ -523,11 +521,11 @@ export function runAge(w: World, size: number, opts: AgeOptions): AgeReport {
   compactPlates(tect.plateSet, plateId);
 
   // Welds only ever reduce the plate count, and with the map carried a plume
-  // rift adds one plate, not two phantom seeds — so a 6-plate world wound down
-  // to 2 within twenty ages, and with two plates any single event redrew every
-  // boundary at once. Earth keeps a roughly steady count because big plates
-  // break. When the count is below the setting, the largest plate rifts across
-  // a random point on it, at most once an age.
+  // rift adds one plate, not two phantom seeds: without a floor, a 6-plate
+  // world would wind down to 2 within twenty ages, and with two plates any
+  // single event redraws every boundary at once. Earth keeps a roughly steady
+  // count because big plates break. When the count is below the setting, the
+  // largest plate rifts across a random point on it, at most once an age.
   if (tect.plateSet.sx.length < Math.max(2, opts.plates)) {
     const count = tect.plateSet.sx.length;
     const area = new Array(count).fill(0);
@@ -553,12 +551,12 @@ export function runAge(w: World, size: number, opts: AgeOptions): AgeReport {
 
   opts.trace?.("hotspots", el);
 
-  // crust past the limit spreads sideways instead of stacking into a plateau —
-  // and hot crust is weak, so a young planet cannot hold as much of one up
+  // Crust past the limit spreads sideways instead of stacking into a plateau,
+  // and hot crust is weak, so a young planet cannot hold as much of one up.
   el = orogenicCollapse(el, size, mountainCeiling(heat), undefined, undefined, reboundOnLand);
   opts.trace?.("collapse", el);
 
-  // and anything no longer being pushed starts wearing down
+  // Anything not being actively pushed starts wearing down.
   el = denudeInactive(el, size, tect.uplifting, opts.denudation ?? 0.2, gradeBand);
   opts.trace?.("denude", el);
 
@@ -708,11 +706,12 @@ export function runAge(w: World, size: number, opts: AgeOptions): AgeReport {
 
   // the phase was worked out here; it is needed before the erosion steps now, so it moved up
 
-  // Sea level is applied as a DELTA from the previous age. Adding the full
-  // offset every age meant the previous one was never undone, and since the
-  // glacial sample is fresh each age the ocean floor became a random walk —
-  // it wandered from 9 to 61 over eighty ages. Temperature and rainfall do not
-  // have this problem because deriveClimate rebuilds them from scratch.
+  // Sea level is applied as a DELTA from the previous age, not the full offset:
+  // the glacial sample is fresh each age, so applying the full offset every
+  // age would leave the previous one never undone and the ocean floor would
+  // random-walk (it wandered from 9 to 61 over eighty ages when tried).
+  // Temperature and rainfall do not have this problem because deriveClimate
+  // rebuilds them from scratch.
   const seaDelta = oceanState ? 0 : phase.seaLevel - (opts.seaLevelOffset ?? 0);
   for (let i = 0; i < el.length; i++) {
     world.TP[i] = Math.round(world.TP[i] + phase.temperature);
@@ -730,9 +729,9 @@ export function runAge(w: World, size: number, opts: AgeOptions): AgeReport {
     // deepening basins are paid for by the sea falling.
     //
     // The volume is read off the map the first time, *after* the sea floor has
-    // been relaxed toward the depths its ages imply — reading it from painted
-    // bathymetry instead made the first age pay for that mismatch all at once
-    // and the sea fell hundreds to thousands of metres.
+    // been relaxed toward the depths its ages imply: reading it straight from
+    // painted bathymetry would make the first age pay for that mismatch all at
+    // once, dropping the sea hundreds to thousands of metres.
     const iceHeld = phase.iceMetres * world.EL.length;
     if (water === undefined) water = waterVolume(world.EL, 0) + iceHeld;
     seaRise = seaLevelForVolume(world.EL, Math.max(0, water - iceHeld));

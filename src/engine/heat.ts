@@ -6,7 +6,7 @@ import { MYR_PER_AGE } from "./timescale";
  * Everything else in the engine treats the planet as if it had always been the
  * age it is now. It has not. Earth's radiogenic heat production has fallen by
  * something like a factor of four since it formed, and mantle potential
- * temperature with it — 150 to 250 K hotter in the Archean. That single number
+ * temperature with it (150 to 250 K hotter in the Archean). That single number
  * moving is why the early Earth is not simply a younger copy of this one:
  *
  *   - convection is more vigorous, so plates move faster and turn over sooner

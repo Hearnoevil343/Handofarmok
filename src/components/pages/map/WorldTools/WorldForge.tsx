@@ -52,7 +52,7 @@ export function WorldForge() {
 
   return (
     <ToolPanel
-      title="World Forge"
+      title="World forge"
       blurb="Build a history and run it in order. Uplift then erode then carve rivers gives a different world from carving first, because each stage works on what the last one left."
     >
       <ol className={styles.steps}>
@@ -143,7 +143,7 @@ export function WorldForge() {
           run(() => write(runSequence(currentWorld(), realmStore.size, steps)))
         }
       >
-        {busy ? "Forging\u2026" : `Run History (${steps.length} steps)`}
+        {busy ? "Forging\u2026" : `Run history (${steps.length} steps)`}
       </button>
 
       <button
@@ -151,7 +151,7 @@ export function WorldForge() {
         className={styles.secondary}
         onClick={() => setSteps(defaultSequence(rnd()))}
       >
-        Reset To Default History
+        Reset
       </button>
     </ToolPanel>
   );
