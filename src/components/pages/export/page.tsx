@@ -54,14 +54,12 @@ export function ExportPage() {
   return (
     <div className={styles.page}>
       <h2 className={styles.heading}>Export</h2>
+      <p className={styles.notice}>Not saved. Download before closing the tab.</p>
       <div className={styles.grid}>
         <section className={styles.card}>
           <div>
             <h3>world_gen.txt</h3>
-            <p>
-              Every loaded realm, with its map and settings, in one file. Put it in Dwarf Fortress&apos;s
-              prefs folder and pick a realm when you create a world.
-            </p>
+            <p>Every loaded preset, with its map and settings, in one file. Put it in Dwarf Fortress&apos;s prefs folder.</p>
           </div>
           <TaskButton
             progress={worldGen.progress}
@@ -74,7 +72,7 @@ export function ExportPage() {
         <section className={styles.card}>
           <div>
             <h3>PerfectWorld heightmaps</h3>
-            <p>A zip with one greyscale elevation image per realm, 257 pixels square.</p>
+            <p>A zip with one greyscale elevation image per preset, 257 pixels square.</p>
           </div>
           <TaskButton
             progress={heightmaps.progress}
@@ -88,9 +86,8 @@ export function ExportPage() {
           <div>
             <h3>Dwarf Fortress defaults</h3>
             <p>
-              Dwarf Fortress&apos;s default world_gen.txt, with its ten standard regions and islands, is on the DF
-              Wiki. Copy it into %APPDATA%\Bay 12 Games\Dwarf Fortress\prefs\world_gen.txt to replace a broken
-              or overwritten file.
+              Dwarf Fortress&apos;s default world_gen.txt, with its ten standard regions and islands. Copy it to
+              %APPDATA%\Bay 12 Games\Dwarf Fortress\prefs\world_gen.txt to replace a broken or overwritten file.
             </p>
           </div>
           <a className={styles.link} href={DF_WIKI_DEFAULTS} target="_blank" rel="noopener noreferrer">

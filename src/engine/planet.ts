@@ -2,8 +2,8 @@
  * How the planet under the map is laid out and how it turns
  * (docs/simulation-plan.md, section 9).
  *
- * Every latitude in the engine used to assume the whole planet — equator along
- * the middle row, a pole at the top and bottom — and a spin like Earth's. These
+ * By default the engine assumes the whole planet: equator along
+ * the middle row, a pole at the top and bottom, and a spin like Earth's. These
  * settings let the player choose otherwise, and the climate follows:
  *
  *  - **Pole layout**, tied to Dwarf Fortress's POLE token. The whole planet,

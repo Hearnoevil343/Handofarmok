@@ -7,15 +7,15 @@
  * same planet at a different level of detail: a 257 map has tiles half as wide,
  * not a planet twice as big.
  *
- * Many constants in the engine were written as a number of tiles at 129 — a
+ * Many constants in the engine were written as a number of tiles at 129: a
  * rebound radius of 6, a denudation window of 7x7, a speck of 10 tiles. At 257
  * those meant half the distance, so a larger map was a different planet rather
  * than a sharper one. They go through here instead: written as they were at the
  * reference size, and scaled by `size / 129`, which is exactly 1 at 129, so
  * existing worlds are unchanged to the bit.
  *
- * Planet size is a scale choice only (docs/simulation-plan.md §9): changing the
- * radius would change km per tile and nothing else.
+ * Planet size is a scale choice only: changing the radius would change km per
+ * tile and nothing else.
  */
 
 export const PLANET_RADIUS_KM = 6371;
@@ -43,12 +43,12 @@ export const scaleSlope = (stepAtReference: number, size: number) =>
   stepAtReference * (REFERENCE_SIZE / size);
 
 /**
- * Elevation units to metres relative to sea level. Provisional — step 4 of the
+ * Elevation units to metres relative to sea level. Provisional, step 4 of the
  * plan calibrates the ocean against depth-vs-age and step 9 against PaleoDEMs.
  * Sea level is 100. Land: 400 is about Everest (8.8 km over 300 units). Ocean:
  * 80 m a unit, so ridge crests (2.5 km) sit near 69 and the deep floor the
  * engine has always settled toward (34-44) is 4.5-5.3 km, which reads as sea
- * floor 30-60 Myr old — Earth's mean. At 100 m a unit the painted oceans read
+ * floor 30-60 Myr old (Earth's mean). At 100 m a unit the painted oceans read
  * as 150-400 Myr old, older than any sea floor on Earth.
  */
 export const METRES_PER_UNIT_LAND = 8800 / 300;

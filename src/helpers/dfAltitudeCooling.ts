@@ -4,8 +4,8 @@
  * Measured, not assumed: all sixteen presets were exported with POLE:NONE,
  * generated in DF 53.16 and read back tile by tile with DFHack. Rainfall and drainage came back identical everywhere. Temperature came
  * back unchanged below elevation 228 and lower above it, by an amount that
- * depends on painted elevation alone — the same at a painted 0 as at a painted
- * 60 — reaching 22 degrees at elevation 400. Each entry is the most common
+ * depends on painted elevation alone: the same at a painted 0 as at a painted
+ * 60, reaching 22 degrees at elevation 400. Each entry is the most common
  * change DF made at that elevation, over 80-94% of the tiles there.
  *
  * Hand of Armok's own climate already cools with altitude, so DF applying its

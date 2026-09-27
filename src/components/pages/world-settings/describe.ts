@@ -4,7 +4,7 @@
  * better than SHOUTING_SNAKE_CASE.
  */
 export const DESCRIBE: Record<string, { label: string; help: string }> = {
-  DIM: { label: "World size", help: "Width and height in region tiles. Fixed once a realm is loaded." },
+  DIM: { label: "World size", help: "Width and height in region tiles. Fixed once a preset is loaded." },
   POLE: { label: "Poles", help: "Which edges of the map are polar. NONE for a painted world you have already given a climate." },
   END_YEAR: { label: "History length", help: "Years of world history before you arrive. Longer means richer, and slower." },
   BEAST_END_YEAR: { label: "Beasts stop at year", help: "Megabeast attacks are disabled after this year, or when only this percentage remain." },

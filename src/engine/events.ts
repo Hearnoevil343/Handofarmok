@@ -3,7 +3,7 @@ import { makeRng } from "./noise";
 
 /**
  * World events: broad, reversible-in-spirit transforms applied to an existing
- * world. Each is a single readable rule so the result is predictable — the
+ * world. Each is a single readable rule so the result is predictable: the
  * point is to be able to say "make it colder" and see the ice advance.
  */
 export type WorldEventId =

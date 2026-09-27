@@ -30,7 +30,7 @@ export function WorldSettingsPage() {
     return perSection;
   }, [settings]);
 
-  if (!realm) return <div className={styles.empty}>No realm is loaded.</div>;
+  if (!realm) return <div className={styles.empty}>No world is loaded.</div>;
 
   const query = search.trim().toLowerCase();
   const shown = query
@@ -77,7 +77,7 @@ export function WorldSettingsPage() {
           <section className={styles.section}>
             <h2 className={styles.sectionTitle}>{current.label}</h2>
             <p className={styles.blurb}>{current.blurb}</p>
-            {shown.length === 0 && <p className={styles.blurb}>This realm has no settings in this section.</p>}
+            {shown.length === 0 && <p className={styles.blurb}>No settings in this section.</p>}
             {shown.map((s) => (
               <SettingRow key={s.token} token={s.token} occurrences={s.rows} />
             ))}

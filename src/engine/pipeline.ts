@@ -56,7 +56,7 @@ export function deriveClimate(
     DR: climate.drainage(el, size, rng),
   };
   // Ocean is ranked separately with the same bands. Ranking only land left
-  // every ocean tile at the Float64Array default of zero — no tropical ocean
+  // every ocean tile at the Float64Array default of zero: no tropical ocean
   // anywhere, and the whole sea flipped to arctic in a single step the moment
   // the climate cycle dropped below the freezing line. Sea surface temperature
   // follows latitude the same way land does; ranking it apart keeps the land's

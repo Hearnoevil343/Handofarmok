@@ -16,7 +16,7 @@ export function WorldEvents() {
 
   return (
     <ToolPanel
-      title="World Events"
+      title="World events"
       blurb="Sweeping changes applied to the world you already have. Stack them to build a history."
     >
       <span className={styles.field}>Event</span>

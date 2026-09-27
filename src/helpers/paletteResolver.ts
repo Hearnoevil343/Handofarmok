@@ -1,8 +1,8 @@
 /**
  * Heat-map ramps for "Tint by layer". Each layer gets a multi-stop gradient
- * that reads at a glance — dry-to-wet, cold-to-hot, evil-to-good — rather than
- * a single two-colour fade (was e.g. elevation dark-blue-to-brown, which barely
- * showed against green biome colours).
+ * that reads at a glance (dry-to-wet, cold-to-hot, evil-to-good) rather than
+ * a single two-colour fade, e.g. elevation as dark-blue-to-brown, which would
+ * barely show against green biome colours.
  *
  * Stops are keyed by the raw layer value, not a normalised 0-1 factor, so each
  * ramp can devote more stops to the range that matters (elevation spends most

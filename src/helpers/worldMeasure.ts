@@ -8,7 +8,7 @@ import { identifyRegionType } from "@helpers/biomeResolver";
  * Scaling counts by map area is wrong, and obviously so once stated: a pocket
  * world that is entirely land has far more room for beasts than a large world
  * that is nearly all ocean. Densities should be measured against the thing the
- * feature actually needs — beasts need wilderness, mountain caves need
+ * feature actually needs: beasts need wilderness, mountain caves need
  * mountains, civilisations need habitable ground.
  */
 export type WorldMeasure = {

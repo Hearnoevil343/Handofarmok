@@ -3,7 +3,7 @@ import { Biome } from "#types";
 /**
  * Loads Dwarf Fortress's own world-map graphics from the player's installation.
  *
- * Nothing is bundled and nothing is uploaded — the files are read in the
+ * Nothing is bundled and nothing is uploaded; the files are read in the
  * browser from a folder the user picks, which also means graphics packs and
  * mods work without any extra effort.
  *
@@ -67,7 +67,7 @@ export async function loadTileset(files: FileList | File[]): Promise<Tileset> {
 
   if (!Object.keys(tokens).length) {
     throw new Error(
-      "No world-map tiles found. Pick the graphics folder inside your Dwarf Fortress install — the one containing graphics_world_map.txt and an images folder.",
+      "No world-map tiles found. Pick the graphics folder inside your Dwarf Fortress install, the one containing graphics_world_map.txt and an images folder.",
     );
   }
   return { pages, tokens };

@@ -2,7 +2,7 @@
 // sharp 1px boxes. docs/ui-rework.md section 4 is the source of truth for
 // these values; keep this file and that table in sync.
 //
-// Also the bare :root default in index.scss (see the comment there) — this
+// Also the bare :root default in index.scss (see the comment there), this
 // look is DEFAULT_LOOK (src/theme/looks.ts), so the app must look like this
 // before data-look is set on <html> (first paint, before React's effect runs).
 @mixin fortress-tokens {

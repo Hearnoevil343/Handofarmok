@@ -17,13 +17,11 @@ export function RiverTools() {
 
   return (
     <ToolPanel
-      title="Rivers & Lakes"
-      blurb="Routes water downhill across the whole map, then carves the valleys it would cut. Water that cannot reach the sea ponds where it stops, which is where lakes appear. Sculpting goes further: it rebuilds the low ground around every river so Dwarf Fortress puts its rivers where this map shows them."
+      title="Rivers & lakes"
+      blurb="Routes water downhill, then carves the valleys it would cut. Sculpting rebuilds the low ground so Dwarf Fortress places its rivers to match."
     >
-      <RangeField min={0} max={100} value={strength} onChange={setStrength} label="Carving Depth"
-        hint="How deeply trunk valleys cut. Headwaters barely change either way." />
-      <RangeField min={1} max={20} value={density} onChange={setDensity} label="River Density"
-        hint="Percentage of land that should carry a river. Adapts to map size and rainfall on its own." />
+      <RangeField min={0} max={100} value={strength} onChange={setStrength} label="Carving depth" />
+      <RangeField min={1} max={20} value={density} onChange={setDensity} label="River density" />
 
       <button
         type="button"
@@ -44,13 +42,13 @@ export function RiverTools() {
           })
         }
       >
-        {busy ? "Working\u2026" : "Carve River Networks"}
+        {busy ? "Working\u2026" : "Carve river networks"}
       </button>
 
-      <RangeField min={20} max={400} value={size} onChange={setSize} label="Smallest River Shaped"
-        hint="How much water a river needs before it gets a valley. Lower shapes more of the network; 80 matched Dwarf Fortress best." />
-      <RangeField min={40} max={240} value={depth} onChange={setDepth} label="Valley Depth"
-        hint="How far a river climbs from its mouth to its source. 80 to 120 matched best; higher flattens the difference Dwarf Fortress can see." />
+      <RangeField min={20} max={400} value={size} onChange={setSize} label="Smallest river shaped"
+        hint="80 matches Dwarf Fortress best." />
+      <RangeField min={40} max={240} value={depth} onChange={setDepth} label="Valley depth"
+        hint="80 to 120 matches Dwarf Fortress best." />
 
       <button
         type="button"
@@ -71,7 +69,7 @@ export function RiverTools() {
           })
         }
       >
-        {busy ? "Working…" : "Sculpt River Valleys"}
+        {busy ? "Working…" : "Sculpt river valleys"}
       </button>
 
       {report && <p className={styles.blurb}>{report}</p>}

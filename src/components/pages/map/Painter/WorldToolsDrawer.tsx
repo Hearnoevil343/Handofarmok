@@ -26,10 +26,9 @@ export function WorldToolsDrawer() {
         className={styles.drawerToggle}
         onClick={() => setOpen((o) => !o)}
         aria-expanded={open}
-        title="Generate, simulate and derive"
       >
         <Wrench size={14} />
-        <span>World Tools</span>
+        <span>Tools</span>
         <ChevronRight size={14} className={cn(open && styles.rotated)} />
       </button>
       {open && (

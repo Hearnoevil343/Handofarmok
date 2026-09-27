@@ -32,9 +32,8 @@ const LEVELS: Level[] = [0, 1, 2, 3, 4];
  * open sea gets fewer than the table says and a pocket world of solid land gets
  * more.
  *
- * Each row shows where the world already stands. Only the button you last
- * clicked used to light up, so a freshly loaded world showed nothing at all
- * while Read This World, from the same numbers, reported "your settings read as
+ * Each row shows where the world already stands, computed from the same
+ * numbers Check world reads to report things like "your settings read as
  * Low civilisations".
  */
 export function QuickSetup() {
@@ -46,8 +45,7 @@ export function QuickSetup() {
   const [mineral, setMineral] = useState<number | null>(null);
 
   // Measured from the selected realm by name, not from whatever realmStore
-  // has active: it used to measure once and keep the first world's land after
-  // switching in the sidebar.
+  // has active, so switching realms in the sidebar re-measures the right world.
   const land = useMemo(() => {
     try {
       const data = activePresetTitle ? realmStore.layersOf(activePresetTitle) : undefined;
@@ -62,7 +60,7 @@ export function QuickSetup() {
   const dim = preset.size;
   const size = sizeFor(dim);
 
-  // what the current values match, the same reading Read This World uses
+  // What the current values match, the same reading Check world uses.
   const intent = getIntent(activePresetTitle ?? "default", preset.settings, dim, land ?? dim * dim);
   const currentOf = (token: string) => Number(preset.settings[token]?.[0]?.[0]);
   const currentHistory = history ?? currentOf("END_YEAR");
@@ -90,20 +88,17 @@ export function QuickSetup() {
   return (
     <section className={styles.base}>
       <div className={styles.head}>
-        <h2 className={styles.title}>Quick Setup</h2>
+        <h2 className={styles.title}>Quick setup</h2>
         <p className={styles.lead}>
-          This world is <strong>{size.label}</strong> — {dim}&times;{dim},{" "}
-          {size.tiles.toLocaleString()} tiles
-          {land !== undefined && <>, {land.toLocaleString()} of them land</>}.
-          These are Dwarf Fortress's own ladders, adjusted for the ground you
-          actually have. Every value they write stays editable in the full token
-          list below &mdash; scroll down for manual overrides. Size is fixed once
-          a realm is loaded, because changing it discards the map.
+          {size.label}, {dim}&times;{dim}, {size.tiles.toLocaleString()} tiles
+          {land !== undefined && <>, {land.toLocaleString()} land</>}. Values below
+          are adjusted for the ground this world has, and stay editable in the
+          token list.
         </p>
       </div>
 
       <div className={styles.row}>
-        <span className={styles.name}>World Size</span>
+        <span className={styles.name}>World size</span>
         <div className={styles.options}>
           {WORLD_SIZES.map((s) => (
             <button
@@ -111,7 +106,7 @@ export function QuickSetup() {
               type="button"
               disabled
               className={cn(styles.chip, styles.locked, s.dim === size.dim && styles.on)}
-              title="Set when the realm is created. Changing it now would reallocate every layer and discard the map."
+              title="Set when the preset is created. Changing it now discards the map."
             >
               {s.label}
               <span className={styles.sub}>{s.dim}</span>

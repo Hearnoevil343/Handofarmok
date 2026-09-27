@@ -107,13 +107,11 @@ export function GameView() {
           <p className={styles.lead}>See it the way the game will draw it.</p>
           <p className={styles.hint}>
             Point this at the <code>graphics</code> folder inside your Dwarf
-            Fortress installation — the one containing{" "}
-            <code>graphics_world_map.txt</code> and an <code>images</code>{" "}
-            folder. Files are read here in your browser and never uploaded or
-            stored. Graphics packs and mods work too.
+            Fortress installation, containing{" "}
+            <code>graphics_world_map.txt</code>. Files are read here and never uploaded.
           </p>
           <label className={styles.button}>
-            {busy ? "Reading\u2026" : "Choose Graphics Folder"}
+            {busy ? "Reading\u2026" : "Choose graphics folder"}
             <input
               className={styles.file}
               type="file"
@@ -137,7 +135,7 @@ export function GameView() {
               className={styles.small}
               onClick={() => setTileset(null)}
             >
-              Change Tileset
+              Tileset
             </button>
           </div>
           <div className={styles.canvasWrap}>

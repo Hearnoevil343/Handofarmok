@@ -16,12 +16,10 @@ export function ErosionTools() {
   return (
     <ToolPanel
       title="Erosion"
-      blurb="Reshapes terrain only — coastlines survive, everything inland is fair game. Run Derive Climate afterwards, since the terrain it was derived from has changed."
+      blurb="Reshapes terrain; coastlines survive. Run Derive climate afterwards."
     >
-      <RangeField min={0} max={100} value={water} onChange={setWater} label="Water (hydraulic)"
-        hint="Droplets carrying sediment downhill. Cuts valleys and drainage networks — this is what makes terrain read as geology rather than noise." />
-      <RangeField min={0} max={100} value={slope} onChange={setSlope} label="Slope (thermal)"
-        hint="Slumps anything steeper than the talus angle into scree, softening knife-edge ridges." />
+      <RangeField min={0} max={100} value={water} onChange={setWater} label="Water (hydraulic)" />
+      <RangeField min={0} max={100} value={slope} onChange={setSlope} label="Slope (thermal)" />
 
       <button
         type="button"
@@ -41,10 +39,6 @@ export function ErosionTools() {
         {busy ? "Working\u2026" : "Run Erosion"}
       </button>
 
-      <p className={styles.blurb}>
-        Slope runs first, then water — weathering breaks rock down before rivers
-        carry it away.
-      </p>
     </ToolPanel>
   );
 }

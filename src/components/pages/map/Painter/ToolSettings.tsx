@@ -15,7 +15,7 @@ import styles from "./Painter.module.scss";
 
 /**
  * Contextual settings bar across the top of the canvas. It renders only what
- * the active tool uses — a category stamp shows edge fray, a sculpt shows
+ * the active tool uses: a category stamp shows edge fray, a sculpt shows
  * strength and falloff, an eyedropper shows nothing at all.
  */
 export function ToolSettings() {
@@ -47,8 +47,8 @@ export function ToolSettings() {
       )}
 
       {show("climateLayer") && (
-        // LayerType is a string enum. This used to pass Number(v), which is NaN,
-        // so activeLayer became NaN and LAYER_META[NaN].min blanked the app.
+        // LayerType is a string enum; pass v through as-is rather than Number(v),
+        // which would make activeLayer NaN and blank the app via LAYER_META[NaN].min.
         <Segmented
           value={p.climateLayer}
           onChange={(v) => dispatch(climateLayerPicked(v as ClimateLayer))}
@@ -133,7 +133,7 @@ export function ToolSettings() {
         onClick={() => dispatch(brushAdjusted({ dfMapColors: !p.dfMapColors }))}
         title="Draw the map in colours measured from Dwarf Fortress’s own world maps. Display only."
       >
-        <Palette size={14} /> DF Colors
+        <Palette size={14} /> DF colors
       </button>
     </div>
   );

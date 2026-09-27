@@ -14,7 +14,7 @@
 export const SIZE_INDEX = [17, 33, 65, 129, 257];
 
 export type Level = 0 | 1 | 2 | 3 | 4;
-export const LEVEL_NAMES = ["Very Low", "Low", "Medium", "High", "Very High"];
+export const LEVEL_NAMES = ["Very low", "Low", "Medium", "High", "Very high"];
 
 /** [level][size] -> [megabeast, semimegabeast, titan] */
 export const VANILLA_BEASTS: number[][][] = [

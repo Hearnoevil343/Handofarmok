@@ -198,7 +198,7 @@ export function solveForBiome(
 
   const out: LayerValues = { ...rep };
 
-  // Locked layers win outright. The result may then miss the requested biome —
+  // Locked layers win outright. The result may then miss the requested biome;
   // that is the honest outcome, and the caller can show what was actually made.
   for (const key of KEYS) {
     if (locked?.[LAYER_OF[key]]) out[key] = current[key];

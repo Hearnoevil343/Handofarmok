@@ -1,7 +1,7 @@
 import type { TileValues } from "#types";
 
 /**
- * Display-only shading. None of this changes exported values — it exists so the
+ * Display-only shading. None of this changes exported values; it exists so the
  * canvas reads as a world rather than a flat fill, and so that every brush
  * stroke produces visible feedback even inside the biome resolver's wide
  * threshold bands (e.g. temperature 0-80 is a single biome on grassland).

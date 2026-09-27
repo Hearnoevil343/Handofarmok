@@ -2,19 +2,9 @@ import { BrandMark } from "@components/main/BrandMark/BrandMark";
 import { OpenFileCard } from "./OpenFileCard";
 import styles from "./page.module.scss";
 import { useNavigate } from "react-router-dom";
-import { useState } from "react";
-
-const TAGLINES = [
-  "Mind the aquifer.",
-  "Every mountain starts as a brushstroke.",
-  "The magma sea is further down than you think.",
-  "Rivers run downhill. Usually.",
-  "Measure twice, embark once.",
-];
 
 export function StartPage() {
   const navigate = useNavigate();
-  const [tagline] = useState(() => TAGLINES[Math.floor(Math.random() * TAGLINES.length)]);
 
   return (
     <div className={styles.page}>
@@ -33,19 +23,20 @@ export function StartPage() {
           <section className={styles.card}>
             <div className={styles.cardText}>
               <h3>New world</h3>
-              <p>Start from blank regions at any of Dwarf Fortress&apos;s world sizes, or from a generated world.</p>
             </div>
             <button type="button" className={styles.action} onClick={() => navigate("/gallery")}>
-              Choose realms
+              Choose worlds
             </button>
           </section>
           <OpenFileCard />
         </div>
 
+        <p className={styles.notice}>
+          Early build. Nothing is saved, so export your world_gen.txt before closing the tab.
+        </p>
+
         <footer className={styles.footer}>
           <span>v{__APP_VERSION__}</span>
-          <span className={styles.dot}>·</span>
-          <em>{tagline}</em>
         </footer>
       </div>
     </div>

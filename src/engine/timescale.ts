@@ -2,8 +2,8 @@
  * One clock for the whole simulation.
  *
  * Every long process in the engine had its own implicit idea of how long an age
- * is — the supercontinent period in `cycles.ts`, the Wilson drive's own copy of
- * it, the denudation rate's comment about the Appalachians — and nothing tied
+ * is (the supercontinent period in `cycles.ts`, the Wilson drive's own copy of
+ * it, the denudation rate's comment about the Appalachians), and nothing tied
  * them together, so any one could drift out of step with the rest without
  * anything noticing. They are expressed here in millions of years and converted
  * to ages in one place.
@@ -30,7 +30,7 @@ export const SUPERCONTINENT_AGES = ages(SUPERCONTINENT_MYR);
  * Icehouse and greenhouse eras.
  *
  * At ten million years an age, a single glacial cycle (about 100 thousand
- * years) cannot be resolved — but whether the planet is in an ice age at all
+ * years) cannot be resolved, but whether the planet is in an ice age at all
  * can, and that state persists for tens of millions of years. Earth's
  * Phanerozoic record is mostly greenhouse, broken by a few long icehouses: the
  * Late Ordovician, the Late Paleozoic (about 100 Myr) and the present Cenozoic

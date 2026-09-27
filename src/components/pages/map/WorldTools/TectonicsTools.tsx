@@ -23,18 +23,15 @@ export function TectonicsTools() {
 
   return (
     <ToolPanel
-      title="Tectonic Age"
-      blurb="Moves the plates and lets the mountains follow. Land that departs leaves new ocean floor with a ridge down the middle; plates that meet pile up — so coastlines still fit together afterwards, the way Africa and South America still do."
+      title="Tectonic age"
+      blurb="Moves the plates and lets the mountains follow."
     >
-      <RangeField min={2} max={16} value={plates} onChange={setPlates} label="Plates"
-        hint="Fewer plates give long continental ranges; more give a broken, island-arc world." />
+      <RangeField min={2} max={16} value={plates} onChange={setPlates} label="Plates" />
 
-      <RangeField min={0} max={100} value={drift} onChange={setDrift} label="Drift Distance"
-        hint="How far the continents actually travel. At zero nothing moves and no mountains can form from collision."
+      <RangeField min={0} max={100} value={drift} onChange={setDrift} label="Drift distance"
         markers={[{ at: 0, label: "static" }, { at: 75, label: "plates separate", warn: true }]} />
 
-      <RangeField min={2} max={35} value={mountains} onChange={setMountains} label="Mountain Cover"
-        hint="Target share of land that ends up mountain. Collision strength is solved for by bisection rather than guessed, because uplift is not linear in drift — it peaks around a quarter of the map width and falls away after."
+      <RangeField min={2} max={35} value={mountains} onChange={setMountains} label="Mountain cover"
         markers={[{ at: 14, label: "earth-like" }]} />
 
       <SeedField seed={seed} onChange={setSeed} label="Plate Seed" />
@@ -72,7 +69,7 @@ export function TectonicsTools() {
           })
         }
       >
-        {busy ? "Working\u2026" : "Run Tectonic Age"}
+        {busy ? "Working\u2026" : "Run tectonic age"}
       </button>
 
       {report && <p className={styles.blurb}>{report}</p>}

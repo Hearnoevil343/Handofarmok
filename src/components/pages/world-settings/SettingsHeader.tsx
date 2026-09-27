@@ -20,7 +20,7 @@ export function SettingsHeader({ search, onSearch }: { search: string; onSearch:
 
   return (
     <header className={styles.header}>
-      <h2 className={styles.pageTitle}>World Settings</h2>
+      <h2 className={styles.pageTitle}>World settings</h2>
       <div className={styles.headerRow}>
         <div>
           {draft === null ? (
@@ -40,11 +40,11 @@ export function SettingsHeader({ search, onSearch }: { search: string; onSearch:
               autoFocus
             />
           )}
-          <p>Settings for this realm. Click its name to rename it.</p>
+          <p>Click the name to rename this preset.</p>
         </div>
         <div className={styles.headerTools}>
-          <button type="button" className={styles.prepare} onClick={() => dispatch(dialogShown("paintSafe"))} title="Change the settings that would undo a painted map">
-            Prepare for painting
+          <button type="button" className={styles.prepare} onClick={() => dispatch(dialogShown("paintSafe"))} title="Paint-safe settings">
+            Paint-safe settings
           </button>
           <input className={styles.search} type="search" placeholder="Search settings (e.g. EMBARK_POINTS)" value={search} onChange={(e) => onSearch(e.target.value)} />
         </div>

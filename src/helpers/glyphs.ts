@@ -4,7 +4,7 @@ import { Biome } from "#types";
  * Simple terrain marks drawn over the biome fill.
  *
  * Flat colour fields never read as Dwarf Fortress no matter how well the hues
- * are matched — what the eye recognises is the little trees, peaks and wave
+ * are matched: what the eye recognises is the little trees, peaks and wave
  * marks. These are original shapes drawn with primitives, not game art.
  */
 export type GlyphKind =

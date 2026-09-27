@@ -3,8 +3,8 @@
  *
  * Asks GitHub for the latest published release of this repository and compares
  * its tag with the version baked in at build time (`__APP_VERSION__`, from
- * package.json). Anything that goes wrong — offline, rate-limited (GitHub allows
- * 60 unauthenticated requests an hour per address), GitHub down — resolves to
+ * package.json). Anything that goes wrong: offline, rate-limited (GitHub allows
+ * 60 unauthenticated requests an hour per address), or GitHub down, resolves to
  * null, so a failed check never gets in anyone's way.
  *
  * Only builds that contain this file can be told about updates; older builds

@@ -1,5 +1,4 @@
 import { useDispatch, useSelector } from "react-redux";
-import { DisclaimerDialog } from "./DisclaimerDialog";
 import { PaintSafeDialog } from "./PaintSafeDialog";
 import type { RootState } from "@store/store";
 import { dialogShown } from "@store/uiSlice";
@@ -15,7 +14,6 @@ export function DialogHost() {
   return (
     <div className={styles.backdrop} onClick={close}>
       <div className={styles.panel} role="dialog" aria-modal="true" onClick={(event) => event.stopPropagation()}>
-        {dialog === "disclaimer" && <DisclaimerDialog onClose={close} />}
         {dialog === "paintSafe" && <PaintSafeDialog onClose={close} />}
       </div>
     </div>

@@ -1,6 +1,6 @@
 import { CLIMATE_NAMES, getSession, runAge } from "@engine/index";
 import { currentWorld, titleCase, useWorldWrite } from "./useWorldWrite";
-import { formatYears, worldWidthKm, yearsForTiles } from "@helpers/scale";
+import { worldWidthKm } from "@helpers/scale";
 import { useRef, useState } from "react";
 
 import { MYR_PER_AGE } from "@engine/timescale";
@@ -39,7 +39,7 @@ export function RunAge() {
     const session = getSession(key);
     const w0 = currentWorld();
     // The land share a world keeps is its own, sampled the first time an age
-    // is run rather than fixed at a global default — a deliberately drowned
+    // is run rather than fixed at a global default: a deliberately drowned
     // world should stay drowned, not drift toward some notional Earth value.
     if (session.baselineLand === null) {
       let land = 0;
@@ -82,20 +82,10 @@ export function RunAge() {
     session.iceLoad = r.iceLoad ?? null;
     session.age += 1;
     write(r.world);
-    const kinds = Object.entries(r.boundaries)
-      .filter(([, c]) => c > 0)
-      .sort((a, b) => b[1] - a[1])
-      .slice(0, 3)
-      .map(([k]) => k.toLowerCase().replace(/_/g, " "))
-      .join(", ");
+    const land = r.crustShare !== undefined ? ` · land ${(100 * r.crustShare).toFixed(0)}%` : "";
     return (
-      `Age ${session.age} (${(session.age * MYR_PER_AGE).toLocaleString()} million years): ` +
-      `${r.mountainPct.toFixed(0)}% mountain, ${r.plateSet.sx.length} plates, ` +
-      `${r.riverTiles} river tiles, ${r.lakeTiles} standing water, ${r.volcanoes} volcanoes, ` +
-      `${r.spots.length} active plumes. Mostly ${kinds}. ${r.phase}.` +
-      (r.crustShare !== undefined
-        ? ` Continental crust ${(100 * r.crustShare).toFixed(0)}% of the world.`
-        : "")
+      `Age ${session.age} · ${(session.age * MYR_PER_AGE).toLocaleString()} Myr${land} · ` +
+      `mountain ${r.mountainPct.toFixed(0)}% · rivers ${r.riverTiles} · volcanoes ${r.volcanoes}`
     );
   };
 
@@ -110,7 +100,7 @@ export function RunAge() {
         // one undo step per age, so Ctrl+Z walks back through the run
         realmStore.checkpoint();
         const line = stepAge();
-        setReport(total > 1 ? `${i} of ${total} — ${line}` : line);
+        setReport(total > 1 ? `${line} (${i}/${total})` : line);
         if (i === total) break;
         // let the map paint this age before the next one starts
         await new Promise<void>((resolve) =>
@@ -135,40 +125,30 @@ export function RunAge() {
     s.seaLevelOffset = 0;
     s.baselineLand = null;
     setSeed(Math.floor(Math.random() * 1e6));
-    setReport("Plates re-rolled. The next age starts a new configuration.");
+    setReport("Reset. New plates next age.");
   };
 
   return (
     <ToolPanel
-      title="Run Age"
-      blurb="Tectonics, weathering, rivers, isostatic rebound and climate, chained in order. The plates persist between presses, so a rift keeps widening and continents keep travelling instead of being re-rolled every time. Every unlocked layer is reshaped — a detailed map will not survive many ages — and Ctrl+Z steps back one age at a time, all the way to where you started."
+      title="Run age"
+      blurb="A detailed map will not survive many ages. Ctrl+Z steps back one age at a time."
       open
     >
       <RangeField min={2} max={16} value={plates} onChange={setPlates} label="Plates"
-        hint="Only used when rolling a new configuration." />
-      <RangeField min={0} max={60} value={drift} onChange={setDrift} label="Drift Per Age"
-        hint="How far the plates travel each age. Treating the map as a whole planet, Earth manages about 1.5 tiles per ten million years, which is roughly 4 here. Higher is faster than any real planet." />
-      {/* One scale, not two. This used to say an age was about 44 thousand
-          years, from Dwarf Fortress's literal tile size, directly under a hint
-          that assumes ten million — a factor of about 230 apart. The engine's
-          climate eras and supercontinent cycle only make sense under the
-          scaled-planet reading, so that is the one stated. */}
+        hint="Only used when rolling new plates." />
+      <RangeField min={0} max={60} value={drift} onChange={setDrift} label="Drift per age" />
       <p className={styles.blurb}>
-        An age is about {MYR_PER_AGE} million years, reading this map as a whole
-        planet: the scale the drift, the climate eras and the supercontinent
-        cycle are all set to. Taken literally, {realmStore.size}&times;
-        {realmStore.size} is only{" "}
-        {worldWidthKm(realmStore.size).toFixed(0)} km across, and Earth's
-        plates would cross it in{" "}
-        {formatYears(yearsForTiles(realmStore.size))}.
+        An age is about {MYR_PER_AGE} million years. {realmStore.size}&times;
+        {realmStore.size} tiles is {worldWidthKm(realmStore.size).toFixed(0)} km
+        across.
       </p>
-      <RangeField min={2} max={35} value={mountains} onChange={setMountains} label="Mountain Cover"
+      <RangeField min={2} max={35} value={mountains} onChange={setMountains} label="Mountain cover"
         markers={[{ at: 14, label: "earth-like" }]} />
       <RangeField min={0} max={100} value={weathering} onChange={setWeathering} label="Weathering" />
-      <RangeField min={0} max={100} value={carving} onChange={setCarving} label="River Carving" />
-      <RangeField min={1} max={20} value={density} onChange={setDensity} label="River Density" />
-      <RangeField min={0} max={100} value={rebound} onChange={setRebound} label="Isostatic Rebound"
-        hint="Crust floats, so stripping weight off a mountain lets it rise again. At zero, erosion only ever subtracts and the world grinds flat." />
+      <RangeField min={0} max={100} value={carving} onChange={setCarving} label="River carving" />
+      <RangeField min={1} max={20} value={density} onChange={setDensity} label="River density" />
+      <RangeField min={0} max={100} value={rebound} onChange={setRebound} label="Isostatic rebound"
+        hint="At zero, erosion only ever subtracts." />
 
       <span className={styles.field}>Climate</span>
       <Dropdown
@@ -179,26 +159,21 @@ export function RunAge() {
       {planetFields}
       <SeedField seed={seed} onChange={setSeed} label="Seed" />
 
-      <RangeField min={1} max={100} value={agesToRun} onChange={setAgesToRun} label="Ages To Run"
-        hint={`Runs this many ages in a row and shows each one on the map as it happens, ending on the last. ${(agesToRun * MYR_PER_AGE).toLocaleString()} million years. Every age is its own undo step.`} />
+      <RangeField min={1} max={100} value={agesToRun} onChange={setAgesToRun} label="Ages to run"
+        hint={`${(agesToRun * MYR_PER_AGE).toLocaleString()} million years total.`} />
 
       <button type="button" className={styles.primary} disabled={busy} onClick={() => void go()}>
-        {busy ? "Running…" : agesToRun > 1 ? `Run ${agesToRun} Ages` : "Run Age"}
+        {busy ? "Running…" : agesToRun > 1 ? `Run ${agesToRun} ages` : "Run age"}
       </button>
       {busy ? (
         <button type="button" className={styles.secondary} onClick={stop}>
-          Stop After This Age
+          Stop
         </button>
       ) : (
         <button type="button" className={styles.secondary} onClick={reset}>
-          Reroll Plates
+          Reroll
         </button>
       )}
-      <p className={styles.blurb}>
-        Plates persist between ages, so the same rift keeps widening. Reroll to
-        throw a new configuration and start the history again; the terrain you
-        already have is kept.
-      </p>
 
       {report && <p className={styles.blurb}>{report}</p>}
     </ToolPanel>

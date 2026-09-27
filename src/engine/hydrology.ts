@@ -9,7 +9,7 @@
  *   4. stream-power carving               (erosion proportional to discharge
  *      and slope, which is what produces dendritic valleys rather than ditches)
  *
- * Water is routed to the ocean or into a lake, exactly as you would expect —
+ * Water is routed to the ocean or into a lake, exactly as you would expect:
  * a river that cannot reach the sea ponds where it stops.
  */
 import { scaleSlope } from "./scale";

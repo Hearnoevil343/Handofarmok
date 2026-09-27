@@ -8,9 +8,9 @@ import styles from "./shell.module.scss";
 import { useDispatch } from "react-redux";
 
 const PAGES = [
-  { label: "World Settings", path: "/world-settings", key: "F2" },
+  { label: "World settings", path: "/world-settings", key: "F2" },
   { label: "Map", path: "/map", key: "F3" },
-  { label: "Game View", path: "/game-view", key: "F4" },
+  { label: "Game view", path: "/game-view", key: "F4" },
   { label: "Export", path: "/export", key: "F5" },
   { label: "About", path: "/about", key: "F6" },
 ];
@@ -21,7 +21,7 @@ export function TopBar() {
   const navigate = useNavigate();
 
   const startOver = useCallback(() => {
-    if (!window.confirm("Start a new world? Every loaded realm is lost unless you exported it.")) return;
+    if (!window.confirm("Start a new world? Every loaded preset is lost unless you exported it.")) return;
     dispatch(realmsCleared());
     navigate("/");
   }, [dispatch, navigate]);
@@ -57,7 +57,7 @@ export function TopBar() {
 
       <nav className={styles.pages}>
         <button type="button" className={styles.newWorld} onClick={startOver}>
-          New World <kbd className={styles.key}>F1</kbd>
+          New world <kbd className={styles.key}>F1</kbd>
         </button>
         {PAGES.map((page) => (
           <NavLink key={page.path} to={page.path} className={({ isActive }) => cn(styles.pageLink, isActive && styles.current)}>

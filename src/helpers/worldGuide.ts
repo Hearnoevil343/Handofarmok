@@ -117,7 +117,7 @@ function adjust(base: number, kind: CountKind, land: number, dim: number): numbe
 }
 
 export const MINERAL_PRESETS: Array<{ label: string; value: number }> = [
-  { label: "Very Rare", value: 50000 },
+  { label: "Very rare", value: 50000 },
   { label: "Rare", value: 10000 },
   { label: "Sparse", value: 2500 },
   { label: "Frequent", value: 500 },
@@ -125,42 +125,42 @@ export const MINERAL_PRESETS: Array<{ label: string; value: number }> = [
 ];
 
 export const HISTORY_PRESETS: Array<{ label: string; value: number }> = [
-  { label: "Very Short", value: 5 },
+  { label: "Very short", value: 5 },
   { label: "Short", value: 25 },
   { label: "Medium", value: 100 },
   { label: "Long", value: 250 },
-  { label: "Very Long", value: 500 },
+  { label: "Very long", value: 500 },
 ];
 
 export const QUICK_GROUPS: Array<{ id: string; label: string; blurb: string; tokens: string[] }> = [
   {
     id: "beasts", label: "Beasts",
-    blurb: "Megabeasts, semi-megabeasts and titans at the start of history. Shown as a triple the way the game does, because the megabeast count barely moves on small worlds.",
+    blurb: "Megabeasts, semi-megabeasts and titans.",
     tokens: ["MEGABEAST_CAP", "SEMIMEGABEAST_CAP", "TITAN_NUMBER"],
   },
   {
     id: "civs", label: "Civilisations",
-    blurb: "Civilisations, site cap and population cap. Below about five civilisations some races stop appearing at all, which is why this scales far more slowly than area.",
+    blurb: "Below about five, some races stop appearing.",
     tokens: ["TOTAL_CIV_NUMBER", "SITE_CAP", "TOTAL_CIV_POPULATION"],
   },
   {
-    id: "night", label: "Night Creatures",
+    id: "night", label: "Night creatures",
     blurb: "Night trolls, bogeymen, nightmares, vampires and werebeasts.",
     tokens: ["NIGHT_TROLL_NUMBER", "BOGEYMAN_NUMBER", "NIGHTMARE_NUMBER", "VAMPIRE_NUMBER", "WEREBEAST_NUMBER"],
   },
   {
-    id: "secrets", label: "Secrets & Demons",
-    blurb: "Necromancer secrets and demon types. Below two demon types, goblin civilisations will not exist.",
+    id: "secrets", label: "Secrets & demons",
+    blurb: "Below two demon types, goblin civilisations will not exist.",
     tokens: ["SECRET_NUMBER", "DEMON_NUMBER"],
   },
   {
-    id: "evil", label: "Evil Weather",
-    blurb: "Evil clouds, evil rain and the regional interactions behind them.",
+    id: "evil", label: "Evil weather",
+    blurb: "Evil clouds, evil rain and the interactions behind them.",
     tokens: ["EVIL_CLOUD_NUMBER", "EVIL_RAIN_NUMBER", "REGIONAL_INTERACTION_NUMBER", "DISTURBANCE_INTERACTION_NUMBER"],
   },
   {
-    id: "caves", label: "Caves & Ruins",
-    blurb: "Kobold caves and mysterious sites. Zero caves means no kobold civilisations.",
+    id: "caves", label: "Caves & ruins",
+    blurb: "Zero caves means no kobold civilisations.",
     tokens: ["MOUNTAIN_CAVE_MIN", "NON_MOUNTAIN_CAVE_MIN", "MYTHICAL_SITE_NUM"],
   },
 ];

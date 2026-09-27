@@ -36,7 +36,7 @@ function RowControl({ token, row, params }: RowProps) {
         options={WORLD_SIZES}
         value={params[0]}
         onChange={(size) => {
-          if (window.confirm("Changing the size clears this realm's map. Continue?")) set([size, size]);
+          if (window.confirm("Changing the size clears this preset's map. Continue?")) set([size, size]);
         }}
       />
     );
@@ -100,7 +100,7 @@ function FrequencyGuide({ token, params }: { token: string; params: string[] }) 
   return (
     <div className={styles.guide}>
       <p>
-        <strong>{MESH_LABELS[mesh - 1] ?? mesh}</strong> &mdash; {meshDescription(mesh, realm.size)}
+        <strong>{MESH_LABELS[mesh - 1] ?? mesh}</strong>: {meshDescription(mesh, realm.size)}
         {mesh > largest && (
           <span className={styles.warn}>
             {" "}
@@ -131,7 +131,7 @@ function FrequencyGuide({ token, params }: { token: string; params: string[] }) 
             </tbody>
           </table>
           <p>
-            Weights are relative, not percentages &mdash; 60:10:10:10:10 and 6:1:1:1:1 do the same thing. They bias
+            Weights are relative, not percentages: 60:10:10:10:10 and 6:1:1:1:1 do the same thing. They bias
             where grid intersections land; the ground between them is smoothed, so values in a band weighted zero still
             appear.
           </p>

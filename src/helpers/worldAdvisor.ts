@@ -9,8 +9,8 @@ import type { WorldMeasure } from "@helpers/worldMeasure";
  * Two jobs. First, counts: you asked for a density, and the density that suits
  * a world depends on what is in it, so the same "Dense" produces different
  * numbers on a land-heavy world and an ocean-heavy one. Second, and more
- * useful, the rejection traps — parameters demanding features the world does
- * not contain, which is the usual reason a world regenerates forever.
+ * useful: the rejection traps (parameters demanding features the world does
+ * not contain), which is the usual reason a world regenerates forever.
  *
  * Nothing is applied automatically. Every finding is a suggestion you tick.
  */
@@ -94,8 +94,8 @@ export function advise(
       if (cur < 0) continue;
       const ratio = cur === 0 ? Infinity : want / cur;
       if (ratio > 1.6 || ratio < 0.62) {
-        // "population" only for the one token that is one; caves, mythical
-        // sites and the site cap were all being described as populations
+        // "population" only for the one token that actually is one; caves,
+        // mythical sites and the site cap are counts, not populations
         const kind =
           TOKEN_KIND[token] === "type" ? "type count"
             : token === "TOTAL_CIV_POPULATION" ? "population"

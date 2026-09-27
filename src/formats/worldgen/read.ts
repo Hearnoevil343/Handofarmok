@@ -33,7 +33,7 @@ export function readWorldGen(text: string): RealmFile[] {
 }
 
 function readSection(section: string): RealmFile {
-  const realm: RealmFile = { title: "Untitled Realm", size: 0, settings: {}, layers: {} };
+  const realm: RealmFile = { title: "Untitled", size: 0, settings: {}, layers: {} };
   const rowsSeen: Partial<Record<LayerType, number>> = {};
 
   for (const [, body] of section.matchAll(/\[([^\]]+)\]/g)) {

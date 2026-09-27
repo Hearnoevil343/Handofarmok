@@ -2,7 +2,7 @@
  * Long-period climate, so a world has a history rather than a trend.
  *
  * Runs of the simulation showed temperature falling monotonically age after age
- * and land bleeding away with it — a world that only ever gets colder and
+ * and land bleeding away with it, a world that only ever gets colder and
  * smaller. Real planets oscillate, and on two very different clocks:
  *
  *  - **Glacial cycles**, tens of thousands to a hundred thousand years. Ice
@@ -48,18 +48,18 @@ export type ClimatePhase = {
  *
  * An age is ten million years (`timescale.ts`). The supercontinent cycle is
  * swept smoothly, a fortieth per age. A glacial cycle is far shorter than an
- * age, so where a world sits in one is *sampled* each age — but only during an
+ * age, so where a world sits in one is *sampled* each age, but only during an
  * icehouse. Whether there is an icehouse at all is an era that lasts several
  * ages, drawn per history from its seed.
  *
- * The previous version sampled the glacial state independently every age, from
- * the age number alone. Two faults followed. Every world ever generated had the
- * identical climate history, whatever its seed. And the planet flipped between
- * glacial maximum and hothouse every ten million years, when Earth's record at
- * that resolution shows long greenhouse stretches broken by a few long ice ages.
- * The age-to-age sea-level swing that produced (thirty elevation units) also
- * kept making and breaking land bridges, which the Wilson cycle metric counted
- * as supercontinents assembling and breaking up.
+ * Sampling the glacial state independently every age, from the age number
+ * alone, would give every world the identical climate history regardless of
+ * seed, and would flip the planet between glacial maximum and hothouse every
+ * ten million years, when Earth's record at that resolution shows long
+ * greenhouse stretches broken by a few long ice ages. The age-to-age sea-level
+ * swing that produces (thirty elevation units) would also keep making and
+ * breaking land bridges, which the Wilson cycle metric would count as
+ * supercontinents assembling and breaking up.
  */
 
 /** Which era an age falls in, walking this history's own sequence of eras. */
@@ -86,13 +86,12 @@ export function climateEra(historySeed: number, age: number): { icehouse: boolea
  * Long-run mean of `warmth` below, from the era lengths: a greenhouse sits at
  * 0.5 and an icehouse at -0.45, weighted by how long each lasts on average.
  *
- * Sea level and temperature are measured from this mean, not from zero. The
- * painted world is the baseline, so over a long history the climate should
- * move the coast either side of it rather than hold it permanently higher. Until
- * conserveCrust stopped cancelling sea level this made no difference, because a
- * constant offset was cancelled with everything else; afterwards the +0.16 mean
- * and the old constant of -4 together held the sea 7 units high, which pushed
- * enough ground below elevation 300 to cut mountain cover from 12% to 7%.
+ * Sea level and temperature are measured from this mean, not from zero,
+ * because the painted world is the baseline: over a long history the climate
+ * should move the coast either side of it rather than hold it permanently
+ * higher. An uncorrected +0.16 mean offset would hold the sea several units
+ * high, pushing enough ground below elevation 300 to cut mountain cover from
+ * 12% to 7%.
  */
 const MEAN_WARMTH = (() => {
   const ice = (ICEHOUSE_MYR.min + ICEHOUSE_MYR.max) / 2;
@@ -142,7 +141,7 @@ export type ClimatePhaseOptions = {
   /**
    * Multiplier on the sea-level swing. 1 is Earth: about 140 m withdrawn at a
    * glacial maximum, 150-250 m of high stand in a hothouse with the continents
-   * dispersed. The engine used to run at roughly three times that.
+   * dispersed.
    */
   seaLevelScale?: number;
   /** walk the glacial state between ages (default) rather than re-roll it */
@@ -214,7 +213,7 @@ export function dispersal(el: Int16Array, size: number): number {
  * Drown specks.
  *
  * Ten ages of drift left over 140 separate landmasses on a 129-tile world,
- * nearly all of them one or two tiles — the residue of plates shearing past
+ * nearly all of them one or two tiles: the residue of plates shearing past
  * each other, not islands anyone would embark on. Real archipelagos have
  * islands; they do not have confetti. Anything below the floor is returned to
  * the sea, while genuine islets survive.
@@ -254,8 +253,8 @@ export function drownSpecks(
 /**
  * Separate the two kinds of crust.
  *
- * Earth's elevation histogram has two peaks — continental shelf and abyssal
- * plain — with a scarcity between them, because continental crust is thick and
+ * Earth's elevation histogram has two peaks (continental shelf and abyssal
+ * plain) with a scarcity between them, because continental crust is thick and
  * buoyant while oceanic crust is thin and dense. There is no stable middle.
  *
  * Ours was a single hump centred near sea level, and that one fact caused three
@@ -268,21 +267,19 @@ export function drownSpecks(
  * nearer, leaving the two peaks and the gap between them.
  */
 /**
- * Separate the two kinds of crust — but leave the shelf alone.
+ * Separate the two kinds of crust, but leave the shelf alone.
  *
- * Earth's elevation histogram is bimodal, and the first version of this put the
- * scarcity in the wrong place. The gap is not at sea level; it is at the
- * **continental slope**, the short steep drop from shelf edge to abyssal plain.
- * Sea level itself sits in the middle of a well-populated band, because the
- * continental shelf is broad and shallow.
+ * Earth's elevation histogram is bimodal, but the gap is not at sea level. It
+ * is at the **continental slope**, the short steep drop from shelf edge to
+ * abyssal plain; sea level itself sits in the middle of a well-populated band,
+ * because the continental shelf is broad and shallow. Evacuating the band
+ * around sea level instead would produce a perfectly bimodal histogram but a
+ * world where sea level does nothing: 2,135 tiles between elevation 80 and 120
+ * would flatten to zero, and land would stay at exactly 32.0% however far the
+ * sea rose or fell, making ice ages invisible.
  *
- * Evacuating the band around sea level produced a perfectly bimodal histogram
- * and a world where sea level did nothing whatsoever: 2,135 tiles between
- * elevation 80 and 120 became zero, and land stayed at exactly 32.0% however
- * far the sea rose or fell. That is why ice ages were invisible.
- *
- * Now the scarce zone is the slope (62 to 96), and everything above it — shelf,
- * coastal lowland, interior — is left where it is. Sea level moves across a
+ * So the scarce zone is the slope (62 to 96); everything above it (shelf,
+ * coastal lowland, interior) is left where it is. Sea level moves across a
  * populated shelf, so ice ages expose it and warm periods drown it, which is
  * what Earth does: land runs from about 33% at a glacial maximum to about 18%
  * in the Cretaceous high, on continental crust that never changed area.
@@ -335,7 +332,7 @@ export function separateCrust(
 /**
  * Flatten the shelf.
  *
- * Continental shelves are among the flattest surfaces on the planet — gradients
+ * Continental shelves are among the flattest surfaces on the planet: gradients
  * of a metre or two per kilometre. A rough one is disastrous here: as sea level
  * crosses it the surface breaks into hundreds of one-tile islands, and a run of
  * twenty ages produced 241 separate landmasses on a 129-tile world. Smoothing
@@ -386,8 +383,8 @@ export function smoothShelf(
  * Conserve continental crust.
  *
  * Earth has had roughly the same area of continental crust for two billion
- * years. What changes is how much of it is above water — 18% of the globe when
- * the Cretaceous seas were high, 33% at a glacial maximum, 29% now — and the
+ * years. What changes is how much of it is above water (18% of the globe when
+ * the Cretaceous seas were high, 33% at a glacial maximum, 29% now), and the
  * crust itself is neither created nor destroyed on those timescales.
  *
  * Our simulation leaks it. Every age, ground a plate vacates becomes new sea
@@ -401,12 +398,12 @@ export function smoothShelf(
  * our own, not the planet's.
  *
  * Land is measured **with the climate's sea-level offset taken back out**.
- * Measuring it as it stood meant a glacial maximum's exposed shelf counted as
- * surplus crust and was sunk again the next age, and a high stand's flooded
- * shelf counted as lost crust and was raised. That cancelled 60% of every
- * sea-level change within one age — and nearly all of the supercontinent
- * cycle's, which moves so slowly that it looked exactly like drift. Only the
- * crust is conserved now; how much of it the sea covers is left to the climate.
+ * Measuring it as it stood would make a glacial maximum's exposed shelf count
+ * as surplus crust and get sunk again the next age, and a high stand's flooded
+ * shelf count as lost crust and get raised, cancelling 60% of every sea-level
+ * change within one age, and nearly all of the supercontinent cycle's (which
+ * moves so slowly that it would look exactly like drift). Only the crust is
+ * conserved; how much of it the sea covers is left to the climate.
  */
 export function conserveCrust(
   el: Int16Array, targetShare: number,
@@ -427,8 +424,8 @@ export function conserveCrust(
   const base = (v: number) => v - seaOffset;
 
   // The lift tapers with height. Restoring land share means moving crust
-  // across the shoreline, and only the shelf and coastal lowland can do that —
-  // lifting an interior already at 200 creates no land, it just makes a
+  // across the shoreline, and only the shelf and coastal lowland can do that.
+  // Lifting an interior already at 200 creates no land, it just makes a
   // mountain. Applying the offset uniformly to all continental crust took
   // mountain cover from 13% to 50% within a hundred ages. So the shift is full
   // at sea level and fades to nothing by `fadeTop`, which lets the coast move
@@ -470,23 +467,23 @@ export function conserveCrust(
 /**
  * The Wilson cycle: supercontinents assemble, break up and assemble again.
  *
- * This would not close before, and the reason was that plate velocities were
- * random vectors fixed at creation. Continents dispersed and kept dispersing,
- * because nothing ever pulled them back. A planet is not like that: the forces
- * respond to the arrangement.
+ * Plate velocities are not random vectors fixed at creation: fixed headings
+ * would let continents disperse and keep dispersing, because nothing would
+ * ever pull them back. A planet is not like that; the forces respond to the
+ * arrangement.
  *
  *  - **Assembled.** Continental crust insulates the mantle beneath it. Heat
  *    accumulates, a plume rises, and the supercontinent rifts apart above it.
  *    Velocities point away from the centre of continental mass.
  *  - **Dispersed.** The ocean floor between the fragments ages, cools, grows
  *    dense and begins to subduct. Slab pull is the dominant force on a plate,
- *    and it closes the ocean again — so the fragments converge.
+ *    and it closes the ocean again, so the fragments converge.
  *
  * Where they reconverge depends on which ocean closes. Closing the new one
  * puts the supercontinent back where it was (introversion); closing the old one
  * assembles it on the far side of the world (extroversion). Pangaea to Amasia
  * is thought to be closer to the latter, so the convergence target here drifts
- * to the antipode — which on a wrapping map means fragments carry on in the
+ * to the antipode, which on a wrapping map means fragments carry on in the
  * same direction and meet again on the other side.
  *
  * Motion is biased toward the wrapping axis for the same reason: north and
@@ -506,7 +503,7 @@ export function wilsonDrive(
   // mean: averaging the angles themselves is just averaging x, so a
   // supercontinent straddling the seam was placed in the middle of the map, on
   // the opposite side of the world. Dispersal then pushed every plate away from
-  // that phantom centre — into the seam from both sides — and the phase meant to
+  // that phantom centre, into the seam from both sides, and the phase meant to
   // break the supercontinent up kept crushing it together at the map edge.
   let sumSin = 0, sumCos = 0, sumY = 0, n = 0;
   for (let i = 0; i < el.length; i++) {
@@ -555,7 +552,7 @@ export function wilsonDrive(
  *
  * Without this a supercontinent assembles and immediately comes apart again,
  * because each plate keeps its own heading and simply carries on through. On a
- * real planet a collision is the end of the ocean between them — the suture
+ * real planet a collision is the end of the ocean between them: the suture
  * locks, and from then on the two blocks travel as one. India is not steering
  * away from Asia.
  *
@@ -631,8 +628,8 @@ export function weldCollidedPlates(
   }
 
   // Merge: welded plates become ONE plate. Averaging their headings and leaving
-  // them separate meant the count only ever went up — every rift added two,
-  // nothing ever removed any — and it pinned at the cap within forty ages,
+  // them separate meant the count only ever went up (every rift added two,
+  // nothing ever removed any), and it pinned at the cap within forty ages,
   // after which no new rift could form. On Earth the suture between India and
   // Asia is not a plate boundary any more; it is inside a plate.
   const keep = new Set<number>();
@@ -683,13 +680,13 @@ export function weldCollidedPlates(
  * Thermal subsidence: ocean crust sinks as it ages.
  *
  * New sea floor at a spreading ridge is hot, buoyant and shallow. As it moves
- * away it cools, densifies and sinks — depth increases with the square root of
+ * away it cools, densifies and sinks: depth increases with the square root of
  * age, from about 2.5 km at the ridge to 5-6 km on the old abyssal plain. It is
  * the same cooling that eventually makes old ocean floor dense enough to
  * subduct, so this and slab pull are one story.
  *
- * Without it, sea floor that anything had nudged upward — collapse spreading
- * off a coast, sediment from erosion, a rift shoulder — just stayed there. By
+ * Without it, sea floor that anything had nudged upward (collapse spreading
+ * off a coast, sediment from erosion, a rift shoulder) just stayed there. By
  * age 100 most of the ocean sat in a shallow band that no other process
  * touched, and the deep plain had all but vanished.
  */

@@ -4,14 +4,14 @@ import { fbm, makeRng } from "./noise";
  * Geological provinces: the evidence that made plate tectonics believable.
  *
  * The coastline fit between South America and Africa is suggestive but easy to
- * dismiss — and was dismissed, for half a century. What settled it was that the
+ * dismiss (and was dismissed) for half a century. What settled it was that the
  * *rocks* matched. The Appalachians run into the sea in Newfoundland and come
  * out again in Scotland and Scandinavia as the Caledonides: one mountain belt,
  * torn in half, the halves now three thousand kilometres apart. The Cape Fold
  * Belt in South Africa continues as the Sierra de la Ventana in Argentina.
  *
  * A terrain generator can show the same thing for free, because the information
- * already exists — it just has to be carried. Every tile is stamped with a
+ * already exists; it just has to be carried. Every tile is stamped with a
  * province at creation and that stamp travels with the crust through every
  * subsequent age. Rift a continent and both margins keep the provinces they
  * shared; drift them apart and the match is still there to be seen, on opposite
@@ -68,7 +68,7 @@ export function seedProvinces(size: number, count: number, seed: number): Provin
  * Stamp a new province wherever a collision is building a mountain belt.
  *
  * A belt raised by one collision is a single geological unit even after a later
- * rift tears it in two — which is exactly how the Caledonides were recognised
+ * rift tears it in two, which is exactly how the Caledonides were recognised
  * on both sides of the Atlantic.
  */
 export function stampOrogen(
@@ -77,12 +77,12 @@ export function stampOrogen(
 ): number {
   let count = 0;
   for (let i = 0; i < uplifting.length; i++) if (uplifting[i]) count++;
-  // An orogeny is a rare event — the Caledonian, the Variscan, the Alpine — not
+  // An orogeny is a rare event (the Caledonian, the Variscan, the Alpine), not
   // something that happens every time two tiles touch. Stamping one per age
   // produced 49 provinces in 50 ages, which makes the map unreadable and the
   // matching meaningless.
   if (count < minTiles) return -1;
-  // Orogenies are also separated in time — the Caledonian, the Variscan and the
+  // Orogenies are also separated in time: the Caledonian, the Variscan and the
   // Alpine are tens of millions of years apart. Without a cooldown every age
   // stamped a new belt and the map became noise.
   if (prov.lastOrogen !== undefined && age - prov.lastOrogen < cooldown) return -1;
