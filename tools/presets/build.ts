@@ -19,7 +19,7 @@ import { middleEarth } from "./recipes/middleEarth";
 import { westeros } from "./recipes/westeros";
 import { britannia } from "./recipes/britannia";
 import { azeroth, easternKingdoms, kalimdor } from "./recipes/azeroth";
-import { cyrodiil, hammerfell, highRock, morrowind, skyrim, tamriel, tamrielViews } from "./recipes/tamriel";
+import { blackMarsh, cyrodiil, hammerfell, highRock, morrowind, skyrim, tamriel, tamrielViews } from "./recipes/tamriel";
 import { newRealmSettings, type TokenSettings } from "@df/settings";
 import { writeWorldGen } from "@formats/worldgen/write";
 import { measureWorld } from "@helpers/worldMeasure";
@@ -38,10 +38,11 @@ const RECIPES: Record<string, { recipe: Recipe; file: string }> = {
   cyrodiil: { recipe: cyrodiil, file: "cyrodiil.txt" },
   hammerfell: { recipe: hammerfell, file: "hammerfell.txt" },
   "high-rock": { recipe: highRock, file: "high_rock.txt" },
+  "black-marsh": { recipe: blackMarsh, file: "black_marsh.txt" },
 };
 const SIZE = 257;
 /** Maps that are a window of a bigger one share a view, so `--compare` can line their tiles up. */
-const VIEWS: Record<string, [number, number, number, number]> = { ...tamrielViews };
+const VIEWS: Record<string, [number, number, number, number]> = { ...tamrielViews, "black-marsh": tamrielViews.black_marsh };
 
 function writePng(file: string, width: number, height: number, rgb: Uint8Array) {
   const raw = Buffer.alloc((width * 3 + 1) * height);

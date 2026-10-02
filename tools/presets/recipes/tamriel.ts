@@ -145,6 +145,9 @@ const cyrodiilEdges: Lands = ({ m }) => ({
     { name: "Hammerfell march", at: m(450, 400), expect: "Desert|Shrub|Grass|Wasteland|Savanna" },
     { name: "Morrowind march", at: m(900, 300), expect: "Shrub|Desert|Wasteland|Grass|Savanna|Taiga|Mountain" },
     { name: "Elsweyr march", at: m(700, 700), expect: "Desert|Shrub|Savanna|Grass|Forest" },
+  ],
+});
+
 /** Checks that only exist once the view is cut to Hammerfell: its landmark and its four edges. */
 const hammerfellEdges: Lands = ({ m }) => ({
   peaks: [],
@@ -156,6 +159,9 @@ const hammerfellEdges: Lands = ({ m }) => ({
     { name: "Cyrodiil march", at: m(523, 450), expect: "Forest|Grass|Shrub|Savanna" },
     { name: "The Iliac Bay", at: m(107, 603), expect: "Ocean" },
     { name: "The Abecean Sea", at: m(124, 654), expect: "Ocean" },
+  ],
+});
+
 /** Checks that only exist once the view is cut to High Rock: its landmarks and its four edges. */
 const highRockEdges: Lands = ({ m }) => ({
   peaks: [],
@@ -170,6 +176,20 @@ const highRockEdges: Lands = ({ m }) => ({
   ],
 });
 
+/** Checks that only exist once the view is cut to Black Marsh: its two landmarks and its four edges. */
+const blackMarshEdges: Lands = ({ m }) => ({
+  peaks: [],
+  regions: [],
+  checks: [
+    { name: "Shadowfen", at: m(950, 549), expect: "Swamp|Marsh" },
+    { name: "Murkmire", at: m(1030, 829), expect: "Swamp|Marsh" },
+    { name: "Cyrodiil march", at: m(749, 432), expect: "Forest|Grass|Shrub|Swamp|Savanna" },
+    { name: "Elsweyr march", at: m(712, 651), expect: "Desert|Shrub|Savanna|Grass|Swamp|Forest" },
+    { name: "Padomaic Ocean (east)", at: m(1188, 689), expect: "Ocean" },
+    { name: "Southern sea", at: m(908, 908), expect: "Ocean" },
+  ],
+});
+
 const VIEW = 1200, PLAN = 1000;
 
 /** The view rectangle each map keeps, in view pixels; the same table is in data/tamriel.py. */
@@ -180,6 +200,7 @@ export const tamrielViews: Record<string, [number, number, number, number]> = {
   cyrodiil: [440, 215, 960, 735],
   hammerfell: [20, 260, 540, 780],
   "high-rock": [0, 0, 480, 480],
+  black_marsh: [700, 430, 1200, 930],
 };
 
 /**
@@ -271,3 +292,7 @@ export const hammerfell = tamrielMap("HAMMERFELL", "hammerfell.json.gz", tamriel
  * Iliac Bay and Betony and the western islands, Hammerfell running in across the bay and at the
  * south edge, and Skyrim's Reach closing the east. */
 export const highRock = tamrielMap("HIGH_ROCK", "high_rock.json.gz", tamrielViews["high-rock"], [...allLands, highRockEdges]);
+/** Black Marsh, the same way: Shadowfen and Murkmire in the swamp interior, the Topal Bay coast
+ * running in at the west and north, Cyrodiil marching in behind it, and the Padomaic Ocean closing
+ * the east and south. */
+export const blackMarsh = tamrielMap("BLACK_MARSH", "black_marsh.json.gz", tamrielViews.black_marsh, [...allLands, blackMarshEdges]);
