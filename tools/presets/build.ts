@@ -18,6 +18,7 @@ import { planWater } from "@helpers/rivers";
 import { middleEarth } from "./recipes/middleEarth";
 import { westeros } from "./recipes/westeros";
 import { britannia } from "./recipes/britannia";
+import { azeroth, easternKingdoms, kalimdor } from "./recipes/azeroth";
 import { newRealmSettings, type TokenSettings } from "@df/settings";
 import { writeWorldGen } from "@formats/worldgen/write";
 import { measureWorld } from "@helpers/worldMeasure";
@@ -27,6 +28,9 @@ const RECIPES: Record<string, { recipe: Recipe; file: string }> = {
   "middle-earth": { recipe: middleEarth, file: "middle_earth.txt" },
   westeros: { recipe: westeros, file: "westeros.txt" },
   britannia: { recipe: britannia, file: "britannia.txt" },
+  azeroth: { recipe: azeroth, file: "azeroth.txt" },
+  kalimdor: { recipe: kalimdor, file: "kalimdor.txt" },
+  "eastern-kingdoms": { recipe: easternKingdoms, file: "eastern_kingdoms.txt" },
 };
 const SIZE = 257;
 
