@@ -164,6 +164,18 @@ export const tamrielViews: Record<string, [number, number, number, number]> = {
  * wobble) over the tile grid, and the two maps do not share one. That scatter is +/- a few points on
  * every layer, which flips any biome whose threshold a tile is already sitting on - most of the
  * remaining disagreement between SKYRIM and TAMRIEL is that, not a difference in the ground.
+ *
+ * MORROWIND measured how much of it is the wobble in particular, because its regions are the most
+ * extreme on the map (Vvardenfell's rainfall 8 and savagery 80 against defaults of 45 and 35), so
+ * the same error shows up as a bigger number. The region geometry itself is exact - mean region
+ * weight over the shared ground drifts 0.000 against the continent, and repainting the regions with
+ * no noise at all drifts 0.06 of rainfall - but the built maps drift 3.9, and setting
+ * `regionWobble` to 0 on both drops that to 0.1 and lifts biome agreement from 74.6% to 80.7%.
+ * The `* z` above is NOT what saves it: the wobble displaces its sample point by a noise field whose
+ * cells are fixed in tiles, so a window reads that field at another scale however the displacement
+ * is scaled, and every region paints slightly weaker (unscaled is still 2.9). The fix is to sample
+ * the engine's noise in view coordinates, as data/tamriel.py's `value_noise` already does; that
+ * changes `build` for the six other presets, so it is a deliberate decision, not a patch.
  */
 function tamrielMap(title: string, terrain: string, keep: [number, number, number, number], lands: Lands[]): Recipe {
   const [x0, y0, x1, y1] = keep;
