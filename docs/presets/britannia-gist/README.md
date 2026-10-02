@@ -2,7 +2,7 @@
 
 Built with **[Hand of Armok](https://github.com/Hearnoevil343/Handofarmok)**, my world builder for Dwarf Fortress: paint or import a map, run geological ages over it, and export a `world_gen.txt` that generates what you designed.
 
-[![Britannia as Dwarf Fortress generated it](britannia-preview.png)](britannia-df-map.png)
+[![Britannia as Dwarf Fortress generated it](https://gist.githubusercontent.com/Hearnoevil343/75e32e5cb102d45d96527d015f58a7dd/raw/britannia-preview.png)](https://gist.githubusercontent.com/Hearnoevil343/75e32e5cb102d45d96527d015f58a7dd/raw/britannia-df-map.png)
 
 *The embark map straight out of Dwarf Fortress, stitched from screenshots. No editing. Click for the full size.*
 
