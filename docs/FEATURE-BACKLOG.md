@@ -225,7 +225,7 @@ still holds for preset packs.
       token; until then say no to evil-placement requests.
 
 ### Map requests, with where each stands
-- [ ] Westeros — announced as on the list
+- [x] Westeros — announced as on the list (0.3.1)
 - [ ] Ultima 6 / Britannia — "challenge accepted"; requester noted the common
       map does not show the volcanoes, so source a better reference first
 - [ ] Elder Scrolls regions (Morrowind asked for by name) — announced 5th
