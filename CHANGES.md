@@ -5,19 +5,9 @@
 - Morrowind preset: a second province window of the same Tamriel map and climate table, with
   Vvardenfell and Red Mountain in the middle, Solstheim off the north coast, the Telvanni coast
   east to the edge of the view, and the Velothi wall closing the west while Skyrim, Cyrodiil and
-  Black Marsh run in behind it. No sea is invented at the cut, and the ranges land where the
-  continent map puts them. 11/11 checks.
-- Against the continent (`--compare tamriel`): same sea or land 98.4%, same biome 74.6%. The ground
-  agrees to a mean of 0.1 of 255 on height and 0.7 on sea, but not tile for tile - the finer grid
-  resolves Red Mountain's caldera and the coastline differently.
-- Rainfall's remaining +2.7 mean is the region-edge wobble reading a tile-grid noise field at a
-  different scale, not the ground and not a unit: the region geometry itself scales exactly. Turning
-  the wobble off on both maps drops that mean to 0.1 and lifts biome agreement to 80.7%; the real
-  fix is sampling the engine's noise in view coordinates, which six other presets share.
-- `build.ts --compare` now splits every layer's drift by sea, lowland and range and watches
-  savagery, which is what located that.
-- `build.ts --layers <file.json>` writes the six built layers as flat arrays, so a window can be
-  measured against its continent outside the build script.
+  Black Marsh run in behind it. No sea is invented at the cut.
+- `build.ts --layers <file.json>` writes the six built layers, for measuring a window against its
+  continent outside the build script.
 
 ## 0.3.5
 

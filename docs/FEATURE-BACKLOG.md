@@ -238,4 +238,5 @@ still holds for preset packs.
 - [ ] Sword Coast (Forgotten Realms) — never answered
 - [ ] Alagaesia (Eragon) — never answered
 - [x] Skyrim — a province window of the Tamriel map at 2.5x, High Rock, Hammerfell, Cyrodiil and the Velothi wall running in at the edges (0.3.5)
+- [x] Morrowind — asked for by name on line 231 and now its own map: a province window of the Tamriel map at 2.3x, Vvardenfell and Red Mountain in the middle, Solstheim off the north coast, the Telvanni coast east to the edge of the view, and the Velothi wall closing the west (unreleased)
 - [ ] Pern — blocked on Good/Evil above
