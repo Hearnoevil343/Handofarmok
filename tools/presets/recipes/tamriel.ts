@@ -134,6 +134,20 @@ const morrowindEdges: Lands = ({ m }) => ({
   ],
 });
 
+/** Checks that only exist once the view is cut to Hammerfell: its landmark and its four edges. */
+const hammerfellEdges: Lands = ({ m }) => ({
+  peaks: [],
+  regions: [],
+  checks: [
+    { name: "The Alik'r Desert", at: m(220, 390), expect: "Desert" },
+    { name: "High Rock march", at: m(107, 265), expect: "Forest|Grass|Shrub|Taiga" },
+    { name: "The Dragontail Mountains", at: m(453, 316), expect: "Mountain|Taiga|Tundra|Forest" },
+    { name: "Cyrodiil march", at: m(523, 450), expect: "Forest|Grass|Shrub|Savanna" },
+    { name: "The Iliac Bay", at: m(107, 603), expect: "Ocean" },
+    { name: "The Abecean Sea", at: m(124, 654), expect: "Ocean" },
+  ],
+});
+
 const VIEW = 1200, PLAN = 1000;
 
 /** The view rectangle each map keeps, in view pixels; the same table is in data/tamriel.py. */
@@ -141,6 +155,7 @@ export const tamrielViews: Record<string, [number, number, number, number]> = {
   tamriel: [0, 0, 1200, 1200],
   skyrim: [306, 55, 786, 535],
   morrowind: [680, 40, 1200, 560],
+  hammerfell: [20, 260, 540, 780],
 };
 
 /**
@@ -227,3 +242,7 @@ export const skyrim = tamrielMap("SKYRIM", "skyrim.json.gz", tamrielViews.skyrim
  * coast, the Telvanni coast east to the edge of the view, and the Velothi wall closing the west with
  * Skyrim, Cyrodiil and Black Marsh running in behind it. */
 export const morrowind = tamrielMap("MORROWIND", "morrowind.json.gz", tamrielViews.morrowind, [...allLands, morrowindEdges]);
+/** Hammerfell, the same way: the Alik'r desert and Craglorn in the middle, Stros M'Kai and the
+ * southern coast on the Abecean Sea, the Iliac Bay in the west with High Rock running in across it,
+ * and Skyrim's Dragontail mountains and Cyrodiil entering at the north and east edges. */
+export const hammerfell = tamrielMap("HAMMERFELL", "hammerfell.json.gz", tamrielViews.hammerfell, [...allLands, hammerfellEdges]);
