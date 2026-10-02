@@ -213,6 +213,19 @@ const valenwoodEdges: Lands = ({ m }) => ({
     { name: "Cyrodiil march", at: m(500, 500), expect: "Forest|Grass|Shrub|Swamp|Savanna" },
     { name: "Elsweyr march", at: m(745, 700), expect: "Desert|Shrub|Savanna|Grass|Swamp|Forest" },
     { name: "Southern sea", at: m(600, 1010), expect: "Ocean" },
+
+/** Checks that only exist once the view is cut to Summerset: its landmarks and its four edges. */
+const summersetEdges: Lands = ({ m }) => ({
+  peaks: [],
+  regions: [],
+  checks: [
+    { name: "Summerset Isle", at: m(110, 800), expect: "Forest|Grass|Shrub" },
+    { name: "Auridon", at: m(232, 742), expect: "Forest|Grass|Shrub" },
+    { name: "The Summerset peaks", at: m(120, 790), expect: "Mountain|Forest|Shrub|Grass|Savanna" },
+    { name: "Auridon's north coast", at: m(240, 540), expect: "Forest|Grass|Shrub|Savanna|Taiga" },
+    { name: "Valenwood march", at: m(470, 750), expect: "Forest|Grass|Shrub|Savanna" },
+    { name: "The western sea", at: m(20, 750), expect: "Ocean" },
+    { name: "The southern sea", at: m(240, 990), expect: "Ocean" },
   ],
 });
 
@@ -229,6 +242,7 @@ export const tamrielViews: Record<string, [number, number, number, number]> = {
   black_marsh: [700, 430, 1200, 930],
   elsweyr: [485, 500, 1005, 1020],
   valenwood: [230, 495, 750, 1015],
+  summerset: [0, 535, 480, 1015],
 };
 
 /**
@@ -333,3 +347,8 @@ export const elsweyr = tamrielMap("ELSWEYR", "elsweyr.json.gz", tamrielViews.els
  * Summerset channel closing the west, Cyrodiil running in at the north, and Elsweyr's Anequina and
  * Pelletine entering at the east, with the real southern sea closing the bottom edge. */
 export const valenwood = tamrielMap("VALENWOOD", "valenwood.json.gz", tamrielViews.valenwood, [...allLands, valenwoodEdges]);
+
+/** Summerset, the same way: Summerset Isle and Auridon against the west edge of the view, the
+ * Summerset peaks in the isle's interior, open sea to the west and south, and Valenwood running in
+ * at the east edge. */
+export const summerset = tamrielMap("SUMMERSET", "summerset.json.gz", tamrielViews.summerset, [...allLands, summersetEdges]);

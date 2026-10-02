@@ -19,7 +19,7 @@ import { middleEarth } from "./recipes/middleEarth";
 import { westeros } from "./recipes/westeros";
 import { britannia } from "./recipes/britannia";
 import { azeroth, easternKingdoms, kalimdor } from "./recipes/azeroth";
-import { blackMarsh, cyrodiil, elsweyr, hammerfell, highRock, morrowind, skyrim, tamriel, tamrielViews, valenwood } from "./recipes/tamriel";
+import { blackMarsh, cyrodiil, elsweyr, hammerfell, highRock, morrowind, skyrim, summerset, tamriel, tamrielViews, valenwood } from "./recipes/tamriel";
 import { newRealmSettings, type TokenSettings } from "@df/settings";
 import { writeWorldGen } from "@formats/worldgen/write";
 import { measureWorld } from "@helpers/worldMeasure";
@@ -41,6 +41,7 @@ const RECIPES: Record<string, { recipe: Recipe; file: string }> = {
   "black-marsh": { recipe: blackMarsh, file: "black_marsh.txt" },
   elsweyr: { recipe: elsweyr, file: "elsweyr.txt" },
   valenwood: { recipe: valenwood, file: "valenwood.txt" },
+  summerset: { recipe: summerset, file: "summerset.txt" },
 };
 const SIZE = 257;
 /** Maps that are a window of a bigger one share a view, so `--compare` can line their tiles up. */
