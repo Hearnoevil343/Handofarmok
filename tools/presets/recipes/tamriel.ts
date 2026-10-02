@@ -120,12 +120,27 @@ const skyrimEdges: Lands = ({ m }) => ({
   ],
 });
 
+/** Checks that only exist once the view is cut to Morrowind: its two landmarks and its four edges. */
+const morrowindEdges: Lands = ({ m }) => ({
+  peaks: [],
+  regions: [],
+  checks: [
+    { name: "Red Mountain", at: m(966, 270), expect: "Mountain" },
+    { name: "The Velothi wall", at: m(740, 250), expect: "Mountain|Taiga|Tundra|Forest" },
+    { name: "Sea of Ghosts", at: m(900, 60), expect: "Ocean" },
+    { name: "Solstheim strait", at: m(900, 175), expect: "Ocean" },
+    { name: "Cyrodiil march", at: m(700, 480), expect: "Forest|Grass|Shrub|Swamp|Savanna" },
+    { name: "Black Marsh march", at: m(1000, 540), expect: "Swamp|Marsh|Forest|Grass|Shrub|Savanna" },
+  ],
+});
+
 const VIEW = 1200, PLAN = 1000;
 
 /** The view rectangle each map keeps, in view pixels; the same table is in data/tamriel.py. */
 export const tamrielViews: Record<string, [number, number, number, number]> = {
   tamriel: [0, 0, 1200, 1200],
   skyrim: [306, 55, 786, 535],
+  morrowind: [680, 40, 1200, 560],
 };
 
 /**
@@ -196,3 +211,7 @@ export const tamriel = tamrielMap("TAMRIEL", "tamriel.json.gz", tamrielViews.tam
 /** Skyrim, as a square window of the same view: High Rock, Hammerfell, Cyrodiil and the Velothi
  * wall of Morrowind run in at its edges, and the climate table above is the one driving it. */
 export const skyrim = tamrielMap("SKYRIM", "skyrim.json.gz", tamrielViews.skyrim, [...allLands, skyrimEdges]);
+/** Morrowind, the same way: Vvardenfell and Red Mountain in the middle, Solstheim off the north
+ * coast, the Telvanni coast east to the edge of the view, and the Velothi wall closing the west with
+ * Skyrim, Cyrodiil and Black Marsh running in behind it. */
+export const morrowind = tamrielMap("MORROWIND", "morrowind.json.gz", tamrielViews.morrowind, [...allLands, morrowindEdges]);
