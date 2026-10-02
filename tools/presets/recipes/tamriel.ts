@@ -134,6 +134,20 @@ const morrowindEdges: Lands = ({ m }) => ({
   ],
 });
 
+/** Checks that only exist once the view is cut to Black Marsh: its two landmarks and its four edges. */
+const blackMarshEdges: Lands = ({ m }) => ({
+  peaks: [],
+  regions: [],
+  checks: [
+    { name: "Shadowfen", at: m(950, 549), expect: "Swamp|Marsh" },
+    { name: "Murkmire", at: m(1030, 829), expect: "Swamp|Marsh" },
+    { name: "Cyrodiil march", at: m(749, 432), expect: "Forest|Grass|Shrub|Swamp|Savanna" },
+    { name: "Elsweyr march", at: m(712, 651), expect: "Desert|Shrub|Savanna|Grass|Swamp|Forest" },
+    { name: "Padomaic Ocean (east)", at: m(1188, 689), expect: "Ocean" },
+    { name: "Southern sea", at: m(908, 908), expect: "Ocean" },
+  ],
+});
+
 const VIEW = 1200, PLAN = 1000;
 
 /** The view rectangle each map keeps, in view pixels; the same table is in data/tamriel.py. */
@@ -141,6 +155,7 @@ export const tamrielViews: Record<string, [number, number, number, number]> = {
   tamriel: [0, 0, 1200, 1200],
   skyrim: [306, 55, 786, 535],
   morrowind: [680, 40, 1200, 560],
+  black_marsh: [700, 430, 1200, 930],
 };
 
 /**
@@ -227,3 +242,7 @@ export const skyrim = tamrielMap("SKYRIM", "skyrim.json.gz", tamrielViews.skyrim
  * coast, the Telvanni coast east to the edge of the view, and the Velothi wall closing the west with
  * Skyrim, Cyrodiil and Black Marsh running in behind it. */
 export const morrowind = tamrielMap("MORROWIND", "morrowind.json.gz", tamrielViews.morrowind, [...allLands, morrowindEdges]);
+/** Black Marsh, the same way: Shadowfen and Murkmire in the swamp interior, the Topal Bay coast
+ * running in at the west and north, Cyrodiil marching in behind it, and the Padomaic Ocean closing
+ * the east and south. */
+export const blackMarsh = tamrielMap("BLACK_MARSH", "black_marsh.json.gz", tamrielViews.black_marsh, [...allLands, blackMarshEdges]);

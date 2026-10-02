@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+- Black Marsh preset: a third province window of the same Tamriel map and climate table, with
+  Shadowfen and Murkmire in the swamp interior, the Topal Bay coast running in at the west and
+  north behind Elsweyr and Cyrodiil, and the Padomaic Ocean closing the east and south. No sea is
+  invented at the cut: 9/9 checks, 99.1% sea-or-land agreement with the continent.
 - Morrowind preset: a second province window of the same Tamriel map and climate table, with
   Vvardenfell and Red Mountain in the middle, Solstheim off the north coast, the Telvanni coast
   east to the edge of the view, and the Velothi wall closing the west while Skyrim, Cyrodiil and
