@@ -7,6 +7,9 @@
   east to the edge of the view, and the Velothi wall closing the west while Skyrim, Cyrodiil and
   Black Marsh run in behind it. No sea is invented at the cut: 11/11 checks, 98.4% sea-or-land
   agreement with the continent, and DF genned it to year 250.
+- Engine noise sampled in a shared view space: a recipe's `noiseView` names the rectangle of one
+  field its tile grid covers, so a province window reads the continent's own noise. Biome agreement
+  95.6% on Skyrim and Morrowind, up from 82.2% and 74.6%, and rainfall drift down to 0.0.
 - `build.ts --layers <file.json>` writes the six built layers, for measuring a window against its
   continent outside the build script.
 

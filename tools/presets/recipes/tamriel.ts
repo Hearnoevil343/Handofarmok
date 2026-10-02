@@ -160,22 +160,13 @@ export const tamrielViews: Record<string, [number, number, number, number]> = {
  *  - a check outside the window would be clamped to an edge tile and read a biome from the wrong
  *    place, so those are dropped and the window names its own.
  *
- * What cannot be lined up: `build` lays its own noise (the patchy and texture fields, the region
- * wobble) over the tile grid, and the two maps do not share one. That scatter is +/- a few points on
- * every layer, which flips any biome whose threshold a tile is already sitting on - most of the
- * remaining disagreement between SKYRIM and TAMRIEL is that, not a difference in the ground.
- *
- * MORROWIND measured how much of it is the wobble in particular, because its regions are the most
- * extreme on the map (Vvardenfell's rainfall 8 and savagery 80 against defaults of 45 and 35), so
- * the same error shows up as a bigger number. The region geometry itself is exact - mean region
- * weight over the shared ground drifts 0.000 against the continent, and repainting the regions with
- * no noise at all drifts 0.06 of rainfall - but the built maps drift 3.9, and setting
- * `regionWobble` to 0 on both drops that to 0.1 and lifts biome agreement from 74.6% to 80.7%.
- * The `* z` above is NOT what saves it: the wobble displaces its sample point by a noise field whose
- * cells are fixed in tiles, so a window reads that field at another scale however the displacement
- * is scaled, and every region paints slightly weaker (unscaled is still 2.9). The fix is to sample
- * the engine's noise in view coordinates, as data/tamriel.py's `value_noise` already does; that
- * changes `build` for the six other presets, so it is a deliberate decision, not a patch.
+ * The noise is shared, not laid out per map: `noiseView` tells `build` which rectangle of the view
+ * this map covers, so the patchy, texture and region-wobble fields are one field read through two
+ * windows and a shared tile gets the same noise on both. The region geometry was already exact -
+ * mean region weight over the shared ground drifts 0.000 - and with the field shared the built maps
+ * follow it: rainfall drifts 0.0 of a point against the continent and biome agreement is 95.6% on
+ * both SKYRIM and MORROWIND, up from 82.2% and 74.6% when each map laid its own noise. What is
+ * left is the coast, where a window's finer tiles put the shelf a few elevation points deeper.
  */
 function tamrielMap(title: string, terrain: string, keep: [number, number, number, number], lands: Lands[]): Recipe {
   const [x0, y0, x1, y1] = keep;
@@ -198,6 +189,8 @@ function tamrielMap(title: string, terrain: string, keep: [number, number, numbe
     land: [],
     water: [],
     coastWobble: 0,
+    // the window's rectangle of the view, so a province reads the continent's own noise field
+    noiseView: { x: sx / VIEW, y: sy / VIEW, scale: side / VIEW },
     regionWobble: 42 * z,
     oceanSlope: 4 / z,
     minFeather: 24 * z,

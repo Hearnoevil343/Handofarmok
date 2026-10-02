@@ -11,7 +11,7 @@ import { hydraulicErosion, thermalErosion } from "@engine/erosion";
 import { carveRivers, drainageTree } from "@engine/hydrology";
 import { type ValleyShaping, shapeValleys } from "@engine/valleys";
 import { RIVER_FLOW } from "@helpers/rivers";
-import { fbm, makeRng, norm01, ridged } from "@engine/noise";
+import { type NoiseView, WHOLE_VIEW, fbm, fbmViews, makeRng, norm01, norm01Like, ridged, ridgedViews } from "@engine/noise";
 
 export type Point = [x: number, y: number];
 
@@ -84,6 +84,13 @@ export interface Recipe {
   coastWobble: number;
   /** how far region edges wander, in plan units (default 35) */
   regionWobble?: number;
+  /**
+   * the sub-rectangle of a shared noise field this map's tile grid covers, as fractions of the
+   * field (default the whole of it, scale 1). A window of a bigger map sets the window's corner and
+   * side here, so both maps read one field over the same ground and the noise on a shared tile is
+   * the same on both instead of being laid out per tile grid.
+   */
+  noiseView?: NoiseView;
   /**
    * elevation lost per tile of distance out from the coast, so the shelf runs out to deep water
    * (default 4). A map covering less ground at the same 257 tiles must lower this by the same
@@ -189,7 +196,19 @@ export function build(recipe: Recipe, size: number, terrain?: Terrain, report?: 
   const unit = PLAN / size;
   // two scales of coast wander: broad bays and headlands, then ragged detail
   // all spread to the full 0-1 range, so the amplitudes below mean what they say
-  const noise = (octaves: number, freq: number) => norm01(fbm(size, rng, octaves, freq));
+  // a window reads the same field as its continent: one lattice, sampled over the window's
+  // rectangle of it and over the whole of it, and spread to 0-1 by the whole field's range
+  const view = recipe.noiseView;
+  const noise = (octaves: number, freq: number) => {
+    if (!view) return norm01(fbm(size, rng, octaves, freq));
+    const [here, whole] = fbmViews(size, rng, octaves, freq, [view, WHOLE_VIEW]);
+    return norm01Like(here, whole);
+  };
+  const ridges = (octaves: number, freq: number) => {
+    if (!view) return norm01(ridged(size, rng, octaves, freq));
+    const [here, whole] = ridgedViews(size, rng, octaves, freq, [view, WHOLE_VIEW]);
+    return norm01Like(here, whole);
+  };
   const broadX = noise(3, 4), broadY = noise(3, 4);
   const wobbleX = noise(4, 16), wobbleY = noise(4, 16);
   const regionX = noise(4, 8), regionY = noise(4, 8);
@@ -197,8 +216,8 @@ export function build(recipe: Recipe, size: number, terrain?: Terrain, report?: 
   const meander = noise(4, 6);
   const hills = noise(4, 5);
   const texture = noise(6, 5);
-  const crest = norm01(ridged(size, rng, 5, 8));
-  const summits = norm01(ridged(size, rng, 4, 18));
+  const crest = ridges(5, 8);
+  const summits = ridges(4, 18);
   const patchy = noise(4, 9);
   const edges = noise(4, 24);
 
