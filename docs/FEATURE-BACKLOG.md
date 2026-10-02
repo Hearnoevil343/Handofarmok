@@ -229,7 +229,7 @@ still holds for preset packs.
 - [x] Ultima 6 / Britannia — built from the Ultima VI surface map; DF gen
       checked (Spine, Deep Forest, NE desert); volcano on the Isle of the Avatar confirmed
 - [ ] Elder Scrolls regions (Morrowind asked for by name) — announced 5th
-- [ ] Azeroth (Warcraft) — announced 4th; ocean problem applies
+- [x] Azeroth (Warcraft) — Kalimdor, Eastern Kingdoms and the combined world; all three genned in the DF UI to year 250, maps captured
 - [ ] One Piece — on the list; ocean problem applies
 - [ ] Runeterra (League of Legends) — promised regardless of upvotes
 - [ ] Isla Nublar (Jurassic Park) — the map that started the project, never

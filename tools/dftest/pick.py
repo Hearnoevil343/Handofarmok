@@ -4,6 +4,7 @@ from PIL import Image
 
 name = sys.argv[1] if len(sys.argv) > 1 else "hoa-britannia"
 cols = int(sys.argv[2]) if len(sys.argv) > 2 else 4
+rows = int(sys.argv[3]) if len(sys.argv) > 3 else 5
 raw = os.path.expandvars("%TEMP%\\" + name + "\\raw")
 out = os.path.expandvars("%TEMP%\\" + name + "\\frames")
 os.makedirs(out, exist_ok=True)
@@ -20,6 +21,6 @@ segs.append(cur)
 print("frames", len(files), "segments", len(segs), [len(s) for s in segs])
 stable = [s for s in segs if len(s) >= 3]
 print("stable", len(stable))
-for k, s in enumerate(stable[-20:]):
+for k, s in enumerate(stable[-rows * cols:]):
     r, c = divmod(k, cols)
     shutil.copy(files[s[-1]], os.path.join(out, f"r{r}c{c}.png"))
