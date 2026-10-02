@@ -134,6 +134,20 @@ const morrowindEdges: Lands = ({ m }) => ({
   ],
 });
 
+/** Checks that only exist once the view is cut to High Rock: its landmarks and its four edges. */
+const highRockEdges: Lands = ({ m }) => ({
+  peaks: [],
+  regions: [],
+  checks: [
+    { name: "The western sea", at: m(20, 210), expect: "Ocean" },
+    { name: "The Iliac Bay", at: m(220, 330), expect: "Ocean" },
+    { name: "Daggerfall and Wayrest", at: m(120, 210), expect: "Forest|Grass|Shrub|Taiga" },
+    { name: "Wrothgarian and Druadach mountains", at: m(290, 210), expect: "Mountain|Forest|Taiga|Tundra" },
+    { name: "Hammerfell march", at: m(240, 460), expect: "Desert|Shrub|Grass|Wasteland|Savanna" },
+    { name: "Skyrim march (The Reach)", at: m(420, 200), expect: "Mountain|Taiga|Tundra|Forest" },
+  ],
+});
+
 const VIEW = 1200, PLAN = 1000;
 
 /** The view rectangle each map keeps, in view pixels; the same table is in data/tamriel.py. */
@@ -141,6 +155,7 @@ export const tamrielViews: Record<string, [number, number, number, number]> = {
   tamriel: [0, 0, 1200, 1200],
   skyrim: [306, 55, 786, 535],
   morrowind: [680, 40, 1200, 560],
+  "high-rock": [0, 0, 480, 480],
 };
 
 /**
@@ -227,3 +242,7 @@ export const skyrim = tamrielMap("SKYRIM", "skyrim.json.gz", tamrielViews.skyrim
  * coast, the Telvanni coast east to the edge of the view, and the Velothi wall closing the west with
  * Skyrim, Cyrodiil and Black Marsh running in behind it. */
 export const morrowind = tamrielMap("MORROWIND", "morrowind.json.gz", tamrielViews.morrowind, [...allLands, morrowindEdges]);
+/** High Rock, the same way: Daggerfall, Wayrest and the Wrothgarian and Druadach mountains with the
+ * Iliac Bay and Betony and the western islands, Hammerfell running in across the bay and at the
+ * south edge, and Skyrim's Reach closing the east. */
+export const highRock = tamrielMap("HIGH_ROCK", "high_rock.json.gz", tamrielViews["high-rock"], [...allLands, highRockEdges]);

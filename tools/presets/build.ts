@@ -19,7 +19,7 @@ import { middleEarth } from "./recipes/middleEarth";
 import { westeros } from "./recipes/westeros";
 import { britannia } from "./recipes/britannia";
 import { azeroth, easternKingdoms, kalimdor } from "./recipes/azeroth";
-import { morrowind, skyrim, tamriel, tamrielViews } from "./recipes/tamriel";
+import { highRock, morrowind, skyrim, tamriel, tamrielViews } from "./recipes/tamriel";
 import { newRealmSettings, type TokenSettings } from "@df/settings";
 import { writeWorldGen } from "@formats/worldgen/write";
 import { measureWorld } from "@helpers/worldMeasure";
@@ -35,6 +35,7 @@ const RECIPES: Record<string, { recipe: Recipe; file: string }> = {
   tamriel: { recipe: tamriel, file: "tamriel.txt" },
   skyrim: { recipe: skyrim, file: "skyrim.txt" },
   morrowind: { recipe: morrowind, file: "morrowind.txt" },
+  "high-rock": { recipe: highRock, file: "high_rock.txt" },
 };
 const SIZE = 257;
 /** Maps that are a window of a bigger one share a view, so `--compare` can line their tiles up. */
