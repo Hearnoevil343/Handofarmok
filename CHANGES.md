@@ -1,6 +1,6 @@
 # Changes to Hand of Armok
 
-## Unreleased
+## 0.3.4
 
 - Azeroth presets, from teebling's terrain map of World of Warcraft Classic: Kalimdor,
   the Eastern Kingdoms, and both together. Coast, lakes and forest are the map's own;
