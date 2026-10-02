@@ -6,24 +6,21 @@ Image: https://gist.githubusercontent.com/Hearnoevil343/75e32e5cb102d45d96527d01
 
 ---
 
-**Title:** I made a Britannia (Ultima VI) world_gen for Dwarf Fortress: the whole surface map, 257x257, free
+**Title:** Made a Britannia (Ultima 6) world for Dwarf Fortress, whole map, 257x257, free
 
 **Body:**
 
-Britannia was on the request list from the Middle Earth and Westeros posts. Here it is.
+A few of you asked for Britannia after the Middle Earth and Westeros posts, so here it is.
 
-This is the embark map straight out of Dwarf Fortress, stitched from screenshots. No editing: the Serpent's Spine across the middle, the Deep Forest in the north-west, the desert in the north-east and the swamps are what DF generated from the preset. The Isle of the Avatar is the only volcano in the world (I checked every region with DFHack).
+The picture is the embark map from DF itself, stitched from screenshots, nothing edited. The Serpent's Spine runs across the middle, big forest top left, desert top right. The Isle of the Avatar is the only volcano in the world, I checked with DFHack.
 
-**Get it:** https://gist.github.com/Hearnoevil343/75e32e5cb102d45d96527d015f58a7dd
+Download: https://gist.github.com/Hearnoevil343/75e32e5cb102d45d96527d015f58a7dd
 
-1. Click **Raw** on `world_gen.txt` and save it into your DF `prefs` folder.
-2. *Create new world > Detailed mode*, pick **BRITANNIA**.
+Click Raw on world_gen.txt, save it in your prefs folder, then Create new world > Detailed mode > BRITANNIA. Keep the vanilla races on. It ran to year 250 with no errors.
 
-It needs the vanilla races turned on. Tested: world generated to year 250 with no errors.
+Made with Hand of Armok, a free world builder I am writing: https://github.com/Hearnoevil343/Handofarmok
 
-**How it was made:** with Hand of Armok, a free world builder I am writing for DF. You paint or import a map, run geological ages over it, and export a `world_gen.txt` that generates what you drew. https://github.com/Hearnoevil343/Handofarmok
-
-The map comes from Otmar Lendl's Ultima VI tile map, so it is non-commercial use only. Requests for the next map are welcome.
+Map is from the Ultima 6 tile map by Otmar Lendl, so non-commercial only. Tell me what map you want next.
 
 ---
 
