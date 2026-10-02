@@ -201,6 +201,8 @@ const elsweyrEdges: Lands = ({ m }) => ({
     { name: "Cyrodiil march", at: m(700, 505), expect: "Forest|Grass|Shrub|Swamp|Savanna" },
     { name: "Black Marsh march", at: m(1000, 700), expect: "Swamp|Marsh|Forest|Grass|Shrub|Savanna" },
     { name: "Southern sea", at: m(700, 1010), expect: "Ocean" },
+  ],
+});
 
 /** Checks that only exist once the view is cut to Valenwood: its two landmarks and its four edges. */
 const valenwoodEdges: Lands = ({ m }) => ({
@@ -213,6 +215,8 @@ const valenwoodEdges: Lands = ({ m }) => ({
     { name: "Cyrodiil march", at: m(500, 500), expect: "Forest|Grass|Shrub|Swamp|Savanna" },
     { name: "Elsweyr march", at: m(745, 700), expect: "Desert|Shrub|Savanna|Grass|Swamp|Forest" },
     { name: "Southern sea", at: m(600, 1010), expect: "Ocean" },
+  ],
+});
 
 /** Checks that only exist once the view is cut to Summerset: its landmarks and its four edges. */
 const summersetEdges: Lands = ({ m }) => ({
