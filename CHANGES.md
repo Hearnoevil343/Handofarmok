@@ -2,6 +2,13 @@
 
 ## Unreleased
 
+- Elsweyr preset: a province window of the same Tamriel map and climate table, with Torval in the
+  Anequina desert and Tenmar Forest in the Pelletine jungle, Valenwood running in at the west and
+  Black Marsh at the east, Cyrodiil closing the north, and the real southern sea at the bottom edge.
+  No sea is invented at the cut: 10/10 checks, 99.4% sea-or-land agreement with the continent; biome
+  agreement is 94.9%, just under the other windows' 95.3-96.2%, from the Nibenay/Colovia forest-type
+  line sitting next to the narrow Valenwood-divide range, which the window's finer grid resolves
+  more sharply than the continent's.
 - High Rock preset: a third province window of the same Tamriel map and climate table, holding
   Daggerfall, Wayrest and the Wrothgarian and Druadach mountains around the Iliac Bay, with
   Hammerfell running in across the bay and at the south edge and Skyrim's Reach closing the east.
