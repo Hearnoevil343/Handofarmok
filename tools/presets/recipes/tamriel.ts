@@ -226,7 +226,7 @@ const summersetEdges: Lands = ({ m }) => ({
     { name: "Summerset Isle", at: m(110, 800), expect: "Forest|Grass|Shrub" },
     { name: "Auridon", at: m(232, 742), expect: "Forest|Grass|Shrub" },
     { name: "The Summerset peaks", at: m(120, 790), expect: "Mountain|Forest|Shrub|Grass|Savanna" },
-    { name: "Auridon's north coast", at: m(240, 540), expect: "Forest|Grass|Shrub|Savanna|Taiga" },
+    { name: "Stros M'Kai", at: m(240, 540), expect: "Desert|Shrub|Grass|Savanna" },
     { name: "Valenwood march", at: m(470, 750), expect: "Forest|Grass|Shrub|Savanna" },
     { name: "The western sea", at: m(20, 750), expect: "Ocean" },
     { name: "The southern sea", at: m(240, 990), expect: "Ocean" },
