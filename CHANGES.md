@@ -1,6 +1,6 @@
 # Changes to Hand of Armok
 
-## Unreleased
+## 0.3.3
 
 - Britannia preset, from the Ultima VI surface map (tile map by Otmar Lendl, tiles by
   Andrew Jenner): coast, rivers, lakes, forests, swamps and the mountain walls are the
