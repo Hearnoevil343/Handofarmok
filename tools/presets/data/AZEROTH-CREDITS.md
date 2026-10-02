@@ -1,6 +1,7 @@
 # Azeroth preset — map data credit
 
-`azeroth.json.gz` (and everything built from it: the Azeroth recipe, the height/coast/forest
+`azeroth.json.gz`, `kalimdor.json.gz` and `eastern-kingdoms.json.gz` (and everything built from
+them: the Azeroth recipes, the height/coast/forest
 data, and the generated preset output) is derived from teebling's hand-stitched high resolution
 terrain map of World of Warcraft Classic (1.12 client minimap images),
 `wow_classic_high_resolution_world_terrain_map_azeroth.png`, from

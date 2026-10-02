@@ -1,6 +1,8 @@
 """Turn the classic World of Warcraft world terrain map into 257x257 layers for the preset builder.
 
-    python azeroth.py <azeroth.png> <out.json> [preview.png]   (then gzip -9 it to azeroth.json.gz)
+    python azeroth.py <map> <azeroth.png> <out.json> [preview.png]   (then gzip -9 it to <map>.json.gz)
+
+<map> is azeroth (both continents), kalimdor or eastern-kingdoms.
 
 Source: teebling's hand-stitched high resolution terrain map of WoW Classic (1.12 client minimap
 images), "wow_classic_high_resolution_world_terrain_map_azeroth.png", 13000 x 12000 px, from
@@ -20,11 +22,22 @@ from scipy import ndimage as nd
 
 Image.MAX_IMAGE_PIXELS = None
 SIZE = 257; SEA = 16
-# square crop of the 13000 x 12000 picture holding both continents, Teldrassil and the south isles
+# square crop of the 13000 x 12000 picture holding both continents, Teldrassil and the south isles,
+# called "the view" below and shown 1200 px square (as the recipe's coordinates)
 CROP = (750, 150, 12550, 11950); G = 2950          # worked at 4:1, about 11.5 px per world tile
-
-src = Image.open(sys.argv[1]).convert('RGB').crop(CROP).resize((G, G), Image.BOX)
-a = np.asarray(src).astype(np.float32)
+# the land each map keeps, in view pixels; the map is the square around it, the rest is open sea
+# (the same rectangles are in recipes/azeroth.ts)
+MAPS = {'azeroth': (0, 0, 1200, 1200), 'kalimdor': (0, 10, 610, 1185), 'eastern-kingdoms': (700, 170, 1190, 1160)}
+name = sys.argv.pop(1)
+x0, y0, x1, y1 = MAPS[name]
+side = max(x1 - x0, y1 - y0); sx = (x0 + x1 - side) / 2; sy = (y0 + y1 - side) / 2
+k = (CROP[2] - CROP[0]) / 1200
+box = tuple(round(v) for v in (CROP[0] + sx * k, CROP[1] + sy * k, CROP[0] + (sx + side) * k, CROP[1] + (sy + side) * k))
+src = Image.open(sys.argv[1]).convert('RGB').crop(box).resize((G, G), Image.BOX)
+a = np.asarray(src).astype(np.float32).copy()
+# black outside the kept land reads as open sea (smooth ground joined to the edge)
+gx0, gy0, gx1, gy1 = (round((v - o) / side * G) for v, o in ((x0, sx), (y0, sy), (x1, sx), (y1, sy)))
+keep = np.zeros((G, G), bool); keep[max(gy0, 0):gy1, max(gx0, 0):gx1] = True; a[~keep] = 0
 lum = a.mean(2)
 m = nd.uniform_filter(lum, 7)
 texture = nd.uniform_filter(np.sqrt(np.maximum(nd.uniform_filter(lum * lum, 7) - m * m, 0)), 5)
@@ -65,7 +78,7 @@ is_land = ~is_sea & ~is_lake
 sea_l = np.where(is_sea, sea_cov, 0); lake_l = np.where(is_lake, lake_cov, 0)
 forest = coverage(forest_px)
 # the picture shows few of the mountain walls WoW raises between zones; these are drawn by hand in
-# pixels of the cropped map shown 1200 px square (as the recipe's `m`), with half-widths in those pixels
+# view pixels (as the recipe's `m`), with half-widths in those pixels
 WALLS = [
     # Kalimdor
     ('Stonetalon Peak', [(120, 470), (170, 520), (215, 560)], 14),
@@ -87,7 +100,7 @@ WALLS = [
 
 def wall_cover():
     """Coverage 0-255 of the hand-drawn walls, with a soft edge."""
-    ys, xs = np.mgrid[0:SIZE, 0:SIZE]; px = (xs + 0.5) * 1200 / SIZE; py = (ys + 0.5) * 1200 / SIZE
+    ys, xs = np.mgrid[0:SIZE, 0:SIZE]; px = sx + (xs + 0.5) * side / SIZE; py = sy + (ys + 0.5) * side / SIZE
     out = np.zeros((SIZE, SIZE))
     for _, pts, w in WALLS:
         d = np.full((SIZE, SIZE), 1e9)
