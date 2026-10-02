@@ -156,6 +156,17 @@ const hammerfellEdges: Lands = ({ m }) => ({
     { name: "Cyrodiil march", at: m(523, 450), expect: "Forest|Grass|Shrub|Savanna" },
     { name: "The Iliac Bay", at: m(107, 603), expect: "Ocean" },
     { name: "The Abecean Sea", at: m(124, 654), expect: "Ocean" },
+/** Checks that only exist once the view is cut to High Rock: its landmarks and its four edges. */
+const highRockEdges: Lands = ({ m }) => ({
+  peaks: [],
+  regions: [],
+  checks: [
+    { name: "The western sea", at: m(20, 210), expect: "Ocean" },
+    { name: "The Iliac Bay", at: m(220, 330), expect: "Ocean" },
+    { name: "Daggerfall and Wayrest", at: m(120, 210), expect: "Forest|Grass|Shrub|Taiga" },
+    { name: "Wrothgarian and Druadach mountains", at: m(290, 210), expect: "Mountain|Forest|Taiga|Tundra" },
+    { name: "Hammerfell march", at: m(240, 460), expect: "Desert|Shrub|Grass|Wasteland|Savanna" },
+    { name: "Skyrim march (The Reach)", at: m(420, 200), expect: "Mountain|Taiga|Tundra|Forest" },
   ],
 });
 
@@ -168,6 +179,7 @@ export const tamrielViews: Record<string, [number, number, number, number]> = {
   morrowind: [680, 40, 1200, 560],
   cyrodiil: [440, 215, 960, 735],
   hammerfell: [20, 260, 540, 780],
+  "high-rock": [0, 0, 480, 480],
 };
 
 /**
@@ -255,3 +267,7 @@ export const cyrodiil = tamrielMap("CYRODIIL", "cyrodiil.json.gz", tamrielViews.
  * southern coast on the Abecean Sea, the Iliac Bay in the west with High Rock running in across it,
  * and Skyrim's Dragontail mountains and Cyrodiil entering at the north and east edges. */
 export const hammerfell = tamrielMap("HAMMERFELL", "hammerfell.json.gz", tamrielViews.hammerfell, [...allLands, hammerfellEdges]);
+/** High Rock, the same way: Daggerfall, Wayrest and the Wrothgarian and Druadach mountains with the
+ * Iliac Bay and Betony and the western islands, Hammerfell running in across the bay and at the
+ * south edge, and Skyrim's Reach closing the east. */
+export const highRock = tamrielMap("HIGH_ROCK", "high_rock.json.gz", tamrielViews["high-rock"], [...allLands, highRockEdges]);
