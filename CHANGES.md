@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+- Summerset preset: a province window of the same Tamriel map and climate table, with Summerset
+  Isle and Auridon against the west edge of the view, the Summerset peaks in the isle's interior,
+  open sea to the west and south, and Valenwood running in at the east edge. No sea is invented at
+  the cut: 10/10 checks, 98.1% sea-or-land agreement with the continent.
 - High Rock preset: a third province window of the same Tamriel map and climate table, holding
   Daggerfall, Wayrest and the Wrothgarian and Druadach mountains around the Iliac Bay, with
   Hammerfell running in across the bay and at the south edge and Skyrim's Reach closing the east.

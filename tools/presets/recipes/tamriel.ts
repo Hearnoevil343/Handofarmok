@@ -190,6 +190,21 @@ const blackMarshEdges: Lands = ({ m }) => ({
   ],
 });
 
+/** Checks that only exist once the view is cut to Summerset: its landmarks and its four edges. */
+const summersetEdges: Lands = ({ m }) => ({
+  peaks: [],
+  regions: [],
+  checks: [
+    { name: "Summerset Isle", at: m(110, 800), expect: "Forest|Grass|Shrub" },
+    { name: "Auridon", at: m(232, 742), expect: "Forest|Grass|Shrub" },
+    { name: "The Summerset peaks", at: m(120, 790), expect: "Mountain|Forest|Shrub|Grass|Savanna" },
+    { name: "Auridon's north coast", at: m(240, 540), expect: "Forest|Grass|Shrub|Savanna|Taiga" },
+    { name: "Valenwood march", at: m(470, 750), expect: "Forest|Grass|Shrub|Savanna" },
+    { name: "The western sea", at: m(20, 750), expect: "Ocean" },
+    { name: "The southern sea", at: m(240, 990), expect: "Ocean" },
+  ],
+});
+
 const VIEW = 1200, PLAN = 1000;
 
 /** The view rectangle each map keeps, in view pixels; the same table is in data/tamriel.py. */
@@ -201,6 +216,7 @@ export const tamrielViews: Record<string, [number, number, number, number]> = {
   hammerfell: [20, 260, 540, 780],
   "high-rock": [0, 0, 480, 480],
   black_marsh: [700, 430, 1200, 930],
+  summerset: [0, 535, 480, 1015],
 };
 
 /**
@@ -296,3 +312,7 @@ export const highRock = tamrielMap("HIGH_ROCK", "high_rock.json.gz", tamrielView
  * running in at the west and north, Cyrodiil marching in behind it, and the Padomaic Ocean closing
  * the east and south. */
 export const blackMarsh = tamrielMap("BLACK_MARSH", "black_marsh.json.gz", tamrielViews.black_marsh, [...allLands, blackMarshEdges]);
+/** Summerset, the same way: Summerset Isle and Auridon against the west edge of the view, the
+ * Summerset peaks in the isle's interior, open sea to the west and south, and Valenwood running in
+ * at the east edge. */
+export const summerset = tamrielMap("SUMMERSET", "summerset.json.gz", tamrielViews.summerset, [...allLands, summersetEdges]);

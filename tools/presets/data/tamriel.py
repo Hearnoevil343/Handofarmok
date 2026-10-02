@@ -40,7 +40,7 @@ CROP = (75, 242, 1880, 2047); G = 2056              # 8 px per world tile
 VIEW = 1200
 # the land each map keeps, in view pixels; the map is the square around it
 # (the same rectangles are in recipes/tamriel.ts)
-MAPS = {'tamriel': (0, 0, 1200, 1200), 'skyrim': (306, 55, 786, 535), 'morrowind': (680, 40, 1200, 560), 'cyrodiil': (440, 215, 960, 735), 'hammerfell': (20, 260, 540, 780), 'high_rock': (0, 0, 480, 480), 'black_marsh': (700, 430, 1200, 930)}
+MAPS = {'tamriel': (0, 0, 1200, 1200), 'skyrim': (306, 55, 786, 535), 'morrowind': (680, 40, 1200, 560), 'cyrodiil': (440, 215, 960, 735), 'hammerfell': (20, 260, 540, 780), 'high_rock': (0, 0, 480, 480), 'black_marsh': (700, 430, 1200, 930), 'summerset': (0, 535, 480, 1015)}
 dump = '--dump' in sys.argv
 if dump: sys.argv.remove('--dump')
 name = sys.argv.pop(1)
