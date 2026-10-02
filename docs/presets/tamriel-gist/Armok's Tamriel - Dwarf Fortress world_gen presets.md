@@ -2,14 +2,14 @@
 
 Built with **[Hand of Armok](https://github.com/Hearnoevil343/Handofarmok)**, my world builder for Dwarf Fortress: paint or import a map, run geological ages over it, and export a `world_gen.txt` that generates what you designed.
 
-[![Tamriel as Dwarf Fortress generated it](https://gist.githubusercontent.com/Hearnoevil343/a9b56855a8a749d77284bfcadfd9029a/raw/tamriel-preview.png)](https://gist.githubusercontent.com/Hearnoevil343/a9b56855a8a749d77284bfcadfd9029a/raw/tamriel-df-map.png)
+[![Tamriel as Dwarf Fortress generated it](https://gist.githubusercontent.com/Hearnoevil343/756b715cc670ecb3a3c8f776326ce9b4/raw/tamriel-preview.png)](https://gist.githubusercontent.com/Hearnoevil343/756b715cc670ecb3a3c8f776326ce9b4/raw/tamriel-df-map.png)
 
 Two presets in one file, both 257x257:
 
 - **TAMRIEL**: the whole continent, all nine provinces on one map, with Vvardenfell, Solstheim, the Summerset Isles and Thras.
 - **SKYRIM**: the same world cut down to a window on one province, so Skyrim fills the whole map at two and a half times the detail. High Rock, Hammerfell, northern Cyrodiil and the Velothi wall of Morrowind run in at the edges, with no invented sea.
 
-[![Skyrim](https://gist.githubusercontent.com/Hearnoevil343/a9b56855a8a749d77284bfcadfd9029a/raw/skyrim-preview.png)](https://gist.githubusercontent.com/Hearnoevil343/a9b56855a8a749d77284bfcadfd9029a/raw/skyrim-df-map.png)
+[![Skyrim](https://gist.githubusercontent.com/Hearnoevil343/756b715cc670ecb3a3c8f776326ce9b4/raw/skyrim-preview.png)](https://gist.githubusercontent.com/Hearnoevil343/756b715cc670ecb3a3c8f776326ce9b4/raw/skyrim-df-map.png)
 
 *The embark maps straight out of Dwarf Fortress, exported by the game itself. No editing. Click a map for the full size.*
 

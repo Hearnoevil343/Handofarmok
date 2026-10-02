@@ -1,10 +1,15 @@
 # Reddit draft: Tamriel and Skyrim presets
 
+**Hold: the gist is secret (unlisted) as of 2026-10-02, by the owner's choice.** Every link and
+image URL below works for anyone who has it, but the gist does not appear on the profile and is not
+indexed. Do not post until it is made public (`gh gist edit` cannot flip that — GitHub has no
+public/secret toggle, so going public means creating a new public gist and the id changes again).
+
 Subreddit: r/dwarffortress. Flair: Modding / Worldgen. Post type: gallery (both full maps), text in the body.
 
 Images, in this order:
-1. https://gist.githubusercontent.com/Hearnoevil343/a9b56855a8a749d77284bfcadfd9029a/raw/tamriel-df-map.png
-2. https://gist.githubusercontent.com/Hearnoevil343/a9b56855a8a749d77284bfcadfd9029a/raw/skyrim-df-map.png
+1. https://gist.githubusercontent.com/Hearnoevil343/756b715cc670ecb3a3c8f776326ce9b4/raw/tamriel-df-map.png
+2. https://gist.githubusercontent.com/Hearnoevil343/756b715cc670ecb3a3c8f776326ce9b4/raw/skyrim-df-map.png
 
 ---
 
@@ -19,7 +24,7 @@ The Elder Scrolls was the next map on the list after Azeroth, and Morrowind was 
 
 The pictures are the embark maps from DF itself, exported by the game, nothing edited. The source map paints no relief, so only the coast and the lakes come from it: the heights, every range (Wrothgarian, Druadach, Dragontail, Jerall, the Throat of the World, Velothi, Valus) and Red Mountain are drawn in, and the climate of each province is hand-made. The rivers, the coastline detail, the biome edges and 250 years of history are DF's own.
 
-Download: https://gist.github.com/Hearnoevil343/a9b56855a8a749d77284bfcadfd9029a
+Download: https://gist.github.com/Hearnoevil343/756b715cc670ecb3a3c8f776326ce9b4
 
 Click Raw on world_gen.txt, save it in your prefs folder, then Create new world > Detailed mode > TAMRIEL or SKYRIM. It replaces your own world_gen.txt, so paste the blocks onto the end of yours if you want to keep your presets. Keep the vanilla races on. Both ran 250 years of history with no errors; DF's own map export then crashed on the Tamriel run, which is a known DF bug on big exports, not the preset.
 
@@ -46,7 +51,7 @@ Image posts. Post the Skyrim map first on r/skyrim and the Tamriel map first on 
 > Made with Hand of Armok, a free world builder for Dwarf Fortress I am writing.
 >
 > Tool: https://github.com/Hearnoevil343/Handofarmok
-> Map file: https://gist.github.com/Hearnoevil343/a9b56855a8a749d77284bfcadfd9029a
+> Map file: https://gist.github.com/Hearnoevil343/756b715cc670ecb3a3c8f776326ce9b4
 
 ## r/fantasymaps
 
