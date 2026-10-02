@@ -84,6 +84,19 @@ export interface Recipe {
   coastWobble: number;
   /** how far region edges wander, in plan units (default 35) */
   regionWobble?: number;
+  /**
+   * elevation lost per tile of distance out from the coast, so the shelf runs out to deep water
+   * (default 4). A map covering less ground at the same 257 tiles must lower this by the same
+   * factor, or its sea drops away several times too fast for the real distance.
+   */
+  oceanSlope?: number;
+  /**
+   * smallest edge any region fades in over, in plan units (default 24), so a region placed with a
+   * hard edge still reads as country rather than a stencil. A window of a bigger map must raise it
+   * by the same factor as `feather`, or the floor binds on one map and not the other and the same
+   * region edge lands in two different places.
+   */
+  minFeather?: number;
   /** erosion strengths, 0-100 each (defaults 35, 8, 40) */
   weathering?: { hydraulic: number; thermal: number; rivers: number };
   /** base land elevation and its variation */
@@ -286,7 +299,7 @@ export function build(recipe: Recipe, size: number, terrain?: Terrain, report?: 
     }
   }
   for (let i = 0; i < n; i++) {
-    if (!land[i]) elevation[i] = clamp(98 - sea[i] * 4 - texture[i] * 12, 5, 99);
+    if (!land[i]) elevation[i] = clamp(98 - sea[i] * (recipe.oceanSlope ?? 4) - texture[i] * 12, 5, 99);
   }
 
   const d = recipe.defaults;
@@ -311,7 +324,7 @@ export function build(recipe: Recipe, size: number, terrain?: Terrain, report?: 
     const xs = region.shape.map((p) => p[0]), ys = region.shape.map((p) => p[1]);
     const extent = Math.min(Math.max(...xs) - Math.min(...xs), Math.max(...ys) - Math.min(...ys));
     // but they still get a ragged edge, so they read as woods and fens, not dots
-    const feather = Math.max(region.feather ?? 25, Math.min(24, extent * 0.4));
+    const feather = Math.max(region.feather ?? 25, Math.min(recipe.minFeather ?? 24, extent * 0.4));
     const wander = Math.min(recipe.regionWobble ?? 35, extent * 0.25);
     for (let ty = 0; ty < size; ty++) {
       for (let tx = 0; tx < size; tx++) {

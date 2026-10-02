@@ -18,8 +18,21 @@ Scripts worth knowing about before writing another one.
   sweep side by side: score, mean penalty per target (largest first), and every metric.
 - **presets** (`tools/presets/`) - builds hand-made presets such as Middle-earth and Westeros from
   measured terrain and vectors; `build.ts --out`. Westeros has no elevation model, so
-  `data/westeros.py` builds heights from the fan map's coast and mountain outlines. Westeros' map
+  `data/westeros.py` builds heights from the fan map's coast and mountain outlines. Tamriel's
+  source is a parchment map with no relief at all: `data/tamriel.py` reads only the coast and
+  lakes from it and draws every mountain range by hand. Westeros' map
   data is CC BY-NC-SA 3.0, non-commercial, credited in `data/WESTEROS-CREDITS.md`.
+  A **province window** (SKYRIM out of TAMRIEL, KALIMDOR out of AZEROTH) is a square crop of the
+  same picture and the same climate table: add a rectangle in view pixels to `MAPS` in the `.py` and
+  to `tamrielViews` in the recipe, then one `export const`. Tamriel's window keeps the neighbours
+  running off its edges; Azeroth's blanks everything outside the rectangle, because its sub-maps
+  really are separated by ocean. `data/tamriel.py --dump` prints land, sea and ranges at 60x60 with
+  view coordinates, which is how to place a check without looking at a picture.
+- **build.ts --compare \<other map\>** - the check that matters for a window: over the ground the two
+  maps share, how often they name the same biome, how often they agree on sea against land, how far
+  each deciding layer has drifted, and which biome one map has more of. A layer with a mean drift is
+  being measured in tiles where it should be measured in view pixels; one that only scatters is the
+  two tile grids' own noise, which cannot be lined up.
 - **dftest** (`tools/dftest/`) - generates a world in Dwarf Fortress from an export and compares
   the result layer by layer with the prediction.
 - **grab.ps1 / sweep.ps1 / stitch.py** (`tools/dftest/`) - full-map screenshot of a generated world
