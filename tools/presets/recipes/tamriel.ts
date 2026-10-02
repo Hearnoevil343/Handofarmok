@@ -120,12 +120,27 @@ const skyrimEdges: Lands = ({ m }) => ({
   ],
 });
 
+/** Checks that only exist once the view is cut to Morrowind: its two landmarks and its four edges. */
+const morrowindEdges: Lands = ({ m }) => ({
+  peaks: [],
+  regions: [],
+  checks: [
+    { name: "Red Mountain", at: m(966, 270), expect: "Mountain" },
+    { name: "The Velothi wall", at: m(740, 250), expect: "Mountain|Taiga|Tundra|Forest" },
+    { name: "Sea of Ghosts", at: m(900, 60), expect: "Ocean" },
+    { name: "Solstheim strait", at: m(900, 175), expect: "Ocean" },
+    { name: "Cyrodiil march", at: m(700, 480), expect: "Forest|Grass|Shrub|Swamp|Savanna" },
+    { name: "Black Marsh march", at: m(1000, 540), expect: "Swamp|Marsh|Forest|Grass|Shrub|Savanna" },
+  ],
+});
+
 const VIEW = 1200, PLAN = 1000;
 
 /** The view rectangle each map keeps, in view pixels; the same table is in data/tamriel.py. */
 export const tamrielViews: Record<string, [number, number, number, number]> = {
   tamriel: [0, 0, 1200, 1200],
   skyrim: [306, 55, 786, 535],
+  morrowind: [680, 40, 1200, 560],
 };
 
 /**
@@ -149,6 +164,18 @@ export const tamrielViews: Record<string, [number, number, number, number]> = {
  * wobble) over the tile grid, and the two maps do not share one. That scatter is +/- a few points on
  * every layer, which flips any biome whose threshold a tile is already sitting on - most of the
  * remaining disagreement between SKYRIM and TAMRIEL is that, not a difference in the ground.
+ *
+ * MORROWIND measured how much of it is the wobble in particular, because its regions are the most
+ * extreme on the map (Vvardenfell's rainfall 8 and savagery 80 against defaults of 45 and 35), so
+ * the same error shows up as a bigger number. The region geometry itself is exact - mean region
+ * weight over the shared ground drifts 0.000 against the continent, and repainting the regions with
+ * no noise at all drifts 0.06 of rainfall - but the built maps drift 3.9, and setting
+ * `regionWobble` to 0 on both drops that to 0.1 and lifts biome agreement from 74.6% to 80.7%.
+ * The `* z` above is NOT what saves it: the wobble displaces its sample point by a noise field whose
+ * cells are fixed in tiles, so a window reads that field at another scale however the displacement
+ * is scaled, and every region paints slightly weaker (unscaled is still 2.9). The fix is to sample
+ * the engine's noise in view coordinates, as data/tamriel.py's `value_noise` already does; that
+ * changes `build` for the six other presets, so it is a deliberate decision, not a patch.
  */
 function tamrielMap(title: string, terrain: string, keep: [number, number, number, number], lands: Lands[]): Recipe {
   const [x0, y0, x1, y1] = keep;
@@ -196,3 +223,7 @@ export const tamriel = tamrielMap("TAMRIEL", "tamriel.json.gz", tamrielViews.tam
 /** Skyrim, as a square window of the same view: High Rock, Hammerfell, Cyrodiil and the Velothi
  * wall of Morrowind run in at its edges, and the climate table above is the one driving it. */
 export const skyrim = tamrielMap("SKYRIM", "skyrim.json.gz", tamrielViews.skyrim, [...allLands, skyrimEdges]);
+/** Morrowind, the same way: Vvardenfell and Red Mountain in the middle, Solstheim off the north
+ * coast, the Telvanni coast east to the edge of the view, and the Velothi wall closing the west with
+ * Skyrim, Cyrodiil and Black Marsh running in behind it. */
+export const morrowind = tamrielMap("MORROWIND", "morrowind.json.gz", tamrielViews.morrowind, [...allLands, morrowindEdges]);

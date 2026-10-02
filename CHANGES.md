@@ -1,5 +1,15 @@
 # Changes to Hand of Armok
 
+## Unreleased
+
+- Morrowind preset: a second province window of the same Tamriel map and climate table, with
+  Vvardenfell and Red Mountain in the middle, Solstheim off the north coast, the Telvanni coast
+  east to the edge of the view, and the Velothi wall closing the west while Skyrim, Cyrodiil and
+  Black Marsh run in behind it. No sea is invented at the cut: 11/11 checks, 98.4% sea-or-land
+  agreement with the continent, and DF genned it to year 250.
+- `build.ts --layers <file.json>` writes the six built layers, for measuring a window against its
+  continent outside the build script.
+
 ## 0.3.5
 
 - Tamriel preset, from the Elder Scrolls Online world map on UESP: every province on one

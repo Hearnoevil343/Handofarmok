@@ -19,7 +19,7 @@ import { middleEarth } from "./recipes/middleEarth";
 import { westeros } from "./recipes/westeros";
 import { britannia } from "./recipes/britannia";
 import { azeroth, easternKingdoms, kalimdor } from "./recipes/azeroth";
-import { skyrim, tamriel, tamrielViews } from "./recipes/tamriel";
+import { morrowind, skyrim, tamriel, tamrielViews } from "./recipes/tamriel";
 import { newRealmSettings, type TokenSettings } from "@df/settings";
 import { writeWorldGen } from "@formats/worldgen/write";
 import { measureWorld } from "@helpers/worldMeasure";
@@ -34,6 +34,7 @@ const RECIPES: Record<string, { recipe: Recipe; file: string }> = {
   "eastern-kingdoms": { recipe: easternKingdoms, file: "eastern_kingdoms.txt" },
   tamriel: { recipe: tamriel, file: "tamriel.txt" },
   skyrim: { recipe: skyrim, file: "skyrim.txt" },
+  morrowind: { recipe: morrowind, file: "morrowind.txt" },
 };
 const SIZE = 257;
 /** Maps that are a window of a bigger one share a view, so `--compare` can line their tiles up. */
@@ -159,7 +160,7 @@ if (compareAt >= 0) {
   let overlap = 0, sameBiome = 0, sameWater = 0;
   const disagreed: Record<string, number> = {};
   const drift: Record<string, number> = {}, spread: Record<string, number> = {}, net: Record<string, number> = {};
-  const WATCH = [LayerType.Elevation, LayerType.Temperature, LayerType.Rainfall, LayerType.Drainage];
+  const WATCH = [LayerType.Elevation, LayerType.Temperature, LayerType.Rainfall, LayerType.Drainage, LayerType.Savagery];
   for (let i = 0; i < SIZE * SIZE; i++) {
     const vx = mine.sx + ((i % SIZE) + 0.5) * (mine.side / SIZE);
     const vy = mine.sy + (((i / SIZE) | 0) + 0.5) * (mine.side / SIZE);
@@ -187,10 +188,17 @@ if (compareAt >= 0) {
     const de = layers.elevation[i] - thoseLayers.elevation[j];
     drift[kind] = (drift[kind] ?? 0) + de;
     spread[kind] = (spread[kind] ?? 0) + 1;
+    // and every layer by the same three kinds of ground, so a mean can be traced to the ground it
+    // sits on: a drift only on land is the regions, one on sea as well is the defaults or the noise
+    for (const l of WATCH) {
+      const dv = layers[l][i] - thoseLayers[l][j];
+      drift[`${kind} ${l}`] = (drift[`${kind} ${l}`] ?? 0) + dv;
+    }
   }
   console.log(`\noverlap with ${other}: ${overlap} tiles; same biome ${((100 * sameBiome) / overlap).toFixed(1)}%, same sea or land ${((100 * sameWater) / overlap).toFixed(1)}%`);
   console.log("  layers: " + WATCH.map((l) => `${l} mean ${(drift[l] / overlap).toFixed(1)} apart ${(spread[l] / overlap).toFixed(1)}`).join(", "));
   console.log("  elevation by ground: " + ["sea", "lowland", "range"].map((k) => `${k} ${spread[k] ?? 0} tiles mean ${((drift[k] ?? 0) / (spread[k] || 1)).toFixed(1)}`).join(", "));
+  for (const l of WATCH) console.log(`  ${l} by ground: ` + ["sea", "lowland", "range"].map((k) => `${k} mean ${((drift[`${k} ${l}`] ?? 0) / (spread[k] || 1)).toFixed(1)}`).join(", "));
   console.log("  disagreed (this/that): " + Object.entries(disagreed).sort((p, q) => q[1] - p[1]).slice(0, 8).map(([k, c]) => `${k} x${c}`).join(", "));
   // churn that cancels out is the two tile grids' noise; a biome this map has far more or far less
   // of over the same ground is a real difference in how it was built
@@ -239,6 +247,14 @@ if (previewAt >= 0) {
   }
   writePng(flags[previewAt + 1], W, W, rgb);
   console.log(`preview: ${flags[previewAt + 1]}`);
+}
+
+// --layers <file.json>: the six built layers as flat arrays, for measuring a window against its
+// continent outside this script (see data/tamriel.py --dump for the same idea on the ground).
+const layersAt = flags.indexOf("--layers");
+if (layersAt >= 0) {
+  fs.writeFileSync(flags[layersAt + 1], JSON.stringify(Object.fromEntries(Object.entries(layers).map(([k, v]) => [k, Array.from(v)]))));
+  console.log(`layers: ${flags[layersAt + 1]}`);
 }
 
 const outAt = flags.indexOf("--out");
