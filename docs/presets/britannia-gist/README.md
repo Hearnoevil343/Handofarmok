@@ -2,9 +2,9 @@
 
 Built with **[Hand of Armok](https://github.com/Hearnoevil343/Handofarmok)**, my world builder for Dwarf Fortress: paint or import a map, run geological ages over it, and export a `world_gen.txt` that generates what you designed.
 
-![Britannia as Dwarf Fortress generated it](britannia-df-map.png)
+[![Britannia as Dwarf Fortress generated it](britannia-preview.png)](britannia-df-map.png)
 
-*The embark map straight out of Dwarf Fortress, stitched from screenshots. No editing.*
+*The embark map straight out of Dwarf Fortress, stitched from screenshots. No editing. Click for the full size.*
 
 **To use:** click **Raw** on `world_gen.txt`, save it as `world_gen.txt` in your DF `prefs` folder (Steam: `%APPDATA%\Bay 12 Games\Dwarf Fortress\prefs`), then *Create new world > Detailed mode* and pick **BRITANNIA** (257x257).
 
