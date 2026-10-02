@@ -25,6 +25,6 @@ Scripts worth knowing about before writing another one.
 - **grab.ps1 / sweep.ps1 / stitch.py** (`tools/dftest/`) - full-map screenshot of a generated world
   on DF's embark map. DF in front on the embark map, then
   `powershell -ExecutionPolicy Bypass -File tools/dftest/sweep.ps1 <dir> 5 3 5 3` and
-  `python tools/dftest/stitch.py grid <dir> 5 3 5 3 <out.png>`. Tuned for 3840x2160 at 16 px
-  tiles (257 map = 4112 px); other resolutions need `CLEAN`/`STEP`/`CURSOR` changed. Works
+  `python tools/dftest/stitch.py grid <dir> 5 3 5 3 <out.png>`. Written for 3840x2160 at 16 px
+  tiles (257 map = 4112 px); other resolutions need `CLEAN`/`STEP`/`CURSOR` changed (the dev screen is 2560x1440, a windowed capture is 2560x1369). Works
   (2026-09-18). The `shift` matching mode is unreliable (black margins); grid uses arithmetic.
