@@ -190,6 +190,20 @@ const blackMarshEdges: Lands = ({ m }) => ({
   ],
 });
 
+/** Checks that only exist once the view is cut to Elsweyr: its two landmarks and its four edges. */
+const elsweyrEdges: Lands = ({ m }) => ({
+  peaks: [],
+  regions: [],
+  checks: [
+    { name: "Torval", at: m(650, 650), expect: "Desert|Shrub|Savanna|Grass" },
+    { name: "Tenmar Forest", at: m(800, 785), expect: "Forest|Savanna|Swamp|Grass" },
+    { name: "Valenwood march", at: m(500, 750), expect: "Forest|Grass|Shrub|Savanna" },
+    { name: "Cyrodiil march", at: m(700, 505), expect: "Forest|Grass|Shrub|Swamp|Savanna" },
+    { name: "Black Marsh march", at: m(1000, 700), expect: "Swamp|Marsh|Forest|Grass|Shrub|Savanna" },
+    { name: "Southern sea", at: m(700, 1010), expect: "Ocean" },
+  ],
+});
+
 const VIEW = 1200, PLAN = 1000;
 
 /** The view rectangle each map keeps, in view pixels; the same table is in data/tamriel.py. */
@@ -201,6 +215,7 @@ export const tamrielViews: Record<string, [number, number, number, number]> = {
   hammerfell: [20, 260, 540, 780],
   "high-rock": [0, 0, 480, 480],
   black_marsh: [700, 430, 1200, 930],
+  elsweyr: [485, 500, 1005, 1020],
 };
 
 /**
@@ -296,3 +311,7 @@ export const highRock = tamrielMap("HIGH_ROCK", "high_rock.json.gz", tamrielView
  * running in at the west and north, Cyrodiil marching in behind it, and the Padomaic Ocean closing
  * the east and south. */
 export const blackMarsh = tamrielMap("BLACK_MARSH", "black_marsh.json.gz", tamrielViews.black_marsh, [...allLands, blackMarshEdges]);
+/** Elsweyr, the same way: Torval in the Anequina desert and Tenmar Forest in the Pelletine jungle,
+ * Valenwood running in at the west and Black Marsh at the east, Cyrodiil closing the north, and the
+ * real southern sea at the bottom edge. */
+export const elsweyr = tamrielMap("ELSWEYR", "elsweyr.json.gz", tamrielViews.elsweyr, [...allLands, elsweyrEdges]);
