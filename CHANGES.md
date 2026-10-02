@@ -15,6 +15,11 @@
 - Cyrodiil preset: a third province window of the same Tamriel map and climate table, holding
   Colovia and Nibenay with Skyrim, Hammerfell, Morrowind and Elsweyr running in at its edges. No
   sea is invented at the cut: 11/11 checks, 99.7% sea-or-land agreement with the continent.
+- Hammerfell preset: a third province window of the same Tamriel map and climate table, with the
+  Alik'r desert and Craglorn in the middle, Stros M'Kai and the southern coast on the Abecean Sea,
+  the Iliac Bay in the west with High Rock running in across it, and the Dragontail mountains and
+  Cyrodiil entering at the north and east edges. No sea is invented at the cut: 11/11 checks, 98.3%
+  sea-or-land agreement with the continent.
 
 ## 0.3.5
 

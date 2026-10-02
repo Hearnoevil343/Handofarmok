@@ -145,6 +145,17 @@ const cyrodiilEdges: Lands = ({ m }) => ({
     { name: "Hammerfell march", at: m(450, 400), expect: "Desert|Shrub|Grass|Wasteland|Savanna" },
     { name: "Morrowind march", at: m(900, 300), expect: "Shrub|Desert|Wasteland|Grass|Savanna|Taiga|Mountain" },
     { name: "Elsweyr march", at: m(700, 700), expect: "Desert|Shrub|Savanna|Grass|Forest" },
+/** Checks that only exist once the view is cut to Hammerfell: its landmark and its four edges. */
+const hammerfellEdges: Lands = ({ m }) => ({
+  peaks: [],
+  regions: [],
+  checks: [
+    { name: "The Alik'r Desert", at: m(220, 390), expect: "Desert" },
+    { name: "High Rock march", at: m(107, 265), expect: "Forest|Grass|Shrub|Taiga" },
+    { name: "The Dragontail Mountains", at: m(453, 316), expect: "Mountain|Taiga|Tundra|Forest" },
+    { name: "Cyrodiil march", at: m(523, 450), expect: "Forest|Grass|Shrub|Savanna" },
+    { name: "The Iliac Bay", at: m(107, 603), expect: "Ocean" },
+    { name: "The Abecean Sea", at: m(124, 654), expect: "Ocean" },
   ],
 });
 
@@ -156,6 +167,7 @@ export const tamrielViews: Record<string, [number, number, number, number]> = {
   skyrim: [306, 55, 786, 535],
   morrowind: [680, 40, 1200, 560],
   cyrodiil: [440, 215, 960, 735],
+  hammerfell: [20, 260, 540, 780],
 };
 
 /**
@@ -239,3 +251,7 @@ export const morrowind = tamrielMap("MORROWIND", "morrowind.json.gz", tamrielVie
  * Skyrim and the Jerall range running in at the north edge, Hammerfell at the west, Morrowind and the
  * Valus range at the east, Elsweyr and Valenwood at the south. */
 export const cyrodiil = tamrielMap("CYRODIIL", "cyrodiil.json.gz", tamrielViews.cyrodiil, [...allLands, cyrodiilEdges]);
+/** Hammerfell, the same way: the Alik'r desert and Craglorn in the middle, Stros M'Kai and the
+ * southern coast on the Abecean Sea, the Iliac Bay in the west with High Rock running in across it,
+ * and Skyrim's Dragontail mountains and Cyrodiil entering at the north and east edges. */
+export const hammerfell = tamrielMap("HAMMERFELL", "hammerfell.json.gz", tamrielViews.hammerfell, [...allLands, hammerfellEdges]);
