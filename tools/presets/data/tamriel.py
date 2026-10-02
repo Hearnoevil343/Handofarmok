@@ -1,8 +1,11 @@
 """Turn UESP's painted map of Tamriel into 257x257 layers for the preset builder.
 
-    python tamriel.py <map> <tamriel.png> <out.json> [preview.png]   (then gzip -9 it to <map>.json.gz)
+    python tamriel.py <map> <tamriel.png> <out.json> [preview.png] [--dump]
+                                                     (then gzip -9 it to <map>.json.gz)
 
-<map> is tamriel (the whole continent); the table is written so a province window can be added later.
+<map> is tamriel (the whole continent) or skyrim (a square window of the same view). A window is a
+plain crop of the same picture: the neighbouring provinces run off its edges and no sea is invented
+at the cut, so the two maps show the same ground where they overlap.
 
 Source: the Elder Scrolls Online world map on UESP, stitched from its tiles,
 https://maps.uesp.net/esomap/tamriel/zoom10/tamriel-<x>-<y>.jpg, 8 x 8 tiles of 256 px = 2048 px
@@ -16,6 +19,13 @@ only where it has that dark coast line around it, which throws away the stains o
 Nothing else is painted - no forest, no relief - so height is built from the picture the way
 azeroth.py does it (land rises away from its coast) and every mountain range is drawn by hand below,
 in the same view pixels the recipe uses. Climate is the recipe's work. Needs numpy, scipy and Pillow.
+
+Every length here is either in view pixels (the ranges, the pale windows) or scaled by `z`, how many
+times smaller this map's window is than the whole view. A window is cut from fewer source pixels and
+blown up to the same 2056 px working picture, and its 257 tiles cover less ground, so without that
+factor the same numbers would mean different real distances on the two maps - a different blur
+reading the coast, a finer mountain noise, a coast rise two and a half times too steep. With it,
+every step measures the same ground, and the whole-continent map (z = 1) is untouched.
 """
 import json, random, sys
 import numpy as np
@@ -27,17 +37,28 @@ SIZE = 257; SEA = 16
 # square crop of the 2048 px picture holding Tamriel, Vvardenfell, Solstheim, Summerset and Thras,
 # called "the view" below and shown 1200 px square (as the recipe's coordinates)
 CROP = (75, 242, 1880, 2047); G = 2056              # 8 px per world tile
-# the land each map keeps, in view pixels; the map is the square around it, the rest is open sea
+VIEW = 1200
+# the land each map keeps, in view pixels; the map is the square around it
 # (the same rectangles are in recipes/tamriel.ts)
-MAPS = {'tamriel': (0, 0, 1200, 1200)}
+MAPS = {'tamriel': (0, 0, 1200, 1200), 'skyrim': (306, 55, 786, 535)}
+dump = '--dump' in sys.argv
+if dump: sys.argv.remove('--dump')
 name = sys.argv.pop(1)
 x0, y0, x1, y1 = MAPS[name]
 side = max(x1 - x0, y1 - y0); sx = (x0 + x1 - side) / 2; sy = (y0 + y1 - side) / 2
-k = (CROP[2] - CROP[0]) / 1200
+z = VIEW / side                                     # 1 for the continent, more for a window
+
+
+def gp(v):
+    """A length written for the whole view, in this map's pixels or tiles."""
+    return max(1, int(round(v * z)))
+
+
+k = (CROP[2] - CROP[0]) / VIEW
 box = tuple(round(v) for v in (CROP[0] + sx * k, CROP[1] + sy * k, CROP[0] + (sx + side) * k, CROP[1] + (sy + side) * k))
 src = Image.open(sys.argv[1]).convert('RGB').crop(box).resize((G, G), Image.LANCZOS)
 a = np.asarray(src).astype(np.float32).copy()
-f = np.stack([nd.uniform_filter(a[..., i], 5) for i in range(3)], -1)
+f = np.stack([nd.uniform_filter(a[..., i], gp(5)) for i in range(3)], -1)
 r, g, b = f[..., 0], f[..., 1], f[..., 2]; flum = f.mean(2)
 
 # land: the warm tan fill, kept only where a dark coast line runs around it, which is what the open
@@ -46,8 +67,18 @@ dark = flum < 118
 
 
 def filled(min_warmth, max_blue):
-    """Fill at least this warm and this far from paper, opened and closed to whole blocks."""
-    return nd.binary_closing(nd.binary_opening(((r - b) > min_warmth) & (b < max_blue), iterations=3), iterations=5)
+    """Fill at least this warm and this far from paper, opened and closed to whole blocks.
+
+    The edge of the picture is not an edge of the land. A window is a crop and the fill runs on past
+    it, but opening treats everything outside the array as paper and so eats a strip off all four
+    sides - which left the mainland a few pixels short of the border, put its own coast test's ring
+    on inland tan instead of the drawn coast line (0.346 against the 0.35 bar) and threw the whole of
+    Skyrim away. So the mask is carried out past the border before the morphology and cut back after.
+    """
+    m = ((r - b) > min_warmth) & (b < max_blue)
+    pad = gp(3) + gp(5) + 2
+    m = nd.binary_closing(nd.binary_opening(np.pad(m, pad, mode='edge'), iterations=gp(3)), iterations=gp(5))
+    return m[pad:-pad, pad:-pad]
 
 
 warm = filled(70, 108)
@@ -55,8 +86,8 @@ lab, n = nd.label(warm)
 land = np.zeros((G, G), bool)
 for i in range(1, n + 1):
     piece = lab == i
-    if piece.sum() < 120: continue
-    ring = nd.binary_dilation(piece, iterations=3) & ~piece
+    if piece.sum() < 120 * z * z: continue
+    ring = nd.binary_dilation(piece, iterations=gp(3)) & ~piece
     if dark[ring].mean() > 0.35: land |= piece
 # Solstheim is painted in a much paler fill than the rest, pale enough that reading it needs a test
 # loose enough to take the open paper as well - so it is read inside its own window, in view pixels.
@@ -64,8 +95,9 @@ for i in range(1, n + 1):
 PALE = [('Solstheim', (788, 68, 892, 182))]
 pale = filled(55, 135)
 for _, (wx0, wy0, wx1, wy1) in PALE:
-    window = np.zeros((G, G), bool)
     gx0, gy0, gx1, gy1 = (round((v - o) / side * G) for v, o in ((wx0, sx), (wy0, sy), (wx1, sx), (wy1, sy)))
+    if gx1 <= 0 or gy1 <= 0 or gx0 >= G or gy0 >= G: continue   # outside this map's window
+    window = np.zeros((G, G), bool)
     window[max(gy0, 0):gy1, max(gx0, 0):gx1] = True
     land |= pale & window
 
@@ -89,7 +121,8 @@ is_sea = (sea_cov >= 128) & ~is_lake
 is_land = ~is_sea & ~is_lake
 sea_l = np.where(is_sea, sea_cov, 0); lake_l = np.where(is_lake, lake_cov, 0)
 # The map paints no relief at all, so every range of Tamriel is drawn here by hand in view pixels
-# (as the recipe's `m`), with half-widths in those pixels.
+# (as the recipe's `m`), with half-widths in those pixels. A window keeps the ranges that reach into
+# it and the part of a range that crosses its edge; the rest simply falls outside.
 WALLS = [
     # High Rock and Hammerfell
     ('Wrothgarian Mountains', [(225, 180), (280, 198), (330, 232)], 13),
@@ -129,27 +162,33 @@ def wall_cover():
 mountain = wall_cover()
 
 
+def view_fraction(off):
+    """Where this map's tile centres fall across the whole view, 0-1."""
+    return (off + np.arange(SIZE) * side / SIZE) / VIEW
+
+
 def value_noise(rng, cells, ridged=False):
-    """Fractal value noise over the tile grid, 0-1."""
+    """Fractal value noise, sampled in view coordinates so every map reads the same field."""
     out = np.zeros((SIZE, SIZE)); total = 0; amp = 1.0; n = cells
-    t = np.arange(SIZE) / SIZE
+    fx = view_fraction(sx); fy = view_fraction(sy)
     for _ in range(4):
         lat = np.array([[rng.random() for _ in range(n + 2)] for _ in range(n + 2)])
-        fi = t * n; i0 = fi.astype(int); s = fi - i0; s = s * s * (3 - 2 * s)
-        p = lat[np.ix_(i0, i0)] + (lat[np.ix_(i0, i0 + 1)] - lat[np.ix_(i0, i0)]) * s[None, :]
-        q = lat[np.ix_(i0 + 1, i0)] + (lat[np.ix_(i0 + 1, i0 + 1)] - lat[np.ix_(i0 + 1, i0)]) * s[None, :]
-        v = p + (q - p) * s[:, None]
-        if ridged: v = 1 - abs(v * 2 - 1)
-        out += v * amp; total += amp; amp *= 0.5; n *= 2
+        ix = (fx * n).astype(int); u = fx * n - ix; u = u * u * (3 - 2 * u)
+        iy = (fy * n).astype(int); v = fy * n - iy; v = v * v * (3 - 2 * v)
+        p = lat[np.ix_(iy, ix)] + (lat[np.ix_(iy, ix + 1)] - lat[np.ix_(iy, ix)]) * u[None, :]
+        q = lat[np.ix_(iy + 1, ix)] + (lat[np.ix_(iy + 1, ix + 1)] - lat[np.ix_(iy + 1, ix)]) * u[None, :]
+        w = p + (q - p) * v[:, None]
+        if ridged: w = 1 - abs(w * 2 - 1)
+        out += w * amp; total += amp; amp *= 0.5; n *= 2
     return out / total
 
 
 rng = random.Random(433)  # the year the Oblivion Crisis ends, 3E 433
 broad = value_noise(rng, 6); fine = value_noise(rng, 24); crest = value_noise(rng, 12, ridged=True)
 coast = nd.distance_transform_edt(is_land)
-h = SEA + 6 + 26 * (1 - np.exp(-coast / 8)) + 16 * (broad - 0.5) + 8 * (fine - 0.5)
+h = SEA + 6 + 26 * (1 - np.exp(-coast / (8 * z))) + 16 * (broad - 0.5) + 8 * (fine - 0.5)
 height = np.where(is_land, np.maximum(SEA + 2, h), 4 + 8 * broad)
-height = np.where(is_land, np.maximum(SEA + 2, nd.uniform_filter(height, 3)), height)
+height = np.where(is_land, np.maximum(SEA + 2, nd.uniform_filter(height, gp(3))), height)
 core = np.clip(mountain / 255 * 2.0, 0, 1) ** 0.7
 height = np.where(is_land, height + 160 * core * (0.55 + 0.45 * crest) * (0.8 + 0.4 * fine), height)
 
@@ -159,8 +198,25 @@ out = {'size': SIZE, 'seaLevel': SEA, 'layers': {
     'sea': [int(v) for v in sea_l.flat], 'lake': [int(v) for v in lake_l.flat],
     'forest': zero, 'wetland': zero, 'hills': zero, 'volcanic': zero}}
 json.dump(out, open(sys.argv[2], 'w'), separators=(',', ':'))
-print('wrote', sys.argv[2], 'land', int(is_land.sum()), 'lake tiles', int(is_lake.sum()),
+print('wrote', sys.argv[2], name, 'view', (round(sx), round(sy), round(sx + side), round(sy + side)),
+      'z', round(z, 3), 'land', int(is_land.sum()), 'lake tiles', int(is_lake.sum()),
       'mountain tiles', int((mountain > 64).sum()))
+
+if dump:
+    # land, sea and ranges at 60 x 60 with view coordinates down the side and across the top, so a
+    # place can be picked for a check without looking at a picture
+    N = 60
+    cols = [int((c + 0.5) * SIZE / N) for c in range(N)]
+    for lead in range(3):
+        row = ''
+        for c in cols:
+            label = f'{round(sx + (c + 0.5) * side / SIZE):4d}'
+            row += label[lead + 1] if c % 6 == 0 else ' '
+        print('     ' + row)
+    for rw in range(N):
+        ty = int((rw + 0.5) * SIZE / N)
+        line = ''.join('^' if mountain[ty, tx] > 64 else '~' if is_lake[ty, tx] else '.' if is_sea[ty, tx] else '#' for tx in cols)
+        print(f'{round(sy + (ty + 0.5) * side / SIZE):4d} {line}')
 
 if len(sys.argv) > 3:
     o = a * 0.6

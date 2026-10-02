@@ -18,8 +18,9 @@ import { type Point, type Recipe, oval } from "../recipe";
  *
  * Coordinates are pixels of that map cropped to (75,242)-(1880,2047) and shown 1200 px square
  * (x east, y south), "the view"; `m` turns them into the map's plan. Written as a table of maps, as
- * Azeroth is, so a province window (a square cut of the same view) can be added beside the whole
- * continent without a second climate table.
+ * Azeroth is, so a province window (a square cut of the same view) is one row of `tamrielViews` and
+ * one export, with no second climate table: SKYRIM is the whole table below, read through a smaller
+ * window, and every province it reaches still paints its own weather there.
  */
 type Helpers = {
   m: (x: number, y: number) => Point;
@@ -107,16 +108,61 @@ const southLands: Lands = ({ m, box }) => ({
   ],
 });
 
-/** A map of the land inside `keep` (view pixels; the same rectangles are in data/tamriel.py), on the square around it. */
+/** Checks that only exist once the view is cut to Skyrim: what its four edges should read. */
+const skyrimEdges: Lands = ({ m }) => ({
+  peaks: [],
+  regions: [],
+  checks: [
+    { name: "Sea of Ghosts", at: m(550, 70), expect: "Ocean" },
+    { name: "High Rock march", at: m(320, 200), expect: "Forest|Grass|Shrub|Taiga" },
+    { name: "Hammerfell march", at: m(330, 500), expect: "Desert|Shrub|Grass|Wasteland|Savanna" },
+    { name: "The Velothi wall", at: m(740, 250), expect: "Mountain|Taiga|Tundra|Forest" },
+  ],
+});
+
+const VIEW = 1200, PLAN = 1000;
+
+/** The view rectangle each map keeps, in view pixels; the same table is in data/tamriel.py. */
+export const tamrielViews: Record<string, [number, number, number, number]> = {
+  tamriel: [0, 0, 1200, 1200],
+  skyrim: [306, 55, 786, 535],
+};
+
+/**
+ * A map of the square of the view around `keep` (view pixels; the same rectangles are in
+ * data/tamriel.py). A window is a plain crop, so the neighbouring provinces run off its edges and
+ * nothing is clipped or invented at the cut: every region of the table above paints whatever part of
+ * itself the window holds, and the ones it does not reach never match a tile.
+ *
+ * Four things above are written for the whole view and have to be re-read for a window, or the same
+ * ground would come out differently on the two maps:
+ *  - temperature is a straight gradient from the top of the plan to the bottom, so its two ends are
+ *    taken from where the window sits in the view, not from the continent's own 12 and 95;
+ *  - `feather` and `regionWobble` are plan units, so they are multiplied by `z` to stay the same
+ *    width of real ground (a 20-unit edge is 24 view px of coast on either map, not 8);
+ *  - `oceanSlope` is elevation lost per tile out from the coast, so it is divided by `z` to keep the
+ *    shelf the same width of real sea instead of dropping to the floor just off the beach;
+ *  - a check outside the window would be clamped to an edge tile and read a biome from the wrong
+ *    place, so those are dropped and the window names its own.
+ *
+ * What cannot be lined up: `build` lays its own noise (the patchy and texture fields, the region
+ * wobble) over the tile grid, and the two maps do not share one. That scatter is +/- a few points on
+ * every layer, which flips any biome whose threshold a tile is already sitting on - most of the
+ * remaining disagreement between SKYRIM and TAMRIEL is that, not a difference in the ground.
+ */
 function tamrielMap(title: string, terrain: string, keep: [number, number, number, number], lands: Lands[]): Recipe {
   const [x0, y0, x1, y1] = keep;
   const side = Math.max(x1 - x0, y1 - y0);
   const sx = (x0 + x1 - side) / 2, sy = (y0 + y1 - side) / 2;
+  const z = VIEW / side;
   const m = (x: number, y: number): Point => [((x - sx) * 1000) / side, ((y - sy) * 1000) / side];
   const area = (...pts: [number, number][]) => pts.map(([x, y]) => m(x, y));
   const box = (x0: number, y0: number, x1: number, y1: number) => area([x0, y0], [x1, y0], [x1, y1], [x0, y1]);
   const round = (x: number, y: number, rx: number, ry: number) => oval(...m(x, y), (rx * 1000) / side, (ry * 1000) / side);
   const parts = lands.map((l) => l({ m, area, box, round }));
+  // the Sea of Ghosts at the top of the view, the jungles of Elsweyr and Black Marsh at the bottom
+  const tempAt = (viewY: number) => 12 + (83 * viewY) / VIEW;
+  const inPlan = ([x, y]: Point) => x >= 0 && x <= PLAN && y >= 0 && y <= PLAN;
   return {
     title,
     seed: 433,
@@ -125,23 +171,28 @@ function tamrielMap(title: string, terrain: string, keep: [number, number, numbe
     land: [],
     water: [],
     coastWobble: 0,
-    regionWobble: 42,
+    regionWobble: 42 * z,
+    oceanSlope: 4 / z,
+    minFeather: 24 * z,
     lowland: { base: 150, variation: 0 },
     ranges: [],
-    peaks: parts.flatMap((p) => p.peaks),
-    // the Sea of Ghosts at the top, the jungles of Elsweyr and Black Marsh at the bottom
-    temperature: { north: 12, south: 95 },
+    peaks: parts.flatMap((p) => p.peaks).map((p) => ({ ...p, radius: p.radius * z })),
+    temperature: { north: tempAt(sy), south: tempAt(sy + side) },
     lapse: 22,
     // drainage under 45 keeps open land grassland rather than hills
     defaults: { rainfall: 45, drainage: 38, savagery: 35, volcanism: 0 },
-    regions: parts.flatMap((p) => p.regions),
+    regions: parts.flatMap((p) => p.regions).map((r) => ({ ...r, feather: (r.feather ?? 25) * z })),
     worldGenOverrides: { BEAST_END_YEAR: ["200", "80"] },
     checks: [
       ...parts.flatMap((p) => p.checks),
       { name: "Sea of Ghosts", at: m(600, 40), expect: "Ocean" },
       { name: "Southern sea", at: m(600, 1000), expect: "Ocean" },
-    ],
+    ].filter((c) => inPlan(c.at)),
   };
 }
 
-export const tamriel = tamrielMap("TAMRIEL", "tamriel.json.gz", [0, 0, 1200, 1200], [northLands, westLands, eastLands, southLands]);
+const allLands = [northLands, westLands, eastLands, southLands];
+export const tamriel = tamrielMap("TAMRIEL", "tamriel.json.gz", tamrielViews.tamriel, allLands);
+/** Skyrim, as a square window of the same view: High Rock, Hammerfell, Cyrodiil and the Velothi
+ * wall of Morrowind run in at its edges, and the climate table above is the one driving it. */
+export const skyrim = tamrielMap("SKYRIM", "skyrim.json.gz", tamrielViews.skyrim, [...allLands, skyrimEdges]);
