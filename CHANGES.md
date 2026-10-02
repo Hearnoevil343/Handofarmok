@@ -1,5 +1,12 @@
 # Changes to Hand of Armok
 
+## Unreleased
+
+- Britannia preset, from the Ultima VI surface map (tile map by Otmar Lendl, tiles by
+  Andrew Jenner): coast, rivers, lakes, forests, swamps and the mountain walls are the
+  game's own; heights are built from them. Desert around the Shrine of Sacrifice and a
+  volcano on the Isle of the Avatar are hand-made from the lore.
+
 ## 0.3.2
 
 - Reworded the interface: sentence-case labels, "world" and "preset" in place of

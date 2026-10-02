@@ -225,9 +225,9 @@ still holds for preset packs.
       token; until then say no to evil-placement requests.
 
 ### Map requests, with where each stands
-- [ ] Westeros — announced as on the list
-- [ ] Ultima 6 / Britannia — "challenge accepted"; requester noted the common
-      map does not show the volcanoes, so source a better reference first
+- [x] Westeros — announced as on the list (0.3.1)
+- [x] Ultima 6 / Britannia — built from the Ultima VI surface map; DF gen
+      checked (Spine, Deep Forest, NE desert); Avatar-isle volcano not confirmed in DF
 - [ ] Elder Scrolls regions (Morrowind asked for by name) — announced 5th
 - [ ] Azeroth (Warcraft) — announced 4th; ocean problem applies
 - [ ] One Piece — on the list; ocean problem applies
