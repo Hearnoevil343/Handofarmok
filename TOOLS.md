@@ -18,7 +18,9 @@ Scripts worth knowing about before writing another one.
   sweep side by side: score, mean penalty per target (largest first), and every metric.
 - **presets** (`tools/presets/`) - builds hand-made presets such as Middle-earth and Westeros from
   measured terrain and vectors; `build.ts --out`. Westeros has no elevation model, so
-  `data/westeros.py` builds heights from the fan map's coast and mountain outlines. Westeros' map
+  `data/westeros.py` builds heights from the fan map's coast and mountain outlines. Tamriel's
+  source is a parchment map with no relief at all: `data/tamriel.py` reads only the coast and
+  lakes from it and draws every mountain range by hand. Westeros' map
   data is CC BY-NC-SA 3.0, non-commercial, credited in `data/WESTEROS-CREDITS.md`.
 - **dftest** (`tools/dftest/`) - generates a world in Dwarf Fortress from an export and compares
   the result layer by layer with the prediction.

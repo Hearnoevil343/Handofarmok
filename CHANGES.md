@@ -1,5 +1,13 @@
 # Changes to Hand of Armok
 
+## 0.3.5
+
+- Tamriel preset, from the Elder Scrolls Online world map on UESP: every province on one
+  257 map, with Vvardenfell, Solstheim, the Summerset Isles and Thras. The parchment map
+  paints no relief, so only the coast and lakes are read from it; the heights, the ranges
+  (Wrothgarian, Druadach, Dragontail, Jerall, the Throat of the World, Velothi, Valus) and
+  Red Mountain are drawn in, and the climate of each province is hand-made.
+
 ## 0.3.4
 
 - Azeroth presets, from teebling's terrain map of World of Warcraft Classic: Kalimdor,

@@ -19,6 +19,7 @@ import { middleEarth } from "./recipes/middleEarth";
 import { westeros } from "./recipes/westeros";
 import { britannia } from "./recipes/britannia";
 import { azeroth, easternKingdoms, kalimdor } from "./recipes/azeroth";
+import { tamriel } from "./recipes/tamriel";
 import { newRealmSettings, type TokenSettings } from "@df/settings";
 import { writeWorldGen } from "@formats/worldgen/write";
 import { measureWorld } from "@helpers/worldMeasure";
@@ -31,6 +32,7 @@ const RECIPES: Record<string, { recipe: Recipe; file: string }> = {
   azeroth: { recipe: azeroth, file: "azeroth.txt" },
   kalimdor: { recipe: kalimdor, file: "kalimdor.txt" },
   "eastern-kingdoms": { recipe: easternKingdoms, file: "eastern_kingdoms.txt" },
+  tamriel: { recipe: tamriel, file: "tamriel.txt" },
 };
 const SIZE = 257;
 
