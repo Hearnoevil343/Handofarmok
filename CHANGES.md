@@ -1,5 +1,20 @@
 # Changes to Hand of Armok
 
+## 0.3.5
+
+- Tamriel preset, from the Elder Scrolls Online world map on UESP: every province on one
+  257 map, with Vvardenfell, Solstheim, the Summerset Isles and Thras. The parchment map
+  paints no relief, so only the coast and lakes are read from it; the heights, the ranges
+  (Wrothgarian, Druadach, Dragontail, Jerall, the Throat of the World, Velothi, Valus) and
+  Red Mountain are drawn in, and the climate of each province is hand-made.
+- Skyrim preset: a province window of the same Tamriel map and the same climate table, cut
+  square so High Rock, Hammerfell, Cyrodiil and the Velothi wall of Morrowind run in at its
+  edges with no invented sea. Adding one costs a rectangle in two files.
+- Presets can now say what their plan units and their tiles are worth as real ground
+  (`oceanSlope`, `minFeather`), so a window of a bigger map puts the same biomes on the same
+  ground instead of a steeper sea and narrower region edges. `build.ts --compare <other map>`
+  measures that agreement.
+
 ## 0.3.4
 
 - Azeroth presets, from teebling's terrain map of World of Warcraft Classic: Kalimdor,

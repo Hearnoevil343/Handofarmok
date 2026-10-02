@@ -19,6 +19,7 @@ import { middleEarth } from "./recipes/middleEarth";
 import { westeros } from "./recipes/westeros";
 import { britannia } from "./recipes/britannia";
 import { azeroth, easternKingdoms, kalimdor } from "./recipes/azeroth";
+import { skyrim, tamriel, tamrielViews } from "./recipes/tamriel";
 import { newRealmSettings, type TokenSettings } from "@df/settings";
 import { writeWorldGen } from "@formats/worldgen/write";
 import { measureWorld } from "@helpers/worldMeasure";
@@ -31,8 +32,12 @@ const RECIPES: Record<string, { recipe: Recipe; file: string }> = {
   azeroth: { recipe: azeroth, file: "azeroth.txt" },
   kalimdor: { recipe: kalimdor, file: "kalimdor.txt" },
   "eastern-kingdoms": { recipe: easternKingdoms, file: "eastern_kingdoms.txt" },
+  tamriel: { recipe: tamriel, file: "tamriel.txt" },
+  skyrim: { recipe: skyrim, file: "skyrim.txt" },
 };
 const SIZE = 257;
+/** Maps that are a window of a bigger one share a view, so `--compare` can line their tiles up. */
+const VIEWS: Record<string, [number, number, number, number]> = { ...tamrielViews };
 
 function writePng(file: string, width: number, height: number, rgb: Uint8Array) {
   const raw = Buffer.alloc((width * 3 + 1) * height);
@@ -128,6 +133,69 @@ const counts: Record<string, number> = {};
 for (let i = 0; i < SIZE * SIZE; i++) counts[biomeAt(i)] = (counts[biomeAt(i)] ?? 0) + 1;
 console.log("\nbiomes:", Object.entries(counts).sort((a, b) => b[1] - a[1]).map(([b, c]) => `${b} ${((100 * c) / (SIZE * SIZE)).toFixed(1)}%`).join(", "));
 console.log(`checks: ${entry.recipe.checks.length - misses}/${entry.recipe.checks.length} as expected`);
+
+// --compare <other map of the same view>: the check that matters for a province window. Both maps
+// show the same ground where they overlap, so they should put the same biome on it. They cannot
+// match tile for tile - the window's 257 tiles cover less ground, so its noise, its coast distances
+// and its region edges are drawn at a finer step - but a disagreement anywhere but a boundary means
+// something is being measured in tiles that should be measured in view pixels.
+const compareAt = flags.indexOf("--compare");
+if (compareAt >= 0) {
+  const other = flags[compareAt + 1];
+  const square = (v: [number, number, number, number]) => {
+    const side = Math.max(v[2] - v[0], v[3] - v[1]);
+    return { sx: (v[0] + v[2] - side) / 2, sy: (v[1] + v[3] - side) / 2, side };
+  };
+  const mine = square(VIEWS[name]), theirs = square(VIEWS[other]);
+  const them = RECIPES[other].recipe;
+  const thatTerrain = them.terrain ? (JSON.parse(zlib.gunzipSync(fs.readFileSync(`tools/presets/data/${them.terrain}`)).toString()) as Terrain) : undefined;
+  const thoseLayers = build(them, SIZE, thatTerrain);
+  const thoseBiomes = (i: number) => {
+    const el = thoseLayers.elevation;
+    const x = i % SIZE;
+    const near = (x > 0 && el[i - 1] < 100) || (x < SIZE - 1 && el[i + 1] < 100) || (i >= SIZE && el[i - SIZE] < 100) || (i + SIZE < el.length && el[i + SIZE] < 100);
+    return identifyBiome(Object.fromEntries(Object.values(LayerType).map((l) => [l, thoseLayers[l][i]])) as TileValues, near);
+  };
+  let overlap = 0, sameBiome = 0, sameWater = 0;
+  const disagreed: Record<string, number> = {};
+  const drift: Record<string, number> = {}, spread: Record<string, number> = {}, net: Record<string, number> = {};
+  const WATCH = [LayerType.Elevation, LayerType.Temperature, LayerType.Rainfall, LayerType.Drainage];
+  for (let i = 0; i < SIZE * SIZE; i++) {
+    const vx = mine.sx + ((i % SIZE) + 0.5) * (mine.side / SIZE);
+    const vy = mine.sy + (((i / SIZE) | 0) + 0.5) * (mine.side / SIZE);
+    const tx = Math.floor(((vx - theirs.sx) / theirs.side) * SIZE), ty = Math.floor(((vy - theirs.sy) / theirs.side) * SIZE);
+    if (tx < 0 || ty < 0 || tx >= SIZE || ty >= SIZE) continue;
+    const j = ty * SIZE + tx;
+    overlap++;
+    const a = biomeAt(i), b = thoseBiomes(j);
+    net[a] = (net[a] ?? 0) + 1;
+    net[b] = (net[b] ?? 0) - 1;
+    if (a === b) sameBiome++;
+    else disagreed[`${a}/${b}`] = (disagreed[`${a}/${b}`] ?? 0) + 1;
+    if (/Ocean/.test(a) === /Ocean/.test(b)) sameWater++;
+    // a layer whose average is off is being measured in the wrong unit; one that only scatters is
+    // the two maps' own tile-grid noise, which no amount of scaling can line up
+    for (const l of WATCH) {
+      const dv = layers[l][i] - thoseLayers[l][j];
+      drift[l] = (drift[l] ?? 0) + dv;
+      spread[l] = (spread[l] ?? 0) + Math.abs(dv);
+    }
+    // and elevation split by what kind of ground it is, so a bias can be traced to the coast rise,
+    // the open lowland or the hand-drawn ranges
+    const hi = Math.max(layers.elevation[i], thoseLayers.elevation[j]);
+    const kind = hi < 100 ? "sea" : hi >= 200 ? "range" : "lowland";
+    const de = layers.elevation[i] - thoseLayers.elevation[j];
+    drift[kind] = (drift[kind] ?? 0) + de;
+    spread[kind] = (spread[kind] ?? 0) + 1;
+  }
+  console.log(`\noverlap with ${other}: ${overlap} tiles; same biome ${((100 * sameBiome) / overlap).toFixed(1)}%, same sea or land ${((100 * sameWater) / overlap).toFixed(1)}%`);
+  console.log("  layers: " + WATCH.map((l) => `${l} mean ${(drift[l] / overlap).toFixed(1)} apart ${(spread[l] / overlap).toFixed(1)}`).join(", "));
+  console.log("  elevation by ground: " + ["sea", "lowland", "range"].map((k) => `${k} ${spread[k] ?? 0} tiles mean ${((drift[k] ?? 0) / (spread[k] || 1)).toFixed(1)}`).join(", "));
+  console.log("  disagreed (this/that): " + Object.entries(disagreed).sort((p, q) => q[1] - p[1]).slice(0, 8).map(([k, c]) => `${k} x${c}`).join(", "));
+  // churn that cancels out is the two tile grids' noise; a biome this map has far more or far less
+  // of over the same ground is a real difference in how it was built
+  console.log("  net over the overlap: " + Object.entries(net).filter(([, c]) => Math.abs(c) >= overlap / 200).sort((p, q) => Math.abs(q[1]) - Math.abs(p[1])).map(([k, c]) => `${k} ${c > 0 ? "+" : ""}${((100 * c) / overlap).toFixed(1)}%`).join(", "));
+}
 {
   const bySize = [0, 0, 0, 0];
   let lakes = 0;
