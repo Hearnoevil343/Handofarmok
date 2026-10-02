@@ -1,5 +1,12 @@
 # Changes to Hand of Armok
 
+## 0.3.4
+
+- Azeroth presets, from teebling's terrain map of World of Warcraft Classic: Kalimdor,
+  the Eastern Kingdoms, and both together. Coast, lakes and forest are the map's own;
+  heights are built from it, with the mountain walls between zones drawn in. Climate,
+  savagery and the volcanoes at Fire Plume Ridge and Blackrock Mountain are hand-made per zone.
+
 ## 0.3.3
 
 - Britannia preset, from the Ultima VI surface map (tile map by Otmar Lendl, tiles by

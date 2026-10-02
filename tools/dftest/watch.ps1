@@ -1,5 +1,5 @@
-param([int]$Seconds = 130)
-$dir = "$env:TEMP\hoa-britannia\raw"
+param([int]$Seconds = 130, [string]$Name = "hoa-britannia")
+$dir = "$env:TEMP\$Name\raw"
 New-Item -ItemType Directory -Force $dir | Out-Null
 $end = (Get-Date).AddSeconds($Seconds)
 $i = 0
