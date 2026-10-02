@@ -2,13 +2,13 @@
 
 Built with **[Hand of Armok](https://github.com/Hearnoevil343/Handofarmok)**, my world builder for Dwarf Fortress: paint or import a map, run geological ages over it, and export a `world_gen.txt` that generates what you designed.
 
+[![Azeroth as Dwarf Fortress generated it](https://gist.githubusercontent.com/Hearnoevil343/53680866c9fa24202d307d94a2e3551f/raw/azeroth-preview.png)](https://gist.githubusercontent.com/Hearnoevil343/53680866c9fa24202d307d94a2e3551f/raw/azeroth-df-map.png)
+
 Three presets in one file, all 257x257:
 
 - **AZEROTH**: both continents of World of Warcraft Classic side by side.
 - **KALIMDOR**: Kalimdor alone, filling the whole map.
 - **EASTERN KINGDOMS**: the Eastern Kingdoms alone, filling the whole map.
-
-[![Azeroth as Dwarf Fortress generated it](https://gist.githubusercontent.com/Hearnoevil343/53680866c9fa24202d307d94a2e3551f/raw/azeroth-preview.png)](https://gist.githubusercontent.com/Hearnoevil343/53680866c9fa24202d307d94a2e3551f/raw/azeroth-df-map.png)
 
 [![Kalimdor](https://gist.githubusercontent.com/Hearnoevil343/53680866c9fa24202d307d94a2e3551f/raw/kalimdor-preview.png)](https://gist.githubusercontent.com/Hearnoevil343/53680866c9fa24202d307d94a2e3551f/raw/kalimdor-df-map.png)
 
