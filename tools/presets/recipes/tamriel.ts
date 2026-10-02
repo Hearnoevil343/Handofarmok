@@ -201,6 +201,18 @@ const elsweyrEdges: Lands = ({ m }) => ({
     { name: "Cyrodiil march", at: m(700, 505), expect: "Forest|Grass|Shrub|Swamp|Savanna" },
     { name: "Black Marsh march", at: m(1000, 700), expect: "Swamp|Marsh|Forest|Grass|Shrub|Savanna" },
     { name: "Southern sea", at: m(700, 1010), expect: "Ocean" },
+
+/** Checks that only exist once the view is cut to Valenwood: its two landmarks and its four edges. */
+const valenwoodEdges: Lands = ({ m }) => ({
+  peaks: [],
+  regions: [],
+  checks: [
+    { name: "Grahtwood", at: m(470, 620), expect: "Forest" },
+    { name: "Malabal Tor", at: m(420, 820), expect: "Forest|Grass|Shrub|Swamp" },
+    { name: "Summerset channel (west)", at: m(235, 650), expect: "Ocean" },
+    { name: "Cyrodiil march", at: m(500, 500), expect: "Forest|Grass|Shrub|Swamp|Savanna" },
+    { name: "Elsweyr march", at: m(745, 700), expect: "Desert|Shrub|Savanna|Grass|Swamp|Forest" },
+    { name: "Southern sea", at: m(600, 1010), expect: "Ocean" },
   ],
 });
 
@@ -216,6 +228,7 @@ export const tamrielViews: Record<string, [number, number, number, number]> = {
   "high-rock": [0, 0, 480, 480],
   black_marsh: [700, 430, 1200, 930],
   elsweyr: [485, 500, 1005, 1020],
+  valenwood: [230, 495, 750, 1015],
 };
 
 /**
@@ -315,3 +328,8 @@ export const blackMarsh = tamrielMap("BLACK_MARSH", "black_marsh.json.gz", tamri
  * Valenwood running in at the west and Black Marsh at the east, Cyrodiil closing the north, and the
  * real southern sea at the bottom edge. */
 export const elsweyr = tamrielMap("ELSWEYR", "elsweyr.json.gz", tamrielViews.elsweyr, [...allLands, elsweyrEdges]);
+
+/** Valenwood, the same way: Grahtwood and Malabal Tor in the forest interior, Auridon and the
+ * Summerset channel closing the west, Cyrodiil running in at the north, and Elsweyr's Anequina and
+ * Pelletine entering at the east, with the real southern sea closing the bottom edge. */
+export const valenwood = tamrielMap("VALENWOOD", "valenwood.json.gz", tamrielViews.valenwood, [...allLands, valenwoodEdges]);

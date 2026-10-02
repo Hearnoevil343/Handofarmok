@@ -9,6 +9,11 @@
   agreement is 94.9%, just under the other windows' 95.3-96.2%, from the Nibenay/Colovia forest-type
   line sitting next to the narrow Valenwood-divide range, which the window's finer grid resolves
   more sharply than the continent's.
+- Valenwood preset: a fourth province window of the same Tamriel map and climate table, with
+  Grahtwood and Malabal Tor in the forest interior, Auridon and the Summerset channel closing the
+  west, Cyrodiil running in at the north, and Elsweyr's Anequina and Pelletine entering at the
+  east. No sea is invented at the cut: 12/12 checks, 98.9% sea-or-land agreement with the
+  continent.
 - High Rock preset: a third province window of the same Tamriel map and climate table, holding
   Daggerfall, Wayrest and the Wrothgarian and Druadach mountains around the Iliac Bay, with
   Hammerfell running in across the bay and at the south edge and Skyrim's Reach closing the east.
