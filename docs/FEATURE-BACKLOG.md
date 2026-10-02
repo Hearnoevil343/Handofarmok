@@ -228,7 +228,7 @@ still holds for preset packs.
 - [x] Westeros — announced as on the list (0.3.1)
 - [x] Ultima 6 / Britannia — built from the Ultima VI surface map; DF gen
       checked (Spine, Deep Forest, NE desert); volcano on the Isle of the Avatar confirmed
-- [ ] Elder Scrolls regions (Morrowind asked for by name) — announced 5th
+- [x] Elder Scrolls regions (Morrowind asked for by name) — Tamriel built from the ESO world map: all nine provinces on one 257 map, with Vvardenfell, Solstheim, Summerset and Thras (0.3.5)
 - [x] Azeroth (Warcraft) — Kalimdor, Eastern Kingdoms and the combined world; all three genned in the DF UI to year 250, maps captured
 - [ ] One Piece — on the list; ocean problem applies
 - [ ] Runeterra (League of Legends) — promised regardless of upvotes
@@ -237,5 +237,5 @@ still holds for preset packs.
 - [ ] Narnia — never answered
 - [ ] Sword Coast (Forgotten Realms) — never answered
 - [ ] Alagaesia (Eragon) — never answered
-- [ ] Skyrim — never answered
+- [x] Skyrim — a province window of the Tamriel map at 2.5x, High Rock, Hammerfell, Cyrodiil and the Velothi wall running in at the edges (0.3.5)
 - [ ] Pern — blocked on Good/Evil above
