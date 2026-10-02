@@ -134,6 +134,20 @@ const morrowindEdges: Lands = ({ m }) => ({
   ],
 });
 
+/** Checks that only exist once the view is cut to Cyrodiil: its landmarks and its four edges. */
+const cyrodiilEdges: Lands = ({ m }) => ({
+  peaks: [],
+  regions: [],
+  checks: [
+    { name: "Colovia", at: m(580, 430), expect: "Forest|Grass|Shrub|Savanna" },
+    { name: "Nibenay", at: m(740, 470), expect: "Forest" },
+    { name: "Skyrim march", at: m(600, 230), expect: "Taiga|Tundra|Forest|Mountain" },
+    { name: "Hammerfell march", at: m(450, 400), expect: "Desert|Shrub|Grass|Wasteland|Savanna" },
+    { name: "Morrowind march", at: m(900, 300), expect: "Shrub|Desert|Wasteland|Grass|Savanna|Taiga|Mountain" },
+    { name: "Elsweyr march", at: m(700, 700), expect: "Desert|Shrub|Savanna|Grass|Forest" },
+  ],
+});
+
 const VIEW = 1200, PLAN = 1000;
 
 /** The view rectangle each map keeps, in view pixels; the same table is in data/tamriel.py. */
@@ -141,6 +155,7 @@ export const tamrielViews: Record<string, [number, number, number, number]> = {
   tamriel: [0, 0, 1200, 1200],
   skyrim: [306, 55, 786, 535],
   morrowind: [680, 40, 1200, 560],
+  cyrodiil: [440, 215, 960, 735],
 };
 
 /**
@@ -220,3 +235,7 @@ export const skyrim = tamrielMap("SKYRIM", "skyrim.json.gz", tamrielViews.skyrim
  * coast, the Telvanni coast east to the edge of the view, and the Velothi wall closing the west with
  * Skyrim, Cyrodiil and Black Marsh running in behind it. */
 export const morrowind = tamrielMap("MORROWIND", "morrowind.json.gz", tamrielViews.morrowind, [...allLands, morrowindEdges]);
+/** Cyrodiil, the same way: Colovia and Nibenay with Lake Rumare and the Imperial City in the middle,
+ * Skyrim and the Jerall range running in at the north edge, Hammerfell at the west, Morrowind and the
+ * Valus range at the east, Elsweyr and Valenwood at the south. */
+export const cyrodiil = tamrielMap("CYRODIIL", "cyrodiil.json.gz", tamrielViews.cyrodiil, [...allLands, cyrodiilEdges]);

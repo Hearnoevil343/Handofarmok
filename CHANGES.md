@@ -12,6 +12,9 @@
   95.6% on Skyrim and Morrowind, up from 82.2% and 74.6%, and rainfall drift down to 0.0.
 - `build.ts --layers <file.json>` writes the six built layers, for measuring a window against its
   continent outside the build script.
+- Cyrodiil preset: a third province window of the same Tamriel map and climate table, holding
+  Colovia and Nibenay with Skyrim, Hammerfell, Morrowind and Elsweyr running in at its edges. No
+  sea is invented at the cut: 11/11 checks, 99.7% sea-or-land agreement with the continent.
 
 ## 0.3.5
 
