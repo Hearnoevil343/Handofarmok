@@ -1,5 +1,5 @@
 ﻿# Helpers for driving Dwarf Fortress: dot-source this (. .\dfkeys.ps1).
-#   Show-DF            maximise, make topmost (so the Claude window cannot cover it), focus
+#   Show-DF            maximise, make topmost (so other windows cannot cover it), focus
 #   Send-DFKey 'd' 5   press d five times (-Shift for shift+d); DF drops keys sent too fast
 #   Grab-DF file.png   client-area screenshot (same as grab.ps1)
 #   Wait-DFStill 6     wait until the screen has not changed for 6 s (DF lags seconds behind input)
