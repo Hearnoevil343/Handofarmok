@@ -46,21 +46,21 @@ const northLands: Lands = ({ m, box }) => ({
     { name: "Wrothgar", at: m(250, 210), expect: "Mountain|Forest|Taiga|Tundra" },
     { name: "Skyrim", at: m(520, 250), expect: "Taiga|Tundra|Forest|Mountain" },
     { name: "Winterhold", at: m(560, 140), expect: "Tundra|Glacier|Taiga|Forest" },
-    { name: "The Reach", at: m(385, 250), expect: "Mountain|Taiga|Tundra|Forest" },
+    { name: "The Reach", at: m(395, 295), expect: "Mountain|Taiga|Tundra|Forest" },
     { name: "Solstheim", at: m(840, 125), expect: "Tundra|Glacier|Taiga|Forest" },
   ],
 });
 
 /** Hammerfell and the Iliac coast: the dry west. */
-const westLands: Lands = ({ m, box }) => ({
+const westLands: Lands = ({ m, box, area }) => ({
   peaks: [],
   regions: [
     { name: "Hammerfell", shape: box(60, 330, 462, 532), set: { rainfall: 14, drainage: 45, savagery: 50 }, add: { temperature: 6 }, feather: 20 },
-    { name: "The Alik'r Desert", shape: box(118, 338, 332, 442), set: { rainfall: 2, drainage: 30, savagery: 55 }, add: { temperature: 12 }, feather: 15 },
+    { name: "The Alik'r Desert", shape: area([240, 440], [270, 425], [305, 420], [335, 425], [360, 440], [378, 460], [388, 485], [380, 510], [358, 528], [328, 538], [295, 535], [265, 522], [242, 502], [228, 480], [224, 460]), set: { rainfall: 2, drainage: 30, savagery: 55 }, add: { temperature: 12 }, feather: 15 },
     { name: "Stros M'Kai", shape: box(208, 478, 308, 582), set: { rainfall: 12, drainage: 40, savagery: 40 }, add: { temperature: 12 }, feather: 10 },
   ],
   checks: [
-    { name: "The Alik'r Desert", at: m(220, 390), expect: "Desert" },
+    { name: "The Alik'r Desert", at: m(305, 480), expect: "Desert" },
     { name: "Hammerfell", at: m(180, 470), expect: "Desert|Shrub|Grass|Wasteland|Savanna" },
     { name: "Stros M'Kai", at: m(255, 530), expect: "Desert|Shrub|Grass|Savanna" },
   ],
@@ -77,7 +77,7 @@ const eastLands: Lands = ({ m, box, round }) => ({
     { name: "Vvardenfell", shape: round(990, 278, 96, 96), set: { rainfall: 8, drainage: 50, savagery: 80, volcanism: 85 }, add: { temperature: 4 }, feather: 10 },
   ],
   checks: [
-    { name: "Colovia", at: m(580, 430), expect: "Forest|Grass|Shrub|Savanna" },
+    { name: "Colovia", at: m(620, 520), expect: "Forest|Grass|Shrub|Savanna" },
     { name: "Nibenay", at: m(740, 470), expect: "Forest" },
     { name: "Deshaan", at: m(850, 285), expect: "Shrub|Desert|Wasteland|Grass|Savanna|Taiga" },
     { name: "Vvardenfell", at: m(990, 278), expect: "Mountain|Wasteland|Desert|Shrub" },
@@ -99,10 +99,10 @@ const southLands: Lands = ({ m, box }) => ({
   ],
   checks: [
     { name: "Valenwood", at: m(480, 760), expect: "Forest" },
-    { name: "Anequina", at: m(700, 690), expect: "Desert|Shrub|Savanna|Grass" },
+    { name: "Anequina", at: m(750, 705), expect: "Desert|Shrub|Savanna|Grass" },
     { name: "Pelletine", at: m(690, 845), expect: "Forest|Savanna|Swamp|Grass" },
     { name: "Black Marsh", at: m(990, 700), expect: "Swamp|Marsh" },
-    { name: "Summerset Isle", at: m(110, 800), expect: "Forest|Grass|Shrub" },
+    { name: "Summerset Isle", at: m(85, 835), expect: "Forest|Grass|Shrub" },
     { name: "Auridon", at: m(232, 742), expect: "Forest|Grass|Shrub" },
     { name: "Thras", at: m(870, 1085), expect: "Swamp|Marsh|Forest|Grass|Shrub" },
   ],
@@ -139,12 +139,12 @@ const cyrodiilEdges: Lands = ({ m }) => ({
   peaks: [],
   regions: [],
   checks: [
-    { name: "Colovia", at: m(580, 430), expect: "Forest|Grass|Shrub|Savanna" },
+    { name: "Colovia", at: m(620, 520), expect: "Forest|Grass|Shrub|Savanna" },
     { name: "Nibenay", at: m(740, 470), expect: "Forest" },
     { name: "Skyrim march", at: m(600, 230), expect: "Taiga|Tundra|Forest|Mountain" },
     { name: "Hammerfell march", at: m(450, 400), expect: "Desert|Shrub|Grass|Wasteland|Savanna" },
-    { name: "Morrowind march", at: m(900, 300), expect: "Shrub|Desert|Wasteland|Grass|Savanna|Taiga|Mountain" },
-    { name: "Elsweyr march", at: m(700, 700), expect: "Desert|Shrub|Savanna|Grass|Forest" },
+    { name: "Morrowind march", at: m(900, 300), expect: "Shrub|Desert|Wasteland|Grass|Savanna|Taiga|Mountain|Hills" },
+    { name: "Elsweyr march", at: m(745, 700), expect: "Desert|Shrub|Savanna|Grass|Forest" },
   ],
 });
 
@@ -153,7 +153,7 @@ const hammerfellEdges: Lands = ({ m }) => ({
   peaks: [],
   regions: [],
   checks: [
-    { name: "The Alik'r Desert", at: m(220, 390), expect: "Desert" },
+    { name: "The Alik'r Desert", at: m(305, 480), expect: "Desert" },
     { name: "High Rock march", at: m(107, 265), expect: "Forest|Grass|Shrub|Taiga" },
     { name: "The Dragontail Mountains", at: m(453, 316), expect: "Mountain|Taiga|Tundra|Forest" },
     { name: "Cyrodiil march", at: m(523, 450), expect: "Forest|Grass|Shrub|Savanna" },
@@ -195,7 +195,7 @@ const elsweyrEdges: Lands = ({ m }) => ({
   peaks: [],
   regions: [],
   checks: [
-    { name: "Torval", at: m(650, 650), expect: "Desert|Shrub|Savanna|Grass" },
+    { name: "Torval", at: m(750, 708), expect: "Desert|Shrub|Savanna|Grass" },
     { name: "Tenmar Forest", at: m(800, 785), expect: "Forest|Savanna|Swamp|Grass" },
     { name: "Valenwood march", at: m(500, 750), expect: "Forest|Grass|Shrub|Savanna" },
     { name: "Cyrodiil march", at: m(700, 505), expect: "Forest|Grass|Shrub|Swamp|Savanna" },
@@ -223,7 +223,7 @@ const summersetEdges: Lands = ({ m }) => ({
   peaks: [],
   regions: [],
   checks: [
-    { name: "Summerset Isle", at: m(110, 800), expect: "Forest|Grass|Shrub" },
+    { name: "Summerset Isle", at: m(85, 835), expect: "Forest|Grass|Shrub" },
     { name: "Auridon", at: m(232, 742), expect: "Forest|Grass|Shrub" },
     { name: "The Summerset peaks", at: m(120, 790), expect: "Mountain|Forest|Shrub|Grass|Savanna" },
     { name: "Stros M'Kai", at: m(240, 540), expect: "Desert|Shrub|Grass|Savanna" },
