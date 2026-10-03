@@ -27,7 +27,7 @@ factor the same numbers would mean different real distances on the two maps - a 
 reading the coast, a finer mountain noise, a coast rise two and a half times too steep. With it,
 every step measures the same ground, and the whole-continent map (z = 1) is untouched.
 """
-import json, math, random, sys
+import json, math, random, sys, zlib
 import numpy as np
 from PIL import Image, ImageDraw
 from scipy import ndimage as nd
@@ -168,9 +168,9 @@ def wall_cover(items):
     ys, xs = np.mgrid[0:SIZE, 0:SIZE]; px = sx + (xs + 0.5) * side / SIZE; py = sy + (ys + 0.5) * side / SIZE
     out = np.zeros((SIZE, SIZE))
     for nm, pts0, w in items:
-        pts = ragged(list(pts0), hash(nm) & 0xffff, 0.10) if len(pts0) > 1 else pts0
+        pts = ragged(list(pts0), zlib.crc32(nm.encode()) & 0xffff, 0.10) if len(pts0) > 1 else pts0
         d = np.full((SIZE, SIZE), 1e9)
-        wr = random.Random(hash(nm) & 0xffff)
+        wr = random.Random(zlib.crc32(nm.encode()) & 0xffff)
         for (ax, ay), (bx, by) in zip(pts, pts[1:]):
             vx, vy = bx - ax, by - ay
             if vx == 0 and vy == 0: continue
@@ -185,7 +185,7 @@ mountain = wall_cover([r for r in TD.RANGES if r[2] >= 8])
 hill_l = np.where(is_land, wall_cover([r for r in TD.RANGES if r[2] < 8]), 0).astype(int)
 forest_l = np.where(is_land, poly_cover([q for _, q in TD.FORESTS]), 0).astype(int)
 wet_l = np.where(is_land, poly_cover([q for _, q in TD.WETLANDS]), 0).astype(int)
-volcanic_l = np.where(is_land, poly_cover([q for n, q, _ in TD.RANGES if n == 'Red Mountain']), 0).astype(int)
+volcanic_l = np.where(is_land, poly_cover([q for n, q, _ in TD.RANGES if n == 'Red Mountain'] + [q for _, q in TD.VOLCANIC]), 0).astype(int)
 
 S = G / SIZE
 
@@ -265,7 +265,10 @@ out = {'size': SIZE, 'seaLevel': SEA, 'layers': {
 if check:
     # every vector point that falls in the sea, so new geography can be checked without a picture
     bad = 0
-    for tag, items in (('RIVER', TD.RIVERS), ('FOREST', TD.FORESTS), ('WETLAND', TD.WETLANDS), ('RANGE', TD.RANGES)):
+    core = nd.binary_erosion(is_land, iterations=2)
+    _, (iy, ix) = nd.distance_transform_edt(~(core if core.any() else is_land), return_indices=True)
+    snaps = {}
+    for tag, items in (('RIVER', TD.RIVERS), ('FOREST', TD.FORESTS), ('WETLAND', TD.WETLANDS), ('RANGE', TD.RANGES), ('VOLCANIC', TD.VOLCANIC)):
         for it in items:
             nm, pts = it[0], it[1]
             off = []
@@ -273,9 +276,19 @@ if check:
                 tx, ty = int(to_grid(x, y)[0] // S), int(to_grid(x, y)[1] // S)
                 if not (0 <= tx < SIZE and 0 <= ty < SIZE) or not is_land[max(0, ty - 1):ty + 2, max(0, tx - 1):tx + 2].any():
                     off.append((x, y))
+                    ty2 = min(max(ty, 0), SIZE - 1); tx2 = min(max(tx, 0), SIZE - 1)
+                    ny, nx = iy[ty2, tx2], ix[ty2, tx2]
+                    snaps.setdefault(nm, []).append([[x, y], [round(sx + (nx + 0.5) * side / SIZE), round(sy + (ny + 0.5) * side / SIZE)]])
             if off:
                 bad += len(off); print(f'{tag:7s} {nm:36s} {len(off)}/{len(pts)} in the sea: {off[:6]}')
     print('points in the sea:', bad)
+    json.dump(snaps, open('snap.json', 'w'))
+    ov = Image.fromarray((is_land * 120 + 40).astype('uint8')).resize((1200, 1200)).convert('RGB'); od = ImageDraw.Draw(ov)
+    for tag, items, col in (('r', TD.RIVERS, (60, 120, 255)), ('f', TD.FORESTS, (0, 255, 0)), ('w', TD.WETLANDS, (255, 0, 255)), ('g', TD.RANGES, (255, 160, 0)), ('v', TD.VOLCANIC, (255, 0, 0))):
+        for it in items:
+            p = [(x, y) for x, y in it[1]]
+            od.line(p + ([p[0]] if tag in 'fwv' else []), fill=col, width=1)
+    ov.save('check.png')
 
 json.dump(out, open(sys.argv[2], 'w'), separators=(',', ':'))
 print('wrote', sys.argv[2], name, 'view', (round(sx), round(sy), round(sx + side), round(sy + side)),
