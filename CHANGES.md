@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- Fixed Middle-earth rejecting every world ("No controllable entity definitions available"):
+  mountain-cave minimum now one per 20 mountain tiles; Middle-earth, Elsweyr, Valenwood and
+  Summerset rebuilt.
 - Added `tools/dftest/genmap.ps1`: gens a preset in Dwarf Fortress headless and saves its map
   export as a PNG, so a world can be checked without driving the game.
 - Fixed four presets Dwarf Fortress rejected for ever: the minimum number of kobold mountain caves

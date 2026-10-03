@@ -105,15 +105,16 @@ const layers = build(recipe, SIZE, terrain, report);
 const SCALED_TOKENS = new Set(["TOTAL_CIV_NUMBER", "SITE_CAP", "TOTAL_CIV_POPULATION", "MEGABEAST_CAP", "SEMIMEGABEAST_CAP", "TITAN_NUMBER", "DEMON_NUMBER", "MOUNTAIN_CAVE_MIN", "NON_MOUNTAIN_CAVE_MIN"]);
 
 /**
- * The densest mountain-cave minimum any map of ours has generated with: one kobold cave per twelve
- * mountain tiles (Middle-earth, 207 caves on 2546). The caves are placed before the civilisations
+ * One kobold cave per twenty mountain tiles. Middle-earth at one per 12.3 (207 on 2546) generated
+ * at first, then rejected ten times running on 2026-10-03, so twelve was the edge, not a safe ratio.
+ * The caves are placed before the civilisations
  * and they take the same mountain ground a mountain-dwelling civilisation needs, so a minimum set
  * from the world's *land* - which is what the cave count scales with - asks for more mountain than a
  * low, flat map has. Dwarf Fortress then rejects the world for ever with "No controllable entity
  * definitions available": no mountain hall can be placed. Confirmed 2026-10-02 on the Black Marsh
  * window (1248 mountain tiles, minimum 218): the same map with MOUNTAIN_CAVE_MIN:0 generated.
  */
-const MOUNTAIN_TILES_PER_CAVE = 12;
+const MOUNTAIN_TILES_PER_CAVE = 20;
 
 /** A realm's settings scaled to the world's actual land, at Medium level, with the recipe's own overrides on top. */
 function realmSettings(): TokenSettings {
