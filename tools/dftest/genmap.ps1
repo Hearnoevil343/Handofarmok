@@ -15,8 +15,10 @@ param(
   [int]$Seed = 433,
   [int]$Size = 2056,
   [int]$TimeoutMin = 40,
-  [string]$OutDir = (Join-Path $PSScriptRoot '..\..\screenshots\df-maps')
+  [string]$OutDir
 )
+# $PSScriptRoot is empty inside a param default on Windows PowerShell 5.1, so resolve it here.
+if (-not $OutDir) { $OutDir = Join-Path $PSScriptRoot '..\..\screenshots\df-maps' }
 $df = 'E:\SteamLibrary\steamapps\common\Dwarf Fortress'
 $saves = "$env:APPDATA\Bay 12 Games\Dwarf Fortress\save"
 $prefs = "$env:APPDATA\Bay 12 Games\Dwarf Fortress\prefs\world_gen.txt"
