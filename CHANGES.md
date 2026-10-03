@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Added `tools/dftest/genmap.ps1`: gens a preset in Dwarf Fortress headless and saves its map
+  export as a PNG, so a world can be checked without driving the game.
 - Fixed four presets Dwarf Fortress rejected for ever: the minimum number of kobold mountain caves
   is now held to one per twelve mountain tiles, the densest ratio a map of ours has generated with.
   It is scaled by the world's land, so flat, wet maps (Black Marsh, Elsweyr, Valenwood, Summerset)

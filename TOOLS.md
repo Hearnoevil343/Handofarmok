@@ -39,6 +39,12 @@ Scripts worth knowing about before writing another one.
   outside the script.
 - **dftest** (`tools/dftest/`) - generates a world in Dwarf Fortress from an export and compares
   the result layer by layer with the prediction.
+- **genmap.ps1 / sheets.py** (`tools/dftest/`) - `powershell -ExecutionPolicy Bypass -File
+  tools/dftest/genmap.ps1 SKYRIM,MORROWIND` gens each preset headless (`-gen`, first free slot, seed
+  433), waits for END_YEAR, and writes DF's own map export (`region<N>-<year>-01-01-detailed.bmp`)
+  to `screenshots/df-maps/<name>.png`. No UI, no screenshots; a small world takes 13-25 min, almost
+  all of it DF's history. This is the flat biome-colour map, not the tileset the player sees; for
+  that, use grab/sweep below. `sheets.py` tiles the PNGs into labelled contact sheets.
 - **grab.ps1 / sweep.ps1 / stitch.py** (`tools/dftest/`) - full-map screenshot of a generated world
   on DF's embark map. DF in front on the embark map, then
   `powershell -ExecutionPolicy Bypass -File tools/dftest/sweep.ps1 <dir> 5 3 5 3` and
