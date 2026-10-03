@@ -104,13 +104,31 @@ const layers = build(recipe, SIZE, terrain, report);
 // and scaling them (69, 414) would diverge from the gist's tested, already-correct values.
 const SCALED_TOKENS = new Set(["TOTAL_CIV_NUMBER", "SITE_CAP", "TOTAL_CIV_POPULATION", "MEGABEAST_CAP", "SEMIMEGABEAST_CAP", "TITAN_NUMBER", "DEMON_NUMBER", "MOUNTAIN_CAVE_MIN", "NON_MOUNTAIN_CAVE_MIN"]);
 
+/**
+ * The densest mountain-cave minimum any map of ours has generated with: one kobold cave per twelve
+ * mountain tiles (Middle-earth, 207 caves on 2546). The caves are placed before the civilisations
+ * and they take the same mountain ground a mountain-dwelling civilisation needs, so a minimum set
+ * from the world's *land* - which is what the cave count scales with - asks for more mountain than a
+ * low, flat map has. Dwarf Fortress then rejects the world for ever with "No controllable entity
+ * definitions available": no mountain hall can be placed. Confirmed 2026-10-02 on the Black Marsh
+ * window (1248 mountain tiles, minimum 218): the same map with MOUNTAIN_CAVE_MIN:0 generated.
+ */
+const MOUNTAIN_TILES_PER_CAVE = 12;
+
 /** A realm's settings scaled to the world's actual land, at Medium level, with the recipe's own overrides on top. */
 function realmSettings(): TokenSettings {
   const settings = newRealmSettings(SIZE);
   applyPaintSafe(settings);
-  const land = measureWorld(layers, SIZE).land;
+  const measure = measureWorld(layers, SIZE);
+  const land = measure.land;
   for (const groupId of ["civs", "beasts", "caves", "secrets"]) {
     for (const { token, value } of groupValues(groupId, 2, SIZE, land)) if (SCALED_TOKENS.has(token)) settings[token] = [[String(value)]];
+  }
+  const caveCap = Math.floor(measure.mountain / MOUNTAIN_TILES_PER_CAVE);
+  const caves = Number(settings.MOUNTAIN_CAVE_MIN[0][0]);
+  if (caves > caveCap) {
+    settings.MOUNTAIN_CAVE_MIN = [[String(caveCap)]];
+    console.log(`mountain caves: ${caves} would outrun ${measure.mountain} mountain tiles; held to ${caveCap}`);
   }
   for (const [token, row] of Object.entries(recipe.worldGenOverrides ?? {})) settings[token] = [[...row]];
   return settings;
