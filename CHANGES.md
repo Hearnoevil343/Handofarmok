@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+- Fixed four presets Dwarf Fortress rejected for ever: the minimum number of kobold mountain caves
+  is now held to one per twelve mountain tiles, the densest ratio a map of ours has generated with.
+  It is scaled by the world's land, so flat, wet maps (Black Marsh, Elsweyr, Valenwood, Summerset)
+  asked for more mountain than they have, the caves took it all, and no mountain hall could be
+  placed - "No controllable entity definitions available". Only those four presets change.
 - Elsweyr preset: a province window of the same Tamriel map and climate table, with Torval in the
   Anequina desert and Tenmar Forest in the Pelletine jungle, Valenwood running in at the west and
   Black Marsh at the east, Cyrodiil closing the north, and the real southern sea at the bottom edge.
